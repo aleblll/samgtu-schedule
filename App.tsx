@@ -78,8 +78,10 @@ const App: React.FC = () => {
   const [scheduleOverrides, setScheduleOverrides] = useState<Record<string, Partial<Lesson>>>(() => {
     try {
       const saved = localStorage.getItem(`schedule_overrides_${currentGroupId}`);
-      const parsed = saved ? JSON.parse(saved) : {};
-      return { ...SEED_SCHEDULE_OVERRIDES, ...parsed };
+      if (saved !== null) {
+        return JSON.parse(saved);
+      }
+      return { ...SEED_SCHEDULE_OVERRIDES };
     } catch (e) {
       return { ...SEED_SCHEDULE_OVERRIDES };
     }

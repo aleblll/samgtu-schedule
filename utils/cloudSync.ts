@@ -28,10 +28,13 @@ export const getLocalBackup = (groupId = 'ingt-310'): GroupCloudData => {
     const st = localStorage.getItem(`subject_teachers_${groupId}`);
     const att = localStorage.getItem(`attendance_${groupId}`);
 
-    const defaultHw = groupId === 'ingt-310' ? SEED_HOMEWORK : [];
-    const defaultOv = groupId === 'ingt-310' ? SEED_SCHEDULE_OVERRIDES : {};
-    const defaultSt = groupId === 'ingt-310' ? SEED_SUBJECT_TEACHERS : {};
-    const defaultAtt = groupId === 'ingt-310' ? SEED_ATTENDANCE : [];
+    const defaultHw = (hw === null && groupId === 'ingt-310') ? SEED_HOMEWORK : [];
+    const defaultOv = (ov === null && groupId === 'ingt-310') ? SEED_SCHEDULE_OVERRIDES : {};
+    const defaultSt = (st === null && groupId === 'ingt-310') ? SEED_SUBJECT_TEACHERS : {};
+    const defaultAtt = (att === null && groupId === 'ingt-310') ? SEED_ATTENDANCE : [];
+
+    const deletedHw: string[] = JSON.parse(localStorage.getItem(`deleted_hw_${groupId}`) || '[]');
+    const deletedSet = new Set(deletedHw);
 
     const localHw: HomeworkItem[] = hw ? JSON.parse(hw) : [];
     const localOv = ov ? JSON.parse(ov) : {};
@@ -39,8 +42,8 @@ export const getLocalBackup = (groupId = 'ingt-310'): GroupCloudData => {
     const localAtt: AttendanceRecord[] = att ? JSON.parse(att) : [];
 
     const hwMap = new Map<string, HomeworkItem>();
-    defaultHw.forEach(it => { if (it && it.id) hwMap.set(it.id, it); });
-    localHw.forEach(it => { if (it && it.id) hwMap.set(it.id, it); });
+    defaultHw.forEach(it => { if (it && it.id && !deletedSet.has(it.id)) hwMap.set(it.id, it); });
+    localHw.forEach(it => { if (it && it.id && !deletedSet.has(it.id)) hwMap.set(it.id, it); });
 
     const attMap = new Map<string, AttendanceRecord>();
     defaultAtt.forEach(it => { if (it) attMap.set(it.docId || `${it.groupId}_${it.date}_${it.lessonId}`, it); });
