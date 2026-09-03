@@ -1,0 +1,9 @@
+{
+  "appId": "ru.samgtu.unischedule",
+  "appName": "Расписание СамГТУ",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

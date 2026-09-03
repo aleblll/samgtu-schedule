@@ -1,0 +1,84 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and role information",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User's email address"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "editor", "viewer"],
+          "description": "User's role in the application"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the user was created"
+        }
+      },
+      "required": ["email", "role", "createdAt"]
+    },
+    "AttendanceRecord": {
+      "title": "Attendance Record",
+      "description": "A record of attendance for a specific lesson on a specific date",
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string",
+          "description": "Date of the lesson (YYYY-MM-DD)"
+        },
+        "lessonId": {
+          "type": "string",
+          "description": "ID of the lesson"
+        },
+        "absentStudentIds": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "List of IDs of absent students"
+        },
+        "excusedStudentIds": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "List of IDs of excused students"
+        },
+        "isCancelled": {
+          "type": "boolean",
+          "description": "Whether the lesson was cancelled"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the record was last updated"
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "UID of the user who last updated the record"
+        }
+      },
+      "required": ["date", "lessonId", "absentStudentIds", "updatedAt", "updatedBy"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Stores user profiles and roles"
+    },
+    "/attendance/{recordId}": {
+      "schema": {
+        "$ref": "#/entities/AttendanceRecord"
+      },
+      "description": "Stores attendance records"
+    }
+  }
+}

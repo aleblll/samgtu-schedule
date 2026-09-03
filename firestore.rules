@@ -1,0 +1,122 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (from Firebase Auth)
+    // Fields:
+    //   - email: string (required) - User's email address
+    //   - role: string (required) - User's role ('admin', 'editor', 'viewer')
+    //   - createdAt: timestamp (required) - When the user was created
+    //
+    // Collection: attendance
+    // Document ID: recordId (auto-generated or composite date_lessonId)
+    // Fields:
+    //   - date: string (required) - YYYY-MM-DD
+    //   - lessonId: string (required) - ID of the lesson
+    //   - absentStudentIds: list of numbers (required)
+    //   - excusedStudentIds: list of numbers (optional)
+    //   - isCancelled: boolean (optional)
+    //   - updatedAt: timestamp (required)
+    //   - updatedBy: string (required) - UID of the user who last updated
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+          (request.auth.token.email == "alexeyberezin2@gmail.com")
+        );
+    }
+
+    function isEditorForGroup(groupId) {
+      return isAdmin() ||
+             (isAuthenticated() && request.auth.token.email == "sychov200713nikita@gmail.com" && groupId == 'ingt-1') ||
+             (isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'editor']);
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['email', 'role', 'createdAt', 'facultyId', 'groupId']) &&
+             data.email is string && isValidEmail(data.email) && data.email.size() < 100 &&
+             data.role in ['admin', 'editor', 'viewer'] &&
+             data.createdAt is timestamp &&
+             (!('facultyId' in data) || (data.facultyId is string && data.facultyId.size() < 50)) &&
+             (!('groupId' in data) || (data.groupId is string && data.groupId.size() < 50));
+    }
+
+    function isValidAttendanceRecord(data) {
+      return hasRequiredFields(['groupId', 'date', 'lessonId', 'absentStudentIds', 'updatedAt', 'updatedBy']) &&
+             hasOnlyAllowedFields(['groupId', 'date', 'lessonId', 'absentStudentIds', 'excusedStudentIds', 'isCancelled', 'updatedAt', 'updatedBy']) &&
+             data.groupId is string && data.groupId.size() > 0 &&
+             data.date is string && data.date.size() == 10 &&
+             data.lessonId is string && data.lessonId.size() > 0 && data.lessonId.size() < 50 &&
+             data.absentStudentIds is list && data.absentStudentIds.size() <= 100 &&
+             (!('excusedStudentIds' in data) || (data.excusedStudentIds is list && data.excusedStudentIds.size() <= 100)) &&
+             (!('isCancelled' in data) || data.isCancelled is bool) &&
+             data.updatedAt is timestamp &&
+             data.updatedBy is string && data.updatedBy == request.auth.uid;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      // Only admins can read all users. Users can read their own profile.
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Only admins can create or update roles. Users cannot create their own admin roles.
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && 
+                    ((isOwner(userId) && request.resource.data.role == 'viewer') || isAdmin());
+                    
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && 
+                    ((isOwner(userId) && request.resource.data.role == resource.data.role && request.resource.data.createdAt == resource.data.createdAt && request.resource.data.email == resource.data.email) || isAdmin());
+                    
+      allow delete: if isAdmin();
+    }
+
+    match /attendance/{recordId} {
+      // Anyone authenticated can read attendance records
+      allow read: if isAuthenticated();
+      
+      // Editors and admins can create/update attendance records
+      allow create: if isEditorForGroup(request.resource.data.groupId) && isValidAttendanceRecord(request.resource.data);
+      allow update: if isEditorForGroup(resource.data.groupId) && isEditorForGroup(request.resource.data.groupId) && isValidAttendanceRecord(request.resource.data);
+      allow delete: if isAdmin();
+    }
+  }
+}
