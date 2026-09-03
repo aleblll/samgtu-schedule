@@ -1,8 +1,11 @@
-﻿console.log("Running all test suites...");
+console.log("Running all test suites...");
 import './test_dates';
 import './test_attendance';
 import './test_schedule_sync';
 import './test_homework';
+import './test_telegram_webapp';
+import { runHomeworkLifecycleStressTest } from './test_homework_lifecycle_stress';
+await runHomeworkLifecycleStressTest();
 console.log("\n=================================================");
-console.log("       ALL 4 TEST SUITES COMPLETED SUCCESSFULLY  ");
+console.log("       ALL TEST SUITES COMPLETED SUCCESSFULLY  ");
 console.log("=================================================");

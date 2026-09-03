@@ -57,8 +57,12 @@ export const getLocalBackup = (groupId = 'ingt-310'): GroupCloudData => {
       lastUpdated: 0
     };
   } catch (e) {
+    let safeDeletedSet = new Set<string>();
+    try {
+      safeDeletedSet = new Set(JSON.parse(localStorage.getItem(`deleted_hw_${groupId}`) || '[]'));
+    } catch {}
     return {
-      homework: SEED_HOMEWORK,
+      homework: SEED_HOMEWORK.filter(it => it && it.id && !safeDeletedSet.has(it.id)),
       scheduleOverrides: SEED_SCHEDULE_OVERRIDES,
       subjectTeachers: SEED_SUBJECT_TEACHERS,
       attendance: SEED_ATTENDANCE,
@@ -143,15 +147,20 @@ export const fetchGroupCloudData = async (force: boolean = false, groupId = 'ing
     }
 
     let cloudHomework: HomeworkItem[] = localBackup.homework || [];
+    let deletedSet = new Set<string>();
+    try {
+      deletedSet = new Set(JSON.parse(localStorage.getItem(`deleted_hw_${groupId}`) || '[]'));
+    } catch (e) {}
+
     if (hwRes.status === 'fulfilled' && hwRes.value?.data && Array.isArray(hwRes.value.data.items)) {
       const raw = hwRes.value.data.items;
       if (raw.length > 0) {
-        // Union merge with local items by ID
+        // Union merge with local items by ID, strictly respecting tombstone list
         const map = new Map<string, HomeworkItem>();
-        cloudHomework.forEach(h => { if (h?.id) map.set(h.id, h); });
+        cloudHomework.forEach(h => { if (h?.id && !deletedSet.has(h.id)) map.set(h.id, h); });
         raw.forEach((h: any) => {
-          if (h && h.id) {
-            map.set(h.id, {
+          if (h && h.id && !deletedSet.has(String(h.id))) {
+            map.set(String(h.id), {
               id: String(h.id),
               groupId: String(h.groupId || groupId),
               subject: String(h.subject || ''),

@@ -274,7 +274,7 @@ const SubjectTeachersModal: React.FC<SubjectTeachersModalProps> = ({
         </form>
 
         {/* Fixed Footer with Safe Area */}
-        <div className="flex gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 shrink-0 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] bg-white dark:bg-slate-900">
+        <div className="flex gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 shrink-0 pb-safe bg-white dark:bg-slate-900">
           <button
             type="button"
             onClick={onClose}

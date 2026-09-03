@@ -15,7 +15,15 @@
       (function() {
         try {
           var theme = localStorage.getItem('app_theme');
-          if (theme === 'dark' || (!theme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          var isDark = false;
+          if (theme) {
+            isDark = theme === 'dark';
+          } else if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.colorScheme) {
+            isDark = window.Telegram.WebApp.colorScheme === 'dark';
+          } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            isDark = true;
+          }
+          if (isDark) {
             document.documentElement.classList.add('dark');
           } else {
             document.documentElement.classList.remove('dark');

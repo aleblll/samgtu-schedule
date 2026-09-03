@@ -6,12 +6,25 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
+@utility pt-safe {
+  padding-top: max(var(--tg-safe-area-inset-top, 0px), env(safe-area-inset-top, 0px));
+}
+
+@utility pb-safe {
+  padding-bottom: max(0.75rem, var(--tg-safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px));
+}
+
+@utility mb-safe {
+  margin-bottom: max(var(--tg-safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px));
+}
+
 html {
   overflow-x: clip;
   width: 100%;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -23,6 +36,7 @@ body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;

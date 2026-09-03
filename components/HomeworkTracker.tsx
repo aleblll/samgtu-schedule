@@ -847,7 +847,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
             </form>
 
             {/* Fixed Footer with Safe Area */}
-            <div className="p-4 border-t border-slate-100 dark:border-slate-800 shrink-0 flex gap-2 pb-[max(1rem,env(safe-area-inset-bottom,0px))] bg-white dark:bg-slate-900">
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800 shrink-0 flex gap-2 pb-safe bg-white dark:bg-slate-900">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}

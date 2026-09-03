@@ -32,7 +32,11 @@ declare global {
 const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     const saved = localStorage.getItem('app_theme');
-    return saved ? saved === 'dark' : (window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false);
+    if (saved) return saved === 'dark';
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp?.colorScheme) {
+      return window.Telegram.WebApp.colorScheme === 'dark';
+    }
+    return (window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false);
   });
   const [activeTab, setActiveTab] = useState<'schedule' | 'homework' | 'attendance' | 'group' | 'admin' | 'profile'>('schedule');
   const [user, setUser] = useState<User | null>(null);
@@ -91,13 +95,32 @@ const App: React.FC = () => {
     setSelectedWeek(currentWeek);
   }, [currentWeek]);
 
-  // Telegram WebApp auto-expand and ready
+  // Telegram WebApp auto-expand, ready and events
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       try {
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
+        window.Telegram.WebApp.enableClosingConfirmation?.();
       } catch (e) {}
+
+      const handleThemeChange = () => {
+        try {
+          if (!localStorage.getItem('app_theme') && window.Telegram?.WebApp?.colorScheme) {
+            setDarkMode(window.Telegram.WebApp.colorScheme === 'dark');
+          }
+        } catch (e) {}
+      };
+
+      try {
+        window.Telegram.WebApp.onEvent?.('themeChanged', handleThemeChange);
+      } catch (e) {}
+
+      return () => {
+        try {
+          window.Telegram?.WebApp?.offEvent?.('themeChanged', handleThemeChange);
+        } catch (e) {}
+      };
     }
   }, []);
 
@@ -106,13 +129,20 @@ const App: React.FC = () => {
     localStorage.setItem('user_role', userRole);
   }, [userRole]);
 
-  // Theme preference persistence
+  // Theme preference persistence and Telegram UI sync
   useEffect(() => {
     localStorage.setItem('app_theme', darkMode ? 'dark' : 'light');
     if (darkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
+    }
+
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+      try {
+        window.Telegram.WebApp.setHeaderColor?.(darkMode ? '#0f172a' : '#ffffff');
+        window.Telegram.WebApp.setBackgroundColor?.(darkMode ? '#020617' : '#f8fafc');
+      } catch (e) {}
     }
   }, [darkMode]);
 
@@ -411,7 +441,7 @@ const App: React.FC = () => {
       <Toaster position="top-center" offset={75} richColors />
 
       {/* Header with Safe Area Inset */}
-      <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 w-full pt-[env(safe-area-inset-top,0px)]">
+      <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 w-full pt-safe">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
