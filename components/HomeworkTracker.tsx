@@ -173,98 +173,69 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
     setIsModalOpen(true);
   };
 
+  const TG_WORKER_URL = 'https://floral-union-26d1.alexeyberezin2.workers.dev';
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     const file = files[0];
-    if (file.size > 8 * 1024 * 1024) {
-      toast.error('Файл слишком большой (>8 МБ). Прикрепите ссылку на Яндекс.Диск или Облако');
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error('Файл слишком большой (>50 МБ). Прикрепите ссылку на Яндекс.Диск или Облако');
       return;
     }
 
     setIsUploading(true);
+    const toastId = toast.loading(`Загрузка «${file.name}» в хранилище Telegram...`);
 
     try {
-      if (file.type.startsWith('image/')) {
-        // High-efficiency mobile canvas compression:
-        // Converts camera photos down to crisp, ultra-fast ~20-30KB JPEG!
-        const img = new Image();
-        const objectUrl = URL.createObjectURL(file);
-        
-        await new Promise<void>((resolve, reject) => {
-          img.onload = () => {
-            URL.revokeObjectURL(objectUrl);
-            const canvas = document.createElement('canvas');
-            let { width, height } = img;
-            const MAX_DIM = 800;
-            if (width > MAX_DIM || height > MAX_DIM) {
-              if (width > height) {
-                height = Math.round((height * MAX_DIM) / width);
-                width = MAX_DIM;
-              } else {
-                width = Math.round((width * MAX_DIM) / height);
-                height = MAX_DIM;
-              }
-            }
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-              ctx.drawImage(img, 0, 0, width, height);
-              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
-              const approxKb = Math.round((compressedBase64.length * 3) / 4 / 1024);
-              setFormAttachments(prev => [
-                ...prev,
-                {
-                  name: file.name,
-                  data: compressedBase64,
-                  type: 'image/jpeg',
-                  size: approxKb + ' КБ'
-                }
-              ]);
-              toast.success(`Фото «${file.name}» оптимизировано (${approxKb} КБ) и прикреплено`);
-              resolve();
-            } else {
-              reject(new Error('Canvas 2D context unavailable'));
-            }
-          };
-          img.onerror = reject;
-          img.src = objectUrl;
-        });
-      } else {
-        // PDF or document
-        if (file.size > 60 * 1024) {
-          toast.error(`Документ «${file.name}» весит ${(file.size / 1024).toFixed(0)} КБ (>60 КБ). Для быстрого скачивания одногруппниками используйте кнопку «+ Ссылка» на Яндекс.Диск или Облако`);
-          setIsUploading(false);
-          return;
-        }
+      const formData = new FormData();
+      formData.append('document', file, file.name);
+      formData.append('caption', `ДЗ: ${file.name}`);
 
-        const reader = new FileReader();
-        await new Promise<void>((resolve, reject) => {
-          reader.onload = () => {
-            setFormAttachments(prev => [
-              ...prev,
-              {
-                name: file.name,
-                data: reader.result as string,
-                type: file.type || 'application/octet-stream',
-                size: (file.size / 1024).toFixed(1) + ' КБ'
-              }
-            ]);
-            toast.success(`Файл «${file.name}» прикреплен`);
-            resolve();
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
+      const res = await fetch(`${TG_WORKER_URL}/upload`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!res.ok) {
+        throw new Error(`Ошибка загрузки: статус ${res.status}`);
       }
-    } catch (err) {
-      console.warn('File upload error:', err);
-      toast.error('Не удалось обработать файл');
+
+      const json = await res.json();
+      if (!json.ok || !json.result) {
+        throw new Error(json.description || 'Сервер Telegram отклонил файл');
+      }
+
+      const doc = json.result.document || (json.result.photo ? json.result.photo[json.result.photo.length - 1] : null);
+      const messageId = json.result.message_id;
+      const fileId = doc?.file_id;
+
+      const streamUrl = `${TG_WORKER_URL}/file?file_id=${fileId}`;
+      const tgPostUrl = `https://t.me/raspisanie_samgtu/${messageId}`;
+      const sizeFormatted = file.size > 1024 * 1024 
+        ? (file.size / (1024 * 1024)).toFixed(1) + ' МБ'
+        : (file.size / 1024).toFixed(0) + ' КБ';
+
+      setFormAttachments(prev => [
+        ...prev,
+        {
+          name: file.name,
+          url: streamUrl,
+          tgUrl: tgPostUrl,
+          type: file.type.startsWith('image/') ? 'image' : 'file',
+          size: sizeFormatted
+        }
+      ]);
+
+      toast.dismiss(toastId);
+      toast.success(`Файл «${file.name}» сохранен в Telegram навсегда!`);
+    } catch (err: any) {
+      console.error('Telegram upload error:', err);
+      toast.dismiss(toastId);
+      toast.error(`Не удалось сохранить в Telegram: ${err.message || 'Сбой сети'}`);
     } finally {
       setIsUploading(false);
-      // Reset input so same file can be selected again
       e.target.value = '';
     }
   };
@@ -395,55 +366,20 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
   };
 
   const handleOpenAttachment = async (att: HomeworkAttachment) => {
-    // 1. If it has a URL
-    if ((att.type === 'link' || att.url) && att.url) {
-      const trimmed = att.url.trim();
-      if (/^https?:\/\//i.test(trimmed)) {
-        const tg = (window as any).Telegram?.WebApp;
-        if (tg && typeof tg.openLink === 'function') {
-          try {
-            tg.openLink(trimmed);
-            return;
-          } catch (e) {
-            console.warn('Telegram openLink error, falling back:', e);
-          }
-        }
-        window.open(trimmed, '_blank', 'noopener,noreferrer');
-      } else {
-        toast.error('Небезопасная ссылка. Разрешены только протоколы http:// и https://');
-      }
-      return;
-    }
-
-    // 2. If it has data (image or file)
-    if (att.data) {
-      if (Capacitor.isNativePlatform()) {
+    // If it's a generic web link (e.g. Yandex Disk), open natively via Telegram if available
+    if (att.type === 'link' && att.url && !att.tgUrl) {
+      const tg = (window as any).Telegram?.WebApp;
+      if (tg && typeof tg.openLink === 'function') {
         try {
-          const base64Only = att.data.includes(',') ? att.data.split(',')[1] : att.data;
-          const writeRes = await Filesystem.writeFile({
-            path: att.name,
-            data: base64Only,
-            directory: Directory.Cache
-          });
-
-          if (writeRes && writeRes.uri) {
-            await Share.share({
-              title: att.name,
-              files: [writeRes.uri],
-              dialogTitle: `Открыть ${att.name}`
-            });
-            return;
-          }
-        } catch (e) {
-          console.warn('Native share attachment error:', e);
-        }
+          tg.openLink(att.url.trim());
+          return;
+        } catch (e) {}
       }
-
-      // Always open in-app preview lightbox modal!
-      // This works universally in Telegram WebApp, Desktop, Mobile Web, and Android!
-      setPreviewAttachment(att);
-      return;
     }
+
+    // Always open in-app preview lightbox modal!
+    // This works universally across Telegram WebApp, Desktop, Mobile Web and Android without popup blocker interference!
+    setPreviewAttachment(att);
   };
 
   // Filter items
@@ -909,12 +845,13 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
 
             {/* Content: Image Preview or Document Details */}
             <div className="flex-1 overflow-y-auto min-h-0 flex flex-col items-center justify-center py-2">
-              {previewAttachment.data && (previewAttachment.type?.includes('image') || previewAttachment.data.startsWith('data:image/')) ? (
+              {(previewAttachment.type === 'image' || previewAttachment.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) || previewAttachment.data?.startsWith('data:image/')) ? (
                 <div className="w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950 rounded-2xl p-2 border border-slate-100 dark:border-slate-800">
                   <img 
-                    src={previewAttachment.data} 
+                    src={previewAttachment.url || previewAttachment.data} 
                     alt={previewAttachment.name}
                     className="max-h-[60vh] max-w-full rounded-xl object-contain shadow-sm"
+                    loading="lazy"
                   />
                 </div>
               ) : (
@@ -927,7 +864,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
                       {previewAttachment.name}
                     </h4>
                     <p className="text-xs text-slate-400 mt-1">
-                      {previewAttachment.url ? 'Внешняя веб-ссылка' : 'Прикрепленный документ задания'}
+                      {previewAttachment.tgUrl ? 'Файл сохранен в канале Telegram группы' : (previewAttachment.url ? 'Веб-файл / ссылка' : 'Документ задания')}
                     </p>
                   </div>
                 </div>
@@ -935,18 +872,28 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex gap-2">
-              {previewAttachment.url && (
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-2">
+              {previewAttachment.tgUrl && (
                 <button
                   onClick={() => {
                     const tg = (window as any).Telegram?.WebApp;
-                    if (tg?.openLink) tg.openLink(previewAttachment.url!);
-                    else window.open(previewAttachment.url!, '_blank');
+                    if (tg?.openLink) tg.openLink(previewAttachment.tgUrl!);
+                    else window.open(previewAttachment.tgUrl!, '_blank');
                   }}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all"
+                  className="flex-1 min-w-[140px] flex items-center justify-center gap-1.5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition-all shadow-sm"
                 >
-                  <ExternalLink className="w-4 h-4" /> Открыть ссылку
+                  <ExternalLink className="w-4 h-4" /> В Telegram
                 </button>
+              )}
+              {previewAttachment.url && (
+                <a
+                  href={previewAttachment.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 min-w-[140px] flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm"
+                >
+                  <Download className="w-4 h-4" /> Скачать файл
+                </a>
               )}
               {previewAttachment.data && (
                 <button
@@ -963,14 +910,14 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
                       toast.info('Изображение открыто для просмотра выше');
                     }
                   }}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all"
+                  className="flex-1 min-w-[140px] flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm"
                 >
                   <Download className="w-4 h-4" /> Сохранить файл
                 </button>
               )}
               <button
                 onClick={() => setPreviewAttachment(null)}
-                className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs rounded-xl transition-all"
+                className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs rounded-xl transition-all shrink-0"
               >
                 Закрыть
               </button>

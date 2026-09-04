@@ -70,6 +70,7 @@ export interface HomeworkAttachment {
   id?: string;
   name: string;
   url?: string;
+  tgUrl?: string;
   data?: string; // base64 string for offline storage
   type?: string;
   size?: string | number;
