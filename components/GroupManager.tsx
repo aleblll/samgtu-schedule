@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Student } from '../types';
 import { STUDENTS_REGISTRY } from '../attendance';
+import { AVAILABLE_GROUPS } from '../constants';
 import { UserPlus, Trash2, Edit2, Check, X, Users, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -10,6 +11,10 @@ interface GroupManagerProps {
 }
 
 const GroupManager: React.FC<GroupManagerProps> = ({ currentGroupId, userRole }) => {
+  const groupConfig = useMemo(() => {
+    return AVAILABLE_GROUPS.find(g => g.id === currentGroupId);
+  }, [currentGroupId]);
+
   const [students, setStudents] = useState<Student[]>(() => {
     if (!currentGroupId) return [];
     const local = localStorage.getItem(`students_${currentGroupId}`);
@@ -20,6 +25,21 @@ const GroupManager: React.FC<GroupManagerProps> = ({ currentGroupId, userRole })
     }
     return STUDENTS_REGISTRY[currentGroupId] || [];
   });
+
+  useEffect(() => {
+    if (!currentGroupId) {
+      setStudents([]);
+      return;
+    }
+    const local = localStorage.getItem(`students_${currentGroupId}`);
+    if (local) {
+      try {
+        setStudents(JSON.parse(local));
+        return;
+      } catch (e) {}
+    }
+    setStudents(STUDENTS_REGISTRY[currentGroupId] || []);
+  }, [currentGroupId]);
 
   const [newStudentName, setNewStudentName] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -89,7 +109,7 @@ const GroupManager: React.FC<GroupManagerProps> = ({ currentGroupId, userRole })
           <div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">Состав группы</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Группа: <span className="font-semibold text-indigo-600 dark:text-indigo-400">3-ИНГТ-110</span> • Студентов: {students.length}
+              Группа: <span className="font-semibold text-indigo-600 dark:text-indigo-400">{groupConfig?.name || currentGroupId}</span> • Студентов: {students.length}
             </p>
           </div>
         </div>

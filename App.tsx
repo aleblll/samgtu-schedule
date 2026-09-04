@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS } from './constants';
+import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, FACULTIES } from './constants';
 import { getSemesterWeek, getWeekDateRange, getDayISODate, useAttendance, getSamaraDate, getSamaraISODate } from './attendance';
 import AttendanceTracker from './components/AttendanceTracker';
 import HomeworkTracker from './components/HomeworkTracker';
@@ -18,7 +18,7 @@ import { fetchGroupCloudData, pushGroupCloudData } from './utils/cloudSync';
 import { SEED_SCHEDULE_OVERRIDES, SEED_SUBJECT_TEACHERS } from './defaultData';
 import {
   LogIn, LogOut, Calendar, BookOpen, ClipboardCheck, Sun, Moon,
-  GraduationCap, Users, RefreshCw, Shield, User as UserIcon, Key, UserCheck
+  GraduationCap, Users, RefreshCw, Shield, User as UserIcon, Key, UserCheck, ChevronDown
 } from 'lucide-react';
 
 declare global {
@@ -52,11 +52,21 @@ const App: React.FC = () => {
   const [quickPin, setQuickPin] = useState('');
   const [isSubjectTeachersModalOpen, setIsSubjectTeachersModalOpen] = useState(false);
 
-  // Fixed group: 3-ИНГТ-110
-  const currentGroupId = 'ingt-310';
+  // Multi-group state: defaults to 3-ИНГТ-110, switchable to any group
+  const [currentGroupId, setCurrentGroupId] = useState<string>(() => {
+    return localStorage.getItem('selected_group_id') || 'ingt-310';
+  });
 
-  // Load attendance records for cross-linking cancelled lessons
-  const { records: attendanceRecords } = useAttendance(
+  const currentGroupConfig = useMemo(() => {
+    return AVAILABLE_GROUPS.find(g => g.id === currentGroupId) || AVAILABLE_GROUPS[0];
+  }, [currentGroupId]);
+
+  const currentFaculty = useMemo(() => {
+    return FACULTIES.find(f => f.id === currentGroupConfig?.facultyId) || FACULTIES[0];
+  }, [currentGroupConfig]);
+
+  // Load attendance records and markAttendance for cross-linking cancelled lessons
+  const { records: attendanceRecords, markAttendance } = useAttendance(
     userRole === 'admin' || userRole === 'starosta', 
     currentGroupId, 
     refreshTrigger
@@ -94,6 +104,23 @@ const App: React.FC = () => {
   useEffect(() => {
     setSelectedWeek(currentWeek);
   }, [currentWeek]);
+
+  // Sync group selection and reload group-specific overrides and teachers
+  useEffect(() => {
+    localStorage.setItem('selected_group_id', currentGroupId);
+    try {
+      const savedOv = localStorage.getItem(`schedule_overrides_${currentGroupId}`);
+      setScheduleOverrides(savedOv ? JSON.parse(savedOv) : { ...SEED_SCHEDULE_OVERRIDES });
+    } catch {
+      setScheduleOverrides({ ...SEED_SCHEDULE_OVERRIDES });
+    }
+    try {
+      const savedSt = localStorage.getItem(`subject_teachers_${currentGroupId}`);
+      setSubjectTeachers(savedSt ? { ...SEED_SUBJECT_TEACHERS, ...JSON.parse(savedSt) } : { ...SEED_SUBJECT_TEACHERS });
+    } catch {
+      setSubjectTeachers({ ...SEED_SUBJECT_TEACHERS });
+    }
+  }, [currentGroupId]);
 
   // Telegram WebApp auto-expand, ready and events
   useEffect(() => {
@@ -294,6 +321,23 @@ const App: React.FC = () => {
     const isTeacherChanged = updatedLesson.teacher !== undefined && updatedLesson.teacher.trim() !== currentTeacher.trim();
     const isNoteChanged = updatedLesson.note !== undefined && updatedLesson.note !== (currentOverride.note || '');
     const isLocationChanged = updatedLesson.location !== undefined && updatedLesson.location !== (currentOverride.location || originalLesson?.location || '');
+    const isCancelledChanged = updatedLesson.isCancelled !== undefined && updatedLesson.isCancelled !== !!currentOverride.isCancelled;
+
+    if (isCancelledChanged) {
+      // Find the day for this lesson to get ISO date
+      const allDays = Object.values(SCHEDULE_REGISTRY[currentGroupId] || {}).flatMap(days => days);
+      const targetDay = allDays.find(d => d.lessons.some(l => l.id === lessonId));
+      const dayName = targetDay?.dayName || 'Понедельник';
+      const isoDate = getDayISODate(dayName, selectedWeek);
+      const existingAtt = attendanceRecords.find(r => r.date === isoDate && r.lessonId === lessonId);
+      markAttendance(
+        isoDate, 
+        lessonId, 
+        existingAtt?.absentStudentIds || [], 
+        existingAtt?.excusedStudentIds || [], 
+        updatedLesson.isCancelled!
+      );
+    }
 
     // Handle Teacher Assignment Scope (only if teacher actually changed!):
     if (isTeacherChanged && updatedLesson.subject && updatedLesson.teacher) {
@@ -309,7 +353,7 @@ const App: React.FC = () => {
         } catch (e) {}
 
         // Push to REST Cloud immediately (syncs to all classmates)
-        pushGroupCloudData({ scheduleOverrides: updated, subjectTeachers: updatedTeachers });
+        pushGroupCloudData({ scheduleOverrides: updated, subjectTeachers: updatedTeachers }, currentGroupId);
 
         try {
           await setDoc(doc(db, 'subject_teachers', currentGroupId), updatedTeachers, { merge: true });
@@ -364,6 +408,13 @@ const App: React.FC = () => {
         pushGroupCloudData({ scheduleOverrides: updated }, currentGroupId);
         toast.success(isNoteChanged ? 'Преподаватель и заметка к паре сохранены' : 'Преподаватель пары обновлен');
       }
+    } else if (isCancelledChanged) {
+      pushGroupCloudData({ scheduleOverrides: updated }, currentGroupId);
+      if (updatedLesson.isCancelled) {
+        toast.warning('Пара отменена для всей группы');
+      } else {
+        toast.success('Пара восстановлена в расписании');
+      }
     } else if (isNoteChanged) {
       // Only note was changed:
       pushGroupCloudData({ scheduleOverrides: updated }, currentGroupId);
@@ -414,6 +465,16 @@ const App: React.FC = () => {
     try {
       localStorage.setItem(`schedule_overrides_${currentGroupId}`, JSON.stringify(updated));
     } catch (e) {}
+
+    // Also un-cancel in attendance if it was cancelled
+    const allDays = Object.values(SCHEDULE_REGISTRY[currentGroupId] || {}).flatMap(days => days);
+    const targetDay = allDays.find(d => d.lessons.some(l => l.id === lessonId));
+    const dayName = targetDay?.dayName || 'Понедельник';
+    const isoDate = getDayISODate(dayName, selectedWeek);
+    const existingAtt = attendanceRecords.find(r => r.date === isoDate && r.lessonId === lessonId);
+    if (existingAtt && existingAtt.isCancelled) {
+      markAttendance(isoDate, lessonId, existingAtt.absentStudentIds, existingAtt.excusedStudentIds || [], false);
+    }
 
     // Push reset to REST Cloud immediately
     pushGroupCloudData({ scheduleOverrides: updated }, currentGroupId);
@@ -466,14 +527,14 @@ const App: React.FC = () => {
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-indigo-200 dark:shadow-none">
-                3
+                {currentGroupConfig.course}
               </div>
               <div>
                 <h1 className="text-base font-bold text-slate-900 dark:text-white leading-tight">
-                  Расписание 3-ИНГТ-110
+                  Расписание {currentGroupConfig.name}
                 </h1>
                 <p className="text-xs text-slate-400 font-medium">
-                  СамГТУ • Мобильное приложение
+                  {currentFaculty.shortName} • СамГТУ
                 </p>
               </div>
             </div>
@@ -501,10 +562,21 @@ const App: React.FC = () => {
           <div className="mt-3 space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <GraduationCap className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                  Группа 3-ИНГТ-110
-                </span>
+                <GraduationCap className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                <div className="relative">
+                  <select
+                    value={currentGroupId}
+                    onChange={(e) => setCurrentGroupId(e.target.value)}
+                    className="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 pr-7 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer appearance-none transition-colors"
+                  >
+                    {AVAILABLE_GROUPS.map(g => (
+                      <option key={g.id} value={g.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                        {g.name} ({g.course} курс)
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
               
               <div className="flex items-center gap-2">
@@ -609,7 +681,7 @@ const App: React.FC = () => {
                 <UserIcon className="w-8 h-8" />
               </div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                {user ? user.displayName || user.email : 'Студент 3-ИНГТ-110'}
+                {user ? user.displayName || user.email : `Студент ${currentGroupConfig.name}`}
               </h2>
               <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase ${
                 userRole === 'admin' 

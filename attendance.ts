@@ -25,6 +25,18 @@ export const STUDENTS_REGISTRY: Registry<Student[]> = {
     { id: 15, name: "Савкин Александр Владимирович" },
     { id: 16, name: "Сычев Никита Дмитриевич" },
     { id: 17, name: "Ульмасова Алина Александровна" }
+  ],
+  'ingt-1': [
+    { id: 1, name: "Александров Данила Игоревич" },
+    { id: 2, name: "Белов Артем Сергеевич" },
+    { id: 3, name: "Волков Максим Денисович" },
+    { id: 4, name: "Григорьева Анна Дмитриевна" }
+  ],
+  'faid-110': [
+    { id: 1, name: "Анисимова Полина Михайловна" },
+    { id: 2, name: "Борисова Ксения Сергеевна" },
+    { id: 3, name: "Васильева Дарья Александровна" },
+    { id: 4, name: "Дмитриев Егор Романович" }
   ]
 };
 
@@ -81,11 +93,25 @@ export const useAttendance = (isAuthenticated: boolean, currentGroupId: string |
       const cloud = await fetchGroupCloudData(true, currentGroupId);
       if (!isMounted) return; // Prevent leak if unmounted during await
 
-      if (cloud && Array.isArray(cloud.attendance) && cloud.attendance.length > 0) {
-        setRecords(cloud.attendance);
+      if (cloud && Array.isArray(cloud.attendance)) {
+        const localSaved = localStorage.getItem(`attendance_${currentGroupId}`);
+        let localCount = 0;
         try {
-          localStorage.setItem(`attendance_${currentGroupId}`, JSON.stringify(cloud.attendance));
+          localCount = localSaved ? JSON.parse(localSaved).length : 0;
         } catch (e) {}
+
+        if (cloud.attendance.length > 0) {
+          setRecords(cloud.attendance);
+          try {
+            localStorage.setItem(`attendance_${currentGroupId}`, JSON.stringify(cloud.attendance));
+          } catch (e) {}
+        } else if (localCount > 0) {
+          // Auto-heal: cloud was wiped or empty, but local has records -> restore cloud!
+          try {
+            const localRecords = JSON.parse(localSaved!);
+            pushGroupCloudData({ attendance: localRecords }, currentGroupId);
+          } catch (e) {}
+        }
       }
 
       // 2. Poll every 20s for attendance updates across devices
@@ -169,21 +195,28 @@ export const useAttendance = (isAuthenticated: boolean, currentGroupId: string |
       updatedBy: auth.currentUser?.uid || 'starosta_pin'
     };
 
-    // 1. Immediately update UI and LocalStorage
-    let latestRecords: AttendanceRecord[] = [];
-    setRecords(prev => {
-      const filtered = prev.filter(r => !(r.date === date && r.lessonId === lessonId));
-      latestRecords = [...filtered, newRecord];
+    // 1. Synchronously compute updated array from current state or localStorage
+    let baseList = records;
+    if (baseList.length === 0) {
       try {
-        localStorage.setItem(`attendance_${groupId}`, JSON.stringify(latestRecords));
+        const saved = localStorage.getItem(`attendance_${groupId}`);
+        if (saved) baseList = JSON.parse(saved);
       } catch (e) {}
-      return latestRecords;
-    });
+    }
 
-    toast.success('Посещаемость сохранена');
+    const filtered = baseList.filter(r => !(r.date === date && r.lessonId === lessonId));
+    const updatedRecords = [...filtered, newRecord];
 
-    // 2. Push to REST Cloud immediately (syncs to all classmates)
-    pushGroupCloudData({ attendance: latestRecords }, groupId);
+    // 2. Immediately update UI and LocalStorage
+    setRecords(updatedRecords);
+    try {
+      localStorage.setItem(`attendance_${groupId}`, JSON.stringify(updatedRecords));
+    } catch (e) {}
+
+    toast.success(isCancelled ? 'Пара отмечена как отмененная' : 'Посещаемость сохранена');
+
+    // 3. Push the GUARANTEED valid array to REST Cloud immediately (syncs to all classmates)
+    pushGroupCloudData({ attendance: updatedRecords }, groupId);
 
     // 3. Sync to Firestore Cloud as well
     try {

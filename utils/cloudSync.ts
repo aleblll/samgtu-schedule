@@ -295,8 +295,12 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
   // 1. Schedule overrides / teachers push
   if (partialUpdate.scheduleOverrides !== undefined || partialUpdate.subjectTeachers !== undefined) {
     const local = getLocalBackup(groupId);
-    const overrides = partialUpdate.scheduleOverrides !== undefined ? partialUpdate.scheduleOverrides : local.scheduleOverrides;
-    const teachers = partialUpdate.subjectTeachers !== undefined ? partialUpdate.subjectTeachers : local.subjectTeachers;
+    const overrides = partialUpdate.scheduleOverrides !== undefined 
+      ? partialUpdate.scheduleOverrides 
+      : { ...(lastFetchedData?.scheduleOverrides || {}), ...(local.scheduleOverrides || {}) };
+    const teachers = partialUpdate.subjectTeachers !== undefined 
+      ? partialUpdate.subjectTeachers 
+      : { ...(SEED_SUBJECT_TEACHERS || {}), ...(lastFetchedData?.subjectTeachers || {}), ...(local.subjectTeachers || {}) };
     promises.push(
       safePut(ENDPOINTS.schedule, FALLBACK_BINS.schedule, {
         payload: JSON.stringify({ overrides, teachers }),

@@ -17,7 +17,9 @@ export const FACULTIES: Faculty[] = [
 ];
 
 export const AVAILABLE_GROUPS: GroupConfig[] = [
-  { id: 'ingt-310', name: '3-ИНГТ-110', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 }
+  { id: 'ingt-310', name: '3-ИНГТ-110', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
+  { id: 'ingt-1', name: '1-ИНГТ-101', facultyId: 'ingt', degree: 'Бакалавриат', course: 1 },
+  { id: 'faid-110', name: '1-ФАИД-110', facultyId: 'faid', degree: 'Бакалавриат', course: 1 }
 ];
 
 export const SCHEDULE_REGISTRY: Registry<WeekData> = {

@@ -23,6 +23,7 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
   const [teacher, setTeacher] = useState(lesson.teacher || '');
   const [location, setLocation] = useState(lesson.location || '');
   const [note, setNote] = useState(lesson.note || '');
+  const [isCancelled, setIsCancelled] = useState<boolean>(!!lesson.isCancelled);
   const [applyScope, setApplyScope] = useState<TeacherAssignmentScope>('type');
 
   if (!isOpen) return null;
@@ -34,6 +35,7 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
       teacher,
       location,
       note,
+      isCancelled,
     }, applyScope);
     onClose();
   };
@@ -153,6 +155,27 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
               onChange={(e) => setNote(e.target.value)}
               className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none text-slate-900 dark:text-white"
             />
+          </div>
+
+          {/* Lesson Cancellation Toggle */}
+          <div className="p-3.5 bg-red-50/70 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 rounded-2xl flex items-center justify-between gap-3">
+            <div>
+              <span className="text-xs font-bold text-red-700 dark:text-red-300 block">
+                Отмена пары на эту дату
+              </span>
+              <span className="text-[11px] text-red-600/80 dark:text-red-400 block mt-0.5">
+                {isCancelled ? 'Пара отменена (будет зачеркнута с красным бейджем)' : 'Включите, если занятие отменено преподавателем'}
+              </span>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer shrink-0">
+              <input
+                type="checkbox"
+                checked={isCancelled}
+                onChange={(e) => setIsCancelled(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-red-600"></div>
+            </label>
           </div>
         </form>
 
