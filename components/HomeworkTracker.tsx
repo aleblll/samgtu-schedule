@@ -66,6 +66,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<HomeworkItem | null>(null);
+  const [previewAttachment, setPreviewAttachment] = useState<HomeworkAttachment | null>(null);
 
   // Form state
   const [formSubject, setFormSubject] = useState(availableSubjects[0] || '');
@@ -387,9 +388,19 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
   };
 
   const handleOpenAttachment = async (att: HomeworkAttachment) => {
-    if (att.type === 'link' && att.url) {
+    // 1. If it has a URL
+    if ((att.type === 'link' || att.url) && att.url) {
       const trimmed = att.url.trim();
       if (/^https?:\/\//i.test(trimmed)) {
+        const tg = (window as any).Telegram?.WebApp;
+        if (tg && typeof tg.openLink === 'function') {
+          try {
+            tg.openLink(trimmed);
+            return;
+          } catch (e) {
+            console.warn('Telegram openLink error, falling back:', e);
+          }
+        }
         window.open(trimmed, '_blank', 'noopener,noreferrer');
       } else {
         toast.error('Небезопасная ссылка. Разрешены только протоколы http:// и https://');
@@ -397,6 +408,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
       return;
     }
 
+    // 2. If it has data (image or file)
     if (att.data) {
       if (Capacitor.isNativePlatform()) {
         try {
@@ -420,23 +432,9 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
         }
       }
 
-      // Browser fallback
-      const link = document.createElement('a');
-      link.href = att.data;
-      link.download = att.name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      return;
-    }
-
-    if (att.url) {
-      const trimmed = att.url.trim();
-      if (/^https?:\/\//i.test(trimmed)) {
-        window.open(trimmed, '_blank', 'noopener,noreferrer');
-      } else {
-        toast.error('Небезопасная ссылка. Разрешены только протоколы http:// и https://');
-      }
+      // Always open in-app preview lightbox modal!
+      // This works universally in Telegram WebApp, Desktop, Mobile Web, and Android!
+      setPreviewAttachment(att);
       return;
     }
   };
@@ -629,13 +627,17 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
                       {item.attachments.map((att, idx) => (
                         <button
                           key={idx}
-                          onClick={() => handleOpenAttachment(att)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all"
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenAttachment(att);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50/80 hover:bg-indigo-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all border border-indigo-100 dark:border-slate-700 active:scale-95 cursor-pointer"
                         >
                           {att.url ? (
                             <ExternalLink className="w-3.5 h-3.5 text-blue-500 shrink-0" />
                           ) : (
-                            <Download className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                            <FileText className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                           )}
                           <span className="truncate max-w-[150px]">{att.name}</span>
                           {att.size && <span className="text-[9px] text-slate-400">({att.size})</span>}
@@ -861,6 +863,109 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md shadow-indigo-200 dark:shadow-none transition-all min-h-[44px]"
               >
                 <Plus className="w-4 h-4" /> {editingItem ? 'Сохранить' : 'Добавить ДЗ'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Attachment Preview Modal / Lightbox (Works in Telegram WebApp & Web without download blocks) */}
+      {previewAttachment && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setPreviewAttachment(null)}
+        >
+          <div 
+            className="bg-white dark:bg-slate-900 rounded-3xl p-5 max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2 overflow-hidden">
+                <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                  {previewAttachment.name}
+                </h3>
+                {previewAttachment.size && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 shrink-0">
+                    {previewAttachment.size}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setPreviewAttachment(null)}
+                className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content: Image Preview or Document Details */}
+            <div className="flex-1 overflow-y-auto min-h-0 flex flex-col items-center justify-center py-2">
+              {previewAttachment.data && (previewAttachment.type?.includes('image') || previewAttachment.data.startsWith('data:image/')) ? (
+                <div className="w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950 rounded-2xl p-2 border border-slate-100 dark:border-slate-800">
+                  <img 
+                    src={previewAttachment.data} 
+                    alt={previewAttachment.name}
+                    className="max-h-[60vh] max-w-full rounded-xl object-contain shadow-sm"
+                  />
+                </div>
+              ) : (
+                <div className="text-center py-8 space-y-3">
+                  <div className="w-16 h-16 rounded-3xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mx-auto">
+                    <FileText className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+                      {previewAttachment.name}
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {previewAttachment.url ? 'Внешняя веб-ссылка' : 'Прикрепленный документ задания'}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+              {previewAttachment.url && (
+                <button
+                  onClick={() => {
+                    const tg = (window as any).Telegram?.WebApp;
+                    if (tg?.openLink) tg.openLink(previewAttachment.url!);
+                    else window.open(previewAttachment.url!, '_blank');
+                  }}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all"
+                >
+                  <ExternalLink className="w-4 h-4" /> Открыть ссылку
+                </button>
+              )}
+              {previewAttachment.data && (
+                <button
+                  onClick={() => {
+                    try {
+                      const link = document.createElement('a');
+                      link.href = previewAttachment.data!;
+                      link.download = previewAttachment.name;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      toast.success('Загрузка файла начата');
+                    } catch (e) {
+                      toast.info('Изображение открыто для просмотра выше');
+                    }
+                  }}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all"
+                >
+                  <Download className="w-4 h-4" /> Сохранить файл
+                </button>
+              )}
+              <button
+                onClick={() => setPreviewAttachment(null)}
+                className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs rounded-xl transition-all"
+              >
+                Закрыть
               </button>
             </div>
           </div>

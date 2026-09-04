@@ -41,8 +41,8 @@ export const SEED_HOMEWORK: HomeworkItem[] = [
     attachments: [
       {
         id: 'att-seed-1',
-        name: 'tiktok',
-        url: 'https://tiktok.com',
+        name: 'Методические материалы СамГТУ',
+        url: 'https://samgtu.ru',
         type: 'link'
       },
       {
@@ -66,16 +66,16 @@ export const SEED_HOMEWORK: HomeworkItem[] = [
     attachments: [
       {
         id: 'att-seed-3',
-        name: 'pinterest',
+        name: 'pinterest (конспект)',
         url: 'https://pin.it/2gmVv8oSl',
         type: 'link'
       },
       {
         id: 'att-seed-4',
-        name: '1_0.png',
-        data: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+        name: 'Образец_отчета.svg',
+        data: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MDAiIGhlaWdodD0iNDAwIiB2aWV3Qm94PSIwIDAgNjAwIDQwMCI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSI0MDAiIHJ4PSIyNCIgZmlsbD0iIzRmNDZlNSIvPjx0ZXh0IHg9IjUwJSIgeT0iNDAlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIzMiIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPtCh0LDQvNCT0KLQowKgMy3QmNCd0JPQoi0xMTA8L3RleHQ+PHRleHQgeD0iNTAlIiB5PSI1NSUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjIwIiBmaWxsPSIjYzdkMmZlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7Ql9Cw0LTQsNC90LjQtINC6INC/0YDQsNC60YLQuNGH0LXRgdC60L7QuSDRgNCw0LHQvtGC0LUg4oSWMTwvdGV4dD48dGV4dCB4PSI1MCUiIHk9IjcwJSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTYiIGZpbGw9IiNhNWI0ZmMiIHRleHQtYW5jaG9yPSJtaWRkbGUiPtCf0YDQuNC80LXRgCDQv9GA0LjQutGA0LXQv9C70LXQvdC90L7Qs9C+INC80LDRgtC10YDQuNCw0LvQsDwvdGV4dD48L3N2Zz4=',
         type: 'image',
-        size: '50.0 КБ'
+        size: '12.4 КБ'
       }
     ],
     createdAt: '2026-09-03T15:49:49.201Z'

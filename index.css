@@ -19,26 +19,26 @@
 }
 
 html {
-  overflow-x: clip;
+  overflow-x: hidden;
+  overflow-y: auto;
   width: 100%;
+  height: 100%;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
 }
 
 body {
-  overflow-x: clip;
-  overflow-y: auto;
+  overflow-x: hidden;
   width: 100%;
   min-height: 100%;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
-  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -49,5 +49,5 @@ body {
 #root {
   width: 100%;
   min-height: 100%;
-  overflow-x: clip;
+  overflow-x: hidden;
 }

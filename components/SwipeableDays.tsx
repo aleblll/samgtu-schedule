@@ -114,12 +114,22 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
   // Evaluates complete gesture at release: ensures fluid vertical scroll and reliable horizontal swipes
   const handlePointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return;
+    // Don't intercept clicks on buttons or links
+    if ((e.target as HTMLElement).closest('button, a, input, textarea, select')) return;
+
     startX.current = e.clientX;
     startY.current = e.clientY;
     startTime.current = Date.now();
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch (err) {}
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch (err) {}
+
     if (startX.current === null || startY.current === null) return;
     const diffX = startX.current - e.clientX;
     const diffY = Math.abs(startY.current - e.clientY);
@@ -128,9 +138,9 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
     startX.current = null;
     startY.current = null;
 
-    const isDominantHorizontal = Math.abs(diffX) > diffY * 1.1;
-    const isDistance = Math.abs(diffX) >= 30;
-    const isFlick = Math.abs(diffX) >= 20 && elapsed < 350;
+    const isDominantHorizontal = Math.abs(diffX) > diffY * 1.05;
+    const isDistance = Math.abs(diffX) >= 28;
+    const isFlick = Math.abs(diffX) >= 18 && elapsed < 350;
 
     if (isDominantHorizontal && (isDistance || isFlick)) {
       if (diffX > 0) {
@@ -141,14 +151,29 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
     }
   };
 
-  const handlePointerCancel = () => {
+  const handlePointerCancel = (e: React.PointerEvent) => {
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch (err) {}
     startX.current = null;
     startY.current = null;
+  };
+
+  // Horizontal mouse wheel or trackpad swipe
+  const handleWheel = (e: React.WheelEvent) => {
+    if (Math.abs(e.deltaX) > 35 && Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      if (e.deltaX > 0) {
+        goToNextDay();
+      } else {
+        goToPrevDay();
+      }
+    }
   };
 
   // Direct Touch Fallback for mobile devices
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length !== 1) return;
+    if ((e.target as HTMLElement).closest('button, a, input, textarea, select')) return;
     startX.current = e.touches[0].clientX;
     startY.current = e.touches[0].clientY;
     startTime.current = Date.now();
@@ -163,9 +188,9 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
     startX.current = null;
     startY.current = null;
 
-    const isDominantHorizontal = Math.abs(diffX) > diffY * 1.1;
-    const isDistance = Math.abs(diffX) >= 30;
-    const isFlick = Math.abs(diffX) >= 20 && elapsed < 350;
+    const isDominantHorizontal = Math.abs(diffX) > diffY * 1.05;
+    const isDistance = Math.abs(diffX) >= 28;
+    const isFlick = Math.abs(diffX) >= 18 && elapsed < 350;
 
     if (isDominantHorizontal && (isDistance || isFlick)) {
       if (diffX > 0) {
@@ -241,6 +266,7 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
         onPointerCancel={handlePointerCancel}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
+        onWheel={handleWheel}
       >
         <div 
           key={`${weekNumber}_${activeDayIndex}`} 
