@@ -172,11 +172,21 @@ const App: React.FC = () => {
 
     const timer = setInterval(() => {
       loadCloud(false);
-    }, 300000); // 5 min interval to protect against rate limits
+    }, 15000); // 15s real-time cloud sync across devices
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadCloud(true);
+      }
+    };
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
 
     return () => {
       isMounted = false;
       clearInterval(timer);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
     };
   }, [currentGroupId, refreshTrigger]);
 

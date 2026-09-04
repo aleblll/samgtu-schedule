@@ -88,7 +88,7 @@ export const useAttendance = (isAuthenticated: boolean, currentGroupId: string |
         } catch (e) {}
       }
 
-      // 2. Poll every 5 min so rate limits are protected
+      // 2. Poll every 20s for attendance updates across devices
       pollTimer = setInterval(async () => {
         if (!isMounted) return;
         const c = await fetchGroupCloudData(false, currentGroupId);
@@ -99,7 +99,7 @@ export const useAttendance = (isAuthenticated: boolean, currentGroupId: string |
             localStorage.setItem(`attendance_${currentGroupId}`, JSON.stringify(c.attendance));
           } catch (e) {}
         }
-      }, 300000);
+      }, 20000);
 
       // 3. Also try Firestore in background if available
       try {
@@ -126,10 +126,24 @@ export const useAttendance = (isAuthenticated: boolean, currentGroupId: string |
 
     setupSubscription();
 
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && isMounted) {
+        const c = await fetchGroupCloudData(true, currentGroupId);
+        if (isMounted && c && Array.isArray(c.attendance) && c.attendance.length > 0) {
+          setRecords(c.attendance);
+          try {
+            localStorage.setItem(`attendance_${currentGroupId}`, JSON.stringify(c.attendance));
+          } catch (e) {}
+        }
+      }
+    };
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       isMounted = false;
       if (pollTimer) clearInterval(pollTimer);
       if (firestoreUnsub) firestoreUnsub();
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [currentGroupId, refreshTrigger]);
 

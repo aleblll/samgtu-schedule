@@ -113,9 +113,11 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
         }
       });
       // 2. Preserve any local items that are NOT deleted and not yet in cloud
+      let hasUnsyncedLocal = false;
       localItems.forEach(it => {
         if (it && it.id && !deletedSet.has(it.id) && !itemMap.has(it.id)) {
           itemMap.set(it.id, it);
+          hasUnsyncedLocal = true;
         }
       });
 
@@ -126,19 +128,37 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
       try {
         localStorage.setItem(`homework_${currentGroupId}`, JSON.stringify(mergedHw));
       } catch (e) {}
+
+      // Auto-heal: If this device has local homework that never made it to cloud, push it immediately!
+      if (hasUnsyncedLocal && mergedHw.length > 0) {
+        pushGroupCloudData({ homework: mergedHw }, currentGroupId).then(ok => {
+          if (ok) console.log('Auto-healed and synced unsaved local homework to cloud');
+        });
+      }
     };
 
     // Load on mount or refresh
     loadCloud(true);
 
-    // Poll every 5 min so rate limits are protected
+    // Poll every 15 seconds for real-time sync across classmates
     const interval = setInterval(() => {
       loadCloud(false);
-    }, 300000);
+    }, 15000);
+
+    // Instant sync on tab focus or returning from Telegram
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadCloud(true);
+      }
+    };
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
 
     return () => {
       isMounted = false;
       clearInterval(interval);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
     };
   }, [currentGroupId, refreshTrigger]);
 

@@ -1,8 +1,17 @@
 import { HomeworkItem, Lesson } from '../types';
 import { AttendanceRecord } from '../attendance';
 
-// Dedicated isolated cloud endpoints on ExtendsClass (zero rate limits, atomic JSON storage)
+export const WORKER_BASE = 'https://floral-union-26d1.alexeyberezin2.workers.dev';
+
+// Primary sync through Cloudflare Worker proxy (100% CORS compliant, zero rate limits, reliable worldwide)
 const ENDPOINTS = {
+  schedule: `${WORKER_BASE}/sync/schedule`,
+  homework: `${WORKER_BASE}/sync/homework`,
+  attendance: `${WORKER_BASE}/sync/attendance`
+};
+
+// Fallback direct bins
+const FALLBACK_BINS = {
   schedule: 'https://extendsclass.com/api/json-storage/bin/cecbcbf',
   homework: 'https://extendsclass.com/api/json-storage/bin/dfdebcc',
   attendance: 'https://extendsclass.com/api/json-storage/bin/cdaacff'
@@ -89,12 +98,18 @@ const fetchJson = async (url: string, timeoutMs = 6000) => {
     });
     clearTimeout(id);
     if (!res.ok) return null;
-    const json = await res.json();
-    if (json && json.error) {
-      console.warn('Cloud API rate limit or error:', json.error);
+    const text = await res.text();
+    try {
+      const json = JSON.parse(text);
+      if (json && json.error) {
+        console.warn('Cloud API rate limit or error:', json.error);
+        return null;
+      }
+      return json;
+    } catch {
+      // Non-JSON response (e.g. unrouted worker fallback)
       return null;
     }
-    return json;
   } catch (e) {
     clearTimeout(id);
     return null;
@@ -116,7 +131,15 @@ const putJson = async (url: string, body: any, timeoutMs = 7000) => {
       body: JSON.stringify(body)
     });
     clearTimeout(id);
-    return res.ok;
+    if (res.ok) {
+      const text = await res.text();
+      // If the response is the default text from an un-updated worker, consider it failed
+      if (text.includes('Running OK') && !text.includes('status') && !text.includes('data')) {
+        return false;
+      }
+      return true;
+    }
+    return false;
   } catch (e) {
     clearTimeout(id);
     return false;
@@ -151,11 +174,17 @@ export const fetchGroupCloudData = async (force: boolean = false, groupId = 'ing
   const localBackup = getLocalBackup(groupId);
 
   try {
-    // Fetch all 3 dedicated endpoints in parallel
+    const fetchWithFallback = async (primaryUrl: string, fallbackUrl: string) => {
+      const p = await fetchJson(primaryUrl, 3500);
+      if (p !== null) return p;
+      return await fetchJson(fallbackUrl, 3500);
+    };
+
+    // Fetch all 3 dedicated endpoints in parallel with fallback
     const [schedRes, hwRes, attRes] = await Promise.allSettled([
-      fetchJson(ENDPOINTS.schedule),
-      fetchJson(ENDPOINTS.homework),
-      fetchJson(ENDPOINTS.attendance)
+      fetchWithFallback(ENDPOINTS.schedule, FALLBACK_BINS.schedule),
+      fetchWithFallback(ENDPOINTS.homework, FALLBACK_BINS.homework),
+      fetchWithFallback(ENDPOINTS.attendance, FALLBACK_BINS.attendance)
     ]);
 
     let cloudScheduleOverrides: Record<string, Partial<Lesson>> = localBackup.scheduleOverrides || {};
@@ -257,13 +286,19 @@ export const fetchGroupCloudData = async (force: boolean = false, groupId = 'ing
 export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>, groupId = 'ingt-310'): Promise<boolean> => {
   const promises: Promise<boolean>[] = [];
 
+  const safePut = async (primaryUrl: string, fallbackUrl: string, body: any) => {
+    const ok = await putJson(primaryUrl, body);
+    if (ok) return true;
+    return await putJson(fallbackUrl, body);
+  };
+
   // 1. Schedule overrides / teachers push
   if (partialUpdate.scheduleOverrides !== undefined || partialUpdate.subjectTeachers !== undefined) {
     const local = getLocalBackup(groupId);
     const overrides = partialUpdate.scheduleOverrides !== undefined ? partialUpdate.scheduleOverrides : local.scheduleOverrides;
     const teachers = partialUpdate.subjectTeachers !== undefined ? partialUpdate.subjectTeachers : local.subjectTeachers;
     promises.push(
-      putJson(ENDPOINTS.schedule, {
+      safePut(ENDPOINTS.schedule, FALLBACK_BINS.schedule, {
         payload: JSON.stringify({ overrides, teachers }),
         updatedAt: Date.now()
       })
@@ -311,7 +346,7 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
     }));
 
     promises.push(
-      putJson(ENDPOINTS.homework, {
+      safePut(ENDPOINTS.homework, FALLBACK_BINS.homework, {
         payload: JSON.stringify({
           items: sanitizedHw,
           deletedIds: allDeleted
@@ -324,7 +359,7 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
   // 3. Attendance push
   if (partialUpdate.attendance !== undefined) {
     promises.push(
-      putJson(ENDPOINTS.attendance, {
+      safePut(ENDPOINTS.attendance, FALLBACK_BINS.attendance, {
         payload: JSON.stringify({ records: partialUpdate.attendance }),
         updatedAt: Date.now()
       })
