@@ -10,6 +10,7 @@ const ENDPOINTS = {
 
 export interface GroupCloudData {
   homework: HomeworkItem[];
+  deletedIds?: string[];
   scheduleOverrides: Record<string, Partial<Lesson>>;
   subjectTeachers: Record<string, string>;
   attendance: AttendanceRecord[];
@@ -152,28 +153,37 @@ export const fetchGroupCloudData = async (force: boolean = false, groupId = 'ing
       deletedSet = new Set(JSON.parse(localStorage.getItem(`deleted_hw_${groupId}`) || '[]'));
     } catch (e) {}
 
-    if (hwRes.status === 'fulfilled' && hwRes.value?.data && Array.isArray(hwRes.value.data.items)) {
-      const raw = hwRes.value.data.items;
-      if (raw.length > 0) {
-        // Union merge with local items by ID, strictly respecting tombstone list
-        const map = new Map<string, HomeworkItem>();
-        cloudHomework.forEach(h => { if (h?.id && !deletedSet.has(h.id)) map.set(h.id, h); });
-        raw.forEach((h: any) => {
-          if (h && h.id && !deletedSet.has(String(h.id))) {
-            map.set(String(h.id), {
-              id: String(h.id),
-              groupId: String(h.groupId || groupId),
-              subject: String(h.subject || ''),
-              title: String(h.title || ''),
-              description: String(h.description || ''),
-              assignedDate: String(h.assignedDate || ''),
-              dueDate: String(h.dueDate || ''),
-              attachments: Array.isArray(h.attachments) ? h.attachments : [],
-              createdAt: String(h.createdAt || '')
-            });
-          }
+    if (hwRes.status === 'fulfilled' && hwRes.value?.data) {
+      const d = hwRes.value.data;
+
+      // 1. Synchronize remote tombstones (deletedIds) from cloud into local device storage
+      if (Array.isArray(d.deletedIds)) {
+        d.deletedIds.forEach((id: any) => {
+          if (id) deletedSet.add(String(id));
         });
-        cloudHomework = Array.from(map.values()).sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+        try {
+          localStorage.setItem(`deleted_hw_${groupId}`, JSON.stringify(Array.from(deletedSet)));
+        } catch (e) {}
+      }
+
+      // 2. Cloud homework items are authoritative for the group (even if items is empty!)
+      if (Array.isArray(d.items)) {
+        const raw = d.items;
+        cloudHomework = raw
+          .filter((h: any) => h && h.id && !deletedSet.has(String(h.id)))
+          .map((h: any) => ({
+            id: String(h.id),
+            groupId: String(h.groupId || groupId),
+            subject: String(h.subject || ''),
+            title: String(h.title || ''),
+            description: String(h.description || ''),
+            assignedDate: String(h.assignedDate || ''),
+            dueDate: String(h.dueDate || ''),
+            attachments: Array.isArray(h.attachments) ? h.attachments : [],
+            createdAt: String(h.createdAt || '')
+          }))
+          .sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+
         try { localStorage.setItem(`homework_${groupId}`, JSON.stringify(cloudHomework)); } catch (e) {}
       }
     }
@@ -199,6 +209,7 @@ export const fetchGroupCloudData = async (force: boolean = false, groupId = 'ing
 
     const result: GroupCloudData = {
       homework: cloudHomework,
+      deletedIds: Array.from(deletedSet),
       scheduleOverrides: cloudScheduleOverrides,
       subjectTeachers: cloudSubjectTeachers,
       attendance: cloudAttendance,
@@ -232,6 +243,14 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
 
   // 2. Homework push
   if (partialUpdate.homework !== undefined) {
+    let localDeleted: string[] = [];
+    try {
+      localDeleted = JSON.parse(localStorage.getItem(`deleted_hw_${groupId}`) || '[]');
+    } catch (e) {}
+
+    const passedDeleted = partialUpdate.deletedIds || [];
+    const allDeleted = Array.from(new Set([...localDeleted, ...passedDeleted]));
+
     // Sanitize attachments: normalize MIME types and strip heavy base64 to avoid 413 / 500 HTTP errors
     const normalizeType = (t?: string) => {
       if (!t) return 'file';
@@ -266,7 +285,11 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
     promises.push(
       putJson(ENDPOINTS.homework, {
         name: 'samgtu_3ingt110_hw',
-        data: { items: sanitizedHw, updatedAt: Date.now() }
+        data: {
+          items: sanitizedHw,
+          deletedIds: allDeleted,
+          updatedAt: Date.now()
+        }
       })
     );
   }

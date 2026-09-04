@@ -91,42 +91,21 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
       const cloud = await fetchGroupCloudData(force, currentGroupId);
       if (!isMounted || !cloud) return;
 
-      // Read tombstone deleted items
+      // Read tombstone deleted items (freshly synced from cloud by fetchGroupCloudData)
       let deletedSet = new Set<string>();
       try {
         const d = JSON.parse(localStorage.getItem(`deleted_hw_${currentGroupId}`) || '[]');
         deletedSet = new Set(d);
       } catch (e) {}
 
-      // Always read latest local items directly to avoid closure stale state
-      let currentLocal: HomeworkItem[] = [];
-      try {
-        const saved = localStorage.getItem(`homework_${currentGroupId}`);
-        if (saved) currentLocal = JSON.parse(saved);
-      } catch (e) {}
-
-      const cloudHw = Array.isArray(cloud.homework) ? cloud.homework : [];
-
-      // If cloud is empty and local has items, auto-heal cloud by pushing local items!
-      if (cloudHw.length === 0 && currentLocal.length > 0) {
-        pushGroupCloudData({ homework: currentLocal.filter(it => !deletedSet.has(it.id)) }, currentGroupId);
-        return;
-      }
-
-      // Merge seed, cloud, and local items respecting deleted items
-      const isFirstRun = localStorage.getItem(`homework_${currentGroupId}`) === null;
-      const defaultList = (isFirstRun && currentGroupId === 'ingt-310') ? SEED_HOMEWORK : [];
-      const map = new Map<string, HomeworkItem>();
-      defaultList.forEach(it => { if (it && it.id && !deletedSet.has(it.id)) map.set(it.id, it); });
-      cloudHw.forEach(it => { if (it && it.id && !deletedSet.has(it.id)) map.set(it.id, it); });
-      currentLocal.forEach(it => { if (it && it.id && !deletedSet.has(it.id)) map.set(it.id, it); });
-
-      const merged = Array.from(map.values())
+      // Authoritative cloud items filtered by remote and local tombstones
+      const cloudHw = (cloud.homework || [])
+        .filter(it => it && it.id && !deletedSet.has(it.id))
         .sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
 
-      setItems(merged);
+      setItems(cloudHw);
       try {
-        localStorage.setItem(`homework_${currentGroupId}`, JSON.stringify(merged));
+        localStorage.setItem(`homework_${currentGroupId}`, JSON.stringify(cloudHw));
       } catch (e) {}
     };
 
@@ -354,8 +333,9 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
     if (!confirm('Вы уверены, что хотите удалить это домашнее задание?')) return;
 
     // 1. Record in tombstone list so seed and cloud polling can NEVER resurrect it!
+    let deletedList: string[] = [];
     try {
-      const deletedList: string[] = JSON.parse(localStorage.getItem(`deleted_hw_${currentGroupId}`) || '[]');
+      deletedList = JSON.parse(localStorage.getItem(`deleted_hw_${currentGroupId}`) || '[]');
       if (!deletedList.includes(id)) {
         deletedList.push(id);
         localStorage.setItem(`deleted_hw_${currentGroupId}`, JSON.stringify(deletedList));
@@ -378,7 +358,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
     toast.info('Задание удалено');
 
     // Push to REST Cloud immediately (syncs deletion to all classmates)
-    pushGroupCloudData({ homework: updated }, currentGroupId).then(ok => {
+    pushGroupCloudData({ homework: updated, deletedIds: deletedList }, currentGroupId).then(ok => {
       if (ok) console.log('Homework deletion synced to cloud successfully');
     });
 

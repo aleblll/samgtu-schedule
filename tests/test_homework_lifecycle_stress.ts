@@ -131,35 +131,14 @@ async function simulateHomeworkTrackerLoadCloud(
     deletedSet = new Set(d);
   } catch (e) {}
 
-  // Always read latest local items directly to avoid closure stale state
-  let currentLocal: HomeworkItem[] = [];
-  try {
-    const saved = mockStorage.getItem(`homework_${currentGroupId}`);
-    if (saved) currentLocal = JSON.parse(saved);
-  } catch (e) {}
-
-  const cloudHw = Array.isArray(cloud.homework) ? cloud.homework : [];
-
-  // If cloud is empty and local has items, auto-heal cloud by pushing local items
-  if (cloudHw.length === 0 && currentLocal.length > 0) {
-    await pushGroupCloudData({ homework: currentLocal.filter(it => !deletedSet.has(it.id)) }, currentGroupId);
-    return;
-  }
-
-  // Merge seed, cloud, and local items respecting deleted items
-  const isFirstRun = mockStorage.getItem(`homework_${currentGroupId}`) === null;
-  const defaultList = (isFirstRun && currentGroupId === 'ingt-310') ? SEED_HOMEWORK : [];
-  const map = new Map<string, HomeworkItem>();
-  defaultList.forEach(it => { if (it && it.id && !deletedSet.has(it.id)) map.set(it.id, it); });
-  cloudHw.forEach(it => { if (it && it.id && !deletedSet.has(it.id)) map.set(it.id, it); });
-  currentLocal.forEach(it => { if (it && it.id && !deletedSet.has(it.id)) map.set(it.id, it); });
-
-  const merged = Array.from(map.values())
+  // Authoritative cloud items filtered by remote and local tombstones
+  const cloudHw = (cloud.homework || [])
+    .filter(it => it && it.id && !deletedSet.has(it.id))
     .sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
 
-  currentState.setItems(merged);
+  currentState.setItems(cloudHw);
   try {
-    mockStorage.setItem(`homework_${currentGroupId}`, JSON.stringify(merged));
+    mockStorage.setItem(`homework_${currentGroupId}`, JSON.stringify(cloudHw));
   } catch (e) {}
 }
 
@@ -255,15 +234,14 @@ async function runTestSuite() {
   // --------------------------------------------------------------------------
   const initialBackup = getLocalBackup(GROUP_ID);
   assert(
-    initialBackup.homework.length === SEED_HOMEWORK.length,
-    'Cold start without localStorage returns default SEED_HOMEWORK',
-    `Found ${initialBackup.homework.length} seed items: ${initialBackup.homework.map(i => i.id).join(', ')}`
+    initialBackup.homework.length === 0,
+    'Cold start without localStorage returns clean empty state (no ghost seed items)',
+    `Found ${initialBackup.homework.length} seed items`
   );
 
-  const seedIds = SEED_HOMEWORK.map(s => s.id);
   assert(
-    seedIds.includes('hw-1756911666632') && seedIds.includes('hw-1756914589201'),
-    'Both standard seed homework IDs exist in SEED_HOMEWORK definition'
+    SEED_HOMEWORK.length === 0,
+    'SEED_HOMEWORK is empty to prevent resurrecting test/ghost items'
   );
 
   // --------------------------------------------------------------------------
