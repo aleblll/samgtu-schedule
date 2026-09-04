@@ -34,16 +34,50 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
   }, [weekNumber, currentSemesterWeek, todayDayName, days]);
 
   const [activeDayIndex, setActiveDayIndex] = useState<number>(initialIndex);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   
-  // Directional Lock swipe tracking
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
-  const touchStartTime = useRef<number>(0);
-  const isHorizontalSwipe = useRef<boolean | null>(null);
+  // Swipe tracking
+  const startX = useRef<number | null>(null);
+  const startY = useRef<number | null>(null);
+  const startTime = useRef<number>(0);
 
   // Day chips scroll container
   const chipsContainerRef = useRef<HTMLDivElement>(null);
   const dayChipRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const goToNextDay = () => {
+    setActiveDayIndex(prev => {
+      if (prev < days.length - 1) {
+        setSlideDirection('left');
+        return prev + 1;
+      }
+      return prev;
+    });
+  };
+
+  const goToPrevDay = () => {
+    setActiveDayIndex(prev => {
+      if (prev > 0) {
+        setSlideDirection('right');
+        return prev - 1;
+      }
+      return prev;
+    });
+  };
+
+  // Keyboard navigation for Desktop / Telegram Desktop users (Left/Right arrows)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) return;
+      if (e.key === 'ArrowLeft') {
+        goToPrevDay();
+      } else if (e.key === 'ArrowRight') {
+        goToNextDay();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [days.length]);
 
   // When weekNumber changes, auto-select today if on current week, or Monday
   useEffect(() => {
@@ -76,77 +110,70 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
     );
   }
 
-  // Touch handlers with Directional Lock:
-  // Distinguishes vertical page scroll from horizontal day swipe within the first 8px of finger movement!
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length !== 1) return;
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-    touchStartTime.current = Date.now();
-    isHorizontalSwipe.current = null;
+  // Pointer & Touch gesture handlers
+  // Evaluates complete gesture at release: ensures fluid vertical scroll and reliable horizontal swipes
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (e.button !== 0) return;
+    startX.current = e.clientX;
+    startY.current = e.clientY;
+    startTime.current = Date.now();
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (touchStartX.current === null || touchStartY.current === null) return;
-    if (isHorizontalSwipe.current !== null) return; // Already locked
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (startX.current === null || startY.current === null) return;
+    const diffX = startX.current - e.clientX;
+    const diffY = Math.abs(startY.current - e.clientY);
+    const elapsed = Date.now() - startTime.current;
 
-    const currentX = e.touches[0].clientX;
-    const currentY = e.touches[0].clientY;
-    const diffX = Math.abs(currentX - touchStartX.current);
-    const diffY = Math.abs(currentY - touchStartY.current);
+    startX.current = null;
+    startY.current = null;
 
-    // After 8px movement, lock gesture direction!
-    if (diffX > 8 || diffY > 8) {
-      if (diffX > diffY * 1.15) {
-        // Clear horizontal swipe intent
-        isHorizontalSwipe.current = true;
+    const isDominantHorizontal = Math.abs(diffX) > diffY * 1.1;
+    const isDistance = Math.abs(diffX) >= 30;
+    const isFlick = Math.abs(diffX) >= 20 && elapsed < 350;
+
+    if (isDominantHorizontal && (isDistance || isFlick)) {
+      if (diffX > 0) {
+        goToNextDay();
       } else {
-        // Vertical scroll intent: lock out swiping so scrolling down never flips days!
-        isHorizontalSwipe.current = false;
+        goToPrevDay();
       }
     }
+  };
+
+  const handlePointerCancel = () => {
+    startX.current = null;
+    startY.current = null;
+  };
+
+  // Direct Touch Fallback for mobile devices
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    startX.current = e.touches[0].clientX;
+    startY.current = e.touches[0].clientY;
+    startTime.current = Date.now();
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null || touchStartY.current === null) {
-      touchStartX.current = null;
-      touchStartY.current = null;
-      isHorizontalSwipe.current = null;
-      return;
-    }
+    if (startX.current === null || startY.current === null) return;
+    const diffX = startX.current - e.changedTouches[0].clientX;
+    const diffY = Math.abs(startY.current - e.changedTouches[0].clientY);
+    const elapsed = Date.now() - startTime.current;
 
-    const touchEndX = e.changedTouches[0].clientX;
-    const touchEndY = e.changedTouches[0].clientY;
-    const diffX = touchStartX.current - touchEndX;
-    const diffY = Math.abs(touchStartY.current - touchEndY);
-    const elapsed = Date.now() - touchStartTime.current;
+    startX.current = null;
+    startY.current = null;
 
-    // Fast flick (> 20px in < 280ms) or intentional drag (> 35px)
-    const isQuickFlick = Math.abs(diffX) > 20 && elapsed < 280;
-    const isDistanceSwipe = Math.abs(diffX) > 35;
-    const horizontalIntent = isHorizontalSwipe.current === true || (isHorizontalSwipe.current === null && Math.abs(diffX) > diffY * 1.2);
+    const isDominantHorizontal = Math.abs(diffX) > diffY * 1.1;
+    const isDistance = Math.abs(diffX) >= 30;
+    const isFlick = Math.abs(diffX) >= 20 && elapsed < 350;
 
-    if (horizontalIntent && (isDistanceSwipe || isQuickFlick) && Math.abs(diffX) > diffY) {
-      if (diffX > 0 && activeDayIndex < days.length - 1) {
-        // Swiped left -> Next day
-        setActiveDayIndex(prev => prev + 1);
-      } else if (diffX < 0 && activeDayIndex > 0) {
-        // Swiped right -> Previous day
-        setActiveDayIndex(prev => prev - 1);
+    if (isDominantHorizontal && (isDistance || isFlick)) {
+      if (diffX > 0) {
+        goToNextDay();
+      } else {
+        goToPrevDay();
       }
     }
-
-    touchStartX.current = null;
-    touchStartY.current = null;
-    touchStartTime.current = 0;
-    isHorizontalSwipe.current = null;
-  };
-
-  const handleTouchCancel = () => {
-    touchStartX.current = null;
-    touchStartY.current = null;
-    touchStartTime.current = 0;
-    isHorizontalSwipe.current = null;
   };
 
   const getShortDayName = (dayName: string) => {
@@ -164,10 +191,10 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
 
   return (
     <div className="space-y-4 w-full max-w-full overflow-x-clip">
-      {/* Day Selector Chips (Mobile Horizontal Row with Calendar Dates & Today Badge) */}
+      {/* Day Selector Chips (Horizontal Row with Calendar Dates & Today Badge) */}
       <div 
         ref={chipsContainerRef}
-        className="flex gap-2 overflow-x-auto pb-2 scrollbar-none sm:hidden w-full max-w-full"
+        className="flex gap-2 overflow-x-auto pb-2 scrollbar-none lg:hidden w-full max-w-full"
       >
         {days.map((day, idx) => {
           const shortName = getShortDayName(day.dayName);
@@ -178,7 +205,10 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
             <button
               key={day.dayName}
               ref={el => { dayChipRefs.current[idx] = el; }}
-              onClick={() => setActiveDayIndex(idx)}
+              onClick={() => {
+                setSlideDirection(idx > activeDayIndex ? 'left' : 'right');
+                setActiveDayIndex(idx);
+              }}
               className={`px-3 py-2 text-xs font-bold rounded-2xl whitespace-nowrap transition-all flex flex-col items-center gap-0.5 shrink-0 relative ${
                 activeDayIndex === idx
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none scale-[1.02]'
@@ -203,15 +233,25 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
         })}
       </div>
 
-      {/* Swipe Container (Mobile) - touch-pan-y guarantees immediate, smooth native vertical scroll! */}
+      {/* Swipe Container - Supports Touch (phones) and Pointer Drag (PC / Telegram Desktop) */}
       <div
-        className="sm:hidden relative w-full max-w-full touch-pan-y"
+        className="lg:hidden relative w-full max-w-full touch-pan-y select-none cursor-grab active:cursor-grabbing"
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
         onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchCancel}
       >
-        <div key={activeDayIndex} className="animate-in fade-in duration-150">
+        <div 
+          key={`${weekNumber}_${activeDayIndex}`} 
+          className={
+            slideDirection === 'left' 
+              ? 'animate-in fade-in slide-in-from-right-4 duration-150' 
+              : slideDirection === 'right' 
+              ? 'animate-in fade-in slide-in-from-left-4 duration-150' 
+              : 'animate-in fade-in duration-150'
+          }
+        >
           <DayColumn 
             daySchedule={days[activeDayIndex] || days[0]} 
             weekNumber={weekNumber}
@@ -224,17 +264,17 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
         {/* Navigation Arrows */}
         <div className="flex justify-between items-center mt-4 w-full">
           <button
-            onClick={() => setActiveDayIndex(prev => Math.max(0, prev - 1))}
+            onClick={goToPrevDay}
             disabled={activeDayIndex === 0}
             className="flex items-center gap-1 px-3.5 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 disabled:opacity-30 border border-slate-200 dark:border-slate-700 min-h-[44px] transition-transform active:scale-95"
           >
             <ChevronLeft className="w-4 h-4" /> Назад
           </button>
           <span className="text-xs text-slate-400 font-medium">
-            {activeDayIndex + 1} из {days.length} (Свайп влево/вправо)
+            {activeDayIndex + 1} из {days.length} (Свайп или стрелки)
           </span>
           <button
-            onClick={() => setActiveDayIndex(prev => Math.min(days.length - 1, prev + 1))}
+            onClick={goToNextDay}
             disabled={activeDayIndex === days.length - 1}
             className="flex items-center gap-1 px-3.5 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 disabled:opacity-30 border border-slate-200 dark:border-slate-700 min-h-[44px] transition-transform active:scale-95"
           >
@@ -243,8 +283,8 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
         </div>
       </div>
 
-      {/* Grid Layout for Desktop/Tablet */}
-      <div className="hidden sm:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 items-start w-full">
+      {/* Grid Layout for Wide Screens (Desktop monitors >= 1024px) */}
+      <div className="hidden lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 items-start w-full">
         {days.map(day => (
           <DayColumn 
             key={day.dayName} 

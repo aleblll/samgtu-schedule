@@ -195,7 +195,7 @@ assert(
 );
 
 assert(
-  swipeableDaysContent.includes('isHorizontalSwipe.current = false'),
+  swipeableDaysContent.includes('isDominantHorizontal'),
   'SwipeableDays has Directional Lock locking out horizontal swipes during vertical scrolling'
 );
 
