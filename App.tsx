@@ -54,7 +54,11 @@ const App: React.FC = () => {
 
   // Multi-group state: defaults to 3-ИНГТ-110, switchable to any group
   const [currentGroupId, setCurrentGroupId] = useState<string>(() => {
-    return localStorage.getItem('selected_group_id') || 'ingt-310';
+    const saved = localStorage.getItem('selected_group_id');
+    if (saved === 'ingt-1') return 'ingt-301';
+    if (saved === 'faid-110') return 'faid-310';
+    if (saved && AVAILABLE_GROUPS.some(g => g.id === saved)) return saved;
+    return 'ingt-310';
   });
 
   const currentGroupConfig = useMemo(() => {

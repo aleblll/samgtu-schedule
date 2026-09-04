@@ -18,8 +18,9 @@ export const FACULTIES: Faculty[] = [
 
 export const AVAILABLE_GROUPS: GroupConfig[] = [
   { id: 'ingt-310', name: '3-ИНГТ-110', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
-  { id: 'ingt-1', name: '1-ИНГТ-101', facultyId: 'ingt', degree: 'Бакалавриат', course: 1 },
-  { id: 'faid-110', name: '1-ФАИД-110', facultyId: 'faid', degree: 'Бакалавриат', course: 1 }
+  { id: 'ingt-301', name: '3-ИНГТ-101', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
+  { id: 'ingt-303', name: '3-ИНГТ-103', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
+  { id: 'faid-310', name: '3-ФАИД-110', facultyId: 'faid', degree: 'Бакалавриат', course: 3 }
 ];
 
 export const SCHEDULE_REGISTRY: Registry<WeekData> = {
@@ -212,7 +213,7 @@ export const SCHEDULE_REGISTRY: Registry<WeekData> = {
     ]
   },
 
-  'ingt-1': {
+  'ingt-301': {
   1: [
     {
       dayName: "Понедельник",
@@ -843,7 +844,7 @@ export const SCHEDULE_REGISTRY: Registry<WeekData> = {
     }
   ]
   },
-  'faid-110': {
+  'faid-310': {
     1: [
       {
         dayName: "Понедельник",
@@ -945,3 +946,39 @@ export const SCHEDULE_REGISTRY: Registry<WeekData> = {
     ]
   }
 };
+
+// 3-ИНГТ-103 Schedule (stream schedule with unique lesson IDs)
+SCHEDULE_REGISTRY['ingt-303'] = {
+  1: (SCHEDULE_REGISTRY['ingt-301']?.[1] || []).map(day => ({
+    ...day,
+    lessons: day.lessons.map(l => ({ ...l, id: `303-${l.id}` }))
+  })),
+  2: (SCHEDULE_REGISTRY['ingt-301']?.[2] || []).map(day => ({
+    ...day,
+    lessons: day.lessons.map(l => ({ ...l, id: `303-${l.id}` }))
+  })),
+  3: (SCHEDULE_REGISTRY['ingt-301']?.[3] || []).map(day => ({
+    ...day,
+    lessons: day.lessons.map(l => ({ ...l, id: `303-${l.id}` }))
+  })),
+  4: (SCHEDULE_REGISTRY['ingt-301']?.[4] || []).map(day => ({
+    ...day,
+    lessons: day.lessons.map(l => ({ ...l, id: `303-${l.id}` }))
+  }))
+};
+
+// Mirror weeks 3 and 4 for 3-ФАИД-110 so full 4-week cycle is populated
+if (SCHEDULE_REGISTRY['faid-310']) {
+  SCHEDULE_REGISTRY['faid-310'][3] = (SCHEDULE_REGISTRY['faid-310'][1] || []).map(day => ({
+    ...day,
+    lessons: day.lessons.map(l => ({ ...l, id: l.id.replace('f1-', 'f3-') }))
+  }));
+  SCHEDULE_REGISTRY['faid-310'][4] = (SCHEDULE_REGISTRY['faid-310'][2] || []).map(day => ({
+    ...day,
+    lessons: day.lessons.map(l => ({ ...l, id: l.id.replace('f2-', 'f4-') }))
+  }));
+}
+
+// Backwards compatibility aliases
+SCHEDULE_REGISTRY['ingt-1'] = SCHEDULE_REGISTRY['ingt-301'];
+SCHEDULE_REGISTRY['faid-110'] = SCHEDULE_REGISTRY['faid-310'];
