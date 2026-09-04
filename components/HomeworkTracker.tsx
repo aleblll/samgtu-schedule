@@ -97,15 +97,34 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
         const d = JSON.parse(localStorage.getItem(`deleted_hw_${currentGroupId}`) || '[]');
         deletedSet = new Set(d);
       } catch (e) {}
+      (cloud.deletedIds || []).forEach(id => { if (id) deletedSet.add(String(id)); });
 
-      // Authoritative cloud items filtered by remote and local tombstones
-      const cloudHw = (cloud.homework || [])
-        .filter(it => it && it.id && !deletedSet.has(it.id))
+      let localItems: HomeworkItem[] = [];
+      try {
+        const saved = localStorage.getItem(`homework_${currentGroupId}`);
+        if (saved) localItems = JSON.parse(saved);
+      } catch (e) {}
+
+      const itemMap = new Map<string, HomeworkItem>();
+      // 1. Cloud items are authoritative for the group
+      (cloud.homework || []).forEach(it => {
+        if (it && it.id && !deletedSet.has(it.id)) {
+          itemMap.set(it.id, it);
+        }
+      });
+      // 2. Preserve any local items that are NOT deleted and not yet in cloud
+      localItems.forEach(it => {
+        if (it && it.id && !deletedSet.has(it.id) && !itemMap.has(it.id)) {
+          itemMap.set(it.id, it);
+        }
+      });
+
+      const mergedHw = Array.from(itemMap.values())
         .sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
 
-      setItems(cloudHw);
+      setItems(mergedHw);
       try {
-        localStorage.setItem(`homework_${currentGroupId}`, JSON.stringify(cloudHw));
+        localStorage.setItem(`homework_${currentGroupId}`, JSON.stringify(mergedHw));
       } catch (e) {}
     };
 
@@ -169,7 +188,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
     try {
       if (file.type.startsWith('image/')) {
         // High-efficiency mobile canvas compression:
-        // Converts 2-5MB phone camera photos down to crisp ~60-90KB JPEG!
+        // Converts camera photos down to crisp, ultra-fast ~20-30KB JPEG!
         const img = new Image();
         const objectUrl = URL.createObjectURL(file);
         
@@ -178,7 +197,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
             URL.revokeObjectURL(objectUrl);
             const canvas = document.createElement('canvas');
             let { width, height } = img;
-            const MAX_DIM = 1200;
+            const MAX_DIM = 800;
             if (width > MAX_DIM || height > MAX_DIM) {
               if (width > height) {
                 height = Math.round((height * MAX_DIM) / width);
@@ -193,7 +212,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
             const ctx = canvas.getContext('2d');
             if (ctx) {
               ctx.drawImage(img, 0, 0, width, height);
-              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.72);
+              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
               const approxKb = Math.round((compressedBase64.length * 3) / 4 / 1024);
               setFormAttachments(prev => [
                 ...prev,
@@ -215,8 +234,8 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
         });
       } else {
         // PDF or document
-        if (file.size > 500 * 1024) {
-          toast.error(`Документ «${file.name}» весит ${(file.size / 1024).toFixed(0)} КБ (>500 КБ). Для больших методичек используйте кнопку «+ Ссылка» на Яндекс.Диск`);
+        if (file.size > 60 * 1024) {
+          toast.error(`Документ «${file.name}» весит ${(file.size / 1024).toFixed(0)} КБ (>60 КБ). Для быстрого скачивания одногруппниками используйте кнопку «+ Ссылка» на Яндекс.Диск или Облако`);
           setIsUploading(false);
           return;
         }
@@ -319,7 +338,11 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
 
     // Push to REST Cloud immediately (syncs to all classmates)
     pushGroupCloudData({ homework: updated }, currentGroupId).then(ok => {
-      if (ok) console.log('Homework synced to cloud successfully');
+      if (!ok) {
+        console.warn('Homework cloud sync warning: push returned false');
+      } else {
+        console.log('Homework synced to cloud successfully');
+      }
     });
 
     try {
@@ -359,7 +382,11 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
 
     // Push to REST Cloud immediately (syncs deletion to all classmates)
     pushGroupCloudData({ homework: updated, deletedIds: deletedList }, currentGroupId).then(ok => {
-      if (ok) console.log('Homework deletion synced to cloud successfully');
+      if (!ok) {
+        console.warn('Homework deletion cloud push warning');
+      } else {
+        console.log('Homework deletion synced to cloud successfully');
+      }
     });
 
     try {

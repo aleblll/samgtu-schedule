@@ -1,11 +1,11 @@
 import { HomeworkItem, Lesson } from '../types';
 import { AttendanceRecord } from '../attendance';
 
-// Dedicated isolated cloud endpoints on restful-api.dev (prevents 413 and cross-table collisions)
+// Dedicated isolated cloud endpoints on ExtendsClass (zero rate limits, atomic JSON storage)
 const ENDPOINTS = {
-  schedule: 'https://api.restful-api.dev/objects/ff808181a067127101a06866ce810497',
-  homework: 'https://api.restful-api.dev/objects/ff808181a067127101a06866951a0496',
-  attendance: 'https://api.restful-api.dev/objects/ff808181a067127101a068670e9a0498'
+  schedule: 'https://extendsclass.com/api/json-storage/bin/cecbcbf',
+  homework: 'https://extendsclass.com/api/json-storage/bin/dfdebcc',
+  attendance: 'https://extendsclass.com/api/json-storage/bin/cdaacff'
 };
 
 export interface GroupCloudData {
@@ -72,14 +72,20 @@ export const getLocalBackup = (groupId = 'ingt-310'): GroupCloudData => {
   }
 };
 
-// Safe fetch with timeout
+// Safe fetch with cache-busting and timeout
 const fetchJson = async (url: string, timeoutMs = 6000) => {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(url, {
+    const cacheBuster = url.includes('?') ? `&_t=${Date.now()}` : `?_t=${Date.now()}`;
+    const res = await fetch(url + cacheBuster, {
       signal: controller.signal,
-      headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' }
+      cache: 'no-store',
+      headers: {
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
     });
     clearTimeout(id);
     if (!res.ok) return null;
@@ -117,6 +123,25 @@ const putJson = async (url: string, body: any, timeoutMs = 7000) => {
   }
 };
 
+// Helper to unwrap atomic cloud payload
+const parseCloudPayload = (raw: any): any => {
+  if (!raw) return null;
+  if (raw.payload && typeof raw.payload === 'string') {
+    try {
+      return JSON.parse(raw.payload);
+    } catch (e) {
+      return null;
+    }
+  }
+  if (raw.data) {
+    if (typeof raw.data === 'string') {
+      try { return JSON.parse(raw.data); } catch (e) {}
+    }
+    return raw.data;
+  }
+  return raw;
+};
+
 export const fetchGroupCloudData = async (force: boolean = false, groupId = 'ingt-310'): Promise<GroupCloudData | null> => {
   const now = Date.now();
   if (!force && lastFetchedData && now - lastFetchTime < 4000) {
@@ -135,15 +160,17 @@ export const fetchGroupCloudData = async (force: boolean = false, groupId = 'ing
 
     let cloudScheduleOverrides: Record<string, Partial<Lesson>> = localBackup.scheduleOverrides || {};
     let cloudSubjectTeachers: Record<string, string> = localBackup.subjectTeachers || {};
-    if (schedRes.status === 'fulfilled' && schedRes.value?.data) {
-      const d = schedRes.value.data;
-      if (d.overrides && typeof d.overrides === 'object') {
-        cloudScheduleOverrides = d.overrides;
-        try { localStorage.setItem(`schedule_overrides_${groupId}`, JSON.stringify(d.overrides)); } catch (e) {}
-      }
-      if (d.teachers && typeof d.teachers === 'object') {
-        cloudSubjectTeachers = d.teachers;
-        try { localStorage.setItem(`subject_teachers_${groupId}`, JSON.stringify(d.teachers)); } catch (e) {}
+    if (schedRes.status === 'fulfilled' && schedRes.value) {
+      const d = parseCloudPayload(schedRes.value);
+      if (d && typeof d === 'object') {
+        if (d.overrides !== undefined) {
+          cloudScheduleOverrides = d.overrides;
+          try { localStorage.setItem(`schedule_overrides_${groupId}`, JSON.stringify(d.overrides)); } catch (e) {}
+        }
+        if (d.teachers !== undefined) {
+          cloudSubjectTeachers = d.teachers;
+          try { localStorage.setItem(`subject_teachers_${groupId}`, JSON.stringify(d.teachers)); } catch (e) {}
+        }
       }
     }
 
@@ -153,45 +180,47 @@ export const fetchGroupCloudData = async (force: boolean = false, groupId = 'ing
       deletedSet = new Set(JSON.parse(localStorage.getItem(`deleted_hw_${groupId}`) || '[]'));
     } catch (e) {}
 
-    if (hwRes.status === 'fulfilled' && hwRes.value?.data) {
-      const d = hwRes.value.data;
+    if (hwRes.status === 'fulfilled' && hwRes.value) {
+      const d = parseCloudPayload(hwRes.value);
+      if (d && typeof d === 'object') {
+        // 1. Synchronize remote tombstones (deletedIds) from cloud into local device storage
+        if (Array.isArray(d.deletedIds)) {
+          d.deletedIds.forEach((id: any) => {
+            if (id) deletedSet.add(String(id));
+          });
+          try {
+            localStorage.setItem(`deleted_hw_${groupId}`, JSON.stringify(Array.from(deletedSet)));
+          } catch (e) {}
+        }
 
-      // 1. Synchronize remote tombstones (deletedIds) from cloud into local device storage
-      if (Array.isArray(d.deletedIds)) {
-        d.deletedIds.forEach((id: any) => {
-          if (id) deletedSet.add(String(id));
-        });
-        try {
-          localStorage.setItem(`deleted_hw_${groupId}`, JSON.stringify(Array.from(deletedSet)));
-        } catch (e) {}
-      }
+        // 2. Cloud homework items are authoritative for the group (even if items is empty!)
+        if (Array.isArray(d.items)) {
+          const raw = d.items;
+          cloudHomework = raw
+            .filter((h: any) => h && h.id && !deletedSet.has(String(h.id)))
+            .map((h: any) => ({
+              id: String(h.id),
+              groupId: String(h.groupId || groupId),
+              subject: String(h.subject || ''),
+              title: String(h.title || ''),
+              description: String(h.description || ''),
+              assignedDate: String(h.assignedDate || ''),
+              dueDate: String(h.dueDate || ''),
+              attachments: Array.isArray(h.attachments) ? h.attachments : [],
+              createdAt: String(h.createdAt || '')
+            }))
+            .sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
 
-      // 2. Cloud homework items are authoritative for the group (even if items is empty!)
-      if (Array.isArray(d.items)) {
-        const raw = d.items;
-        cloudHomework = raw
-          .filter((h: any) => h && h.id && !deletedSet.has(String(h.id)))
-          .map((h: any) => ({
-            id: String(h.id),
-            groupId: String(h.groupId || groupId),
-            subject: String(h.subject || ''),
-            title: String(h.title || ''),
-            description: String(h.description || ''),
-            assignedDate: String(h.assignedDate || ''),
-            dueDate: String(h.dueDate || ''),
-            attachments: Array.isArray(h.attachments) ? h.attachments : [],
-            createdAt: String(h.createdAt || '')
-          }))
-          .sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
-
-        try { localStorage.setItem(`homework_${groupId}`, JSON.stringify(cloudHomework)); } catch (e) {}
+          try { localStorage.setItem(`homework_${groupId}`, JSON.stringify(cloudHomework)); } catch (e) {}
+        }
       }
     }
 
     let cloudAttendance: AttendanceRecord[] = localBackup.attendance || [];
-    if (attRes.status === 'fulfilled' && attRes.value?.data && Array.isArray(attRes.value.data.records)) {
-      const raw = attRes.value.data.records;
-      if (raw.length > 0) {
+    if (attRes.status === 'fulfilled' && attRes.value) {
+      const d = parseCloudPayload(attRes.value);
+      if (d && typeof d === 'object' && Array.isArray(d.records)) {
+        const raw = d.records;
         cloudAttendance = raw.map((a: any) => ({
           docId: String(a.docId || `${groupId}_${a.date}_${a.lessonId}`),
           groupId: String(a.groupId || groupId),
@@ -235,8 +264,8 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
     const teachers = partialUpdate.subjectTeachers !== undefined ? partialUpdate.subjectTeachers : local.subjectTeachers;
     promises.push(
       putJson(ENDPOINTS.schedule, {
-        name: 'samgtu_3ingt110_schedule',
-        data: { overrides, teachers, updatedAt: Date.now() }
+        payload: JSON.stringify({ overrides, teachers }),
+        updatedAt: Date.now()
       })
     );
   }
@@ -251,7 +280,7 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
     const passedDeleted = partialUpdate.deletedIds || [];
     const allDeleted = Array.from(new Set([...localDeleted, ...passedDeleted]));
 
-    // Sanitize attachments: normalize MIME types and strip heavy base64 to avoid 413 / 500 HTTP errors
+    // Sanitize attachments: normalize MIME types and limit heavy base64 to avoid 413 (>100KB) errors
     const normalizeType = (t?: string) => {
       if (!t) return 'file';
       if (t === 'link' || t.includes('link')) return 'link';
@@ -266,13 +295,12 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
       ...item,
       attachments: (item.attachments || []).map(att => {
         const cleanType = normalizeType(att.type);
-        if (att.data && att.data.length > 200000) {
+        if (att.data && att.data.length > 75000) {
           return {
             name: att.name,
             type: cleanType,
             size: att.size,
-            url: att.url
-            // heavy base64 data stripped for cloud payload so Nginx won't return 413!
+            url: att.url || ''
           };
         }
         return {
@@ -284,12 +312,11 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
 
     promises.push(
       putJson(ENDPOINTS.homework, {
-        name: 'samgtu_3ingt110_hw',
-        data: {
+        payload: JSON.stringify({
           items: sanitizedHw,
-          deletedIds: allDeleted,
-          updatedAt: Date.now()
-        }
+          deletedIds: allDeleted
+        }),
+        updatedAt: Date.now()
       })
     );
   }
@@ -298,8 +325,8 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
   if (partialUpdate.attendance !== undefined) {
     promises.push(
       putJson(ENDPOINTS.attendance, {
-        name: 'samgtu_3ingt110_attendance',
-        data: { records: partialUpdate.attendance, updatedAt: Date.now() }
+        payload: JSON.stringify({ records: partialUpdate.attendance }),
+        updatedAt: Date.now()
       })
     );
   }
@@ -307,5 +334,5 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
   if (promises.length === 0) return true;
 
   const results = await Promise.allSettled(promises);
-  return results.some(r => r.status === 'fulfilled' && r.value === true);
+  return results.every(r => r.status === 'fulfilled' && r.value === true);
 };

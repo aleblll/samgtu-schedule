@@ -153,14 +153,14 @@ const App: React.FC = () => {
     const loadCloud = async (force: boolean = false) => {
       const cloud = await fetchGroupCloudData(force, currentGroupId);
       if (cloud && isMounted) {
-        if (cloud.scheduleOverrides && Object.keys(cloud.scheduleOverrides).length > 0) {
-          setScheduleOverrides(prev => ({ ...prev, ...cloud.scheduleOverrides }));
+        if (cloud.scheduleOverrides !== undefined) {
+          setScheduleOverrides(cloud.scheduleOverrides);
           try {
             localStorage.setItem(`schedule_overrides_${currentGroupId}`, JSON.stringify(cloud.scheduleOverrides));
           } catch (e) {}
         }
-        if (cloud.subjectTeachers && Object.keys(cloud.subjectTeachers).length > 0) {
-          setSubjectTeachers(prev => ({ ...prev, ...cloud.subjectTeachers }));
+        if (cloud.subjectTeachers !== undefined) {
+          setSubjectTeachers(cloud.subjectTeachers);
           try {
             localStorage.setItem(`subject_teachers_${currentGroupId}`, JSON.stringify(cloud.subjectTeachers));
           } catch (e) {}
@@ -200,8 +200,8 @@ const App: React.FC = () => {
     try {
       const cloud = await fetchGroupCloudData(true, currentGroupId);
       if (cloud) {
-        if (cloud.scheduleOverrides) setScheduleOverrides(prev => ({ ...prev, ...cloud.scheduleOverrides }));
-        if (cloud.subjectTeachers) setSubjectTeachers(prev => ({ ...prev, ...cloud.subjectTeachers }));
+        if (cloud.scheduleOverrides !== undefined) setScheduleOverrides(cloud.scheduleOverrides);
+        if (cloud.subjectTeachers !== undefined) setSubjectTeachers(cloud.subjectTeachers);
       }
     } catch (e) {}
     toast.success('Данные обновлены');
@@ -241,10 +241,20 @@ const App: React.FC = () => {
       ...updatedLesson
     };
 
+    // If note is emptied or whitespace, delete the note property so it does not persist
+    if (updatedLesson.note !== undefined && updatedLesson.note.trim() === '') {
+      delete merged.note;
+    }
+
     const updated = {
       ...scheduleOverrides,
       [lessonId]: merged
     };
+
+    // If this lesson has no customized properties left, remove it from overrides
+    if (Object.keys(merged).length === 0) {
+      delete updated[lessonId];
+    }
 
     setScheduleOverrides(updated);
     try {

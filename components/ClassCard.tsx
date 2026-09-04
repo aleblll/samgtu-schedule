@@ -72,10 +72,10 @@ const ClassCard: React.FC<ClassCardProps> = ({
             {lesson.subject}
           </h3>
 
-          {lesson.note && (
+          {lesson.note && lesson.note.trim() !== '' && (
             <div className="mb-2 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-700/30 rounded-xl flex items-start gap-1.5 text-xs text-amber-800 dark:text-amber-300">
               <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
-              <span className="leading-tight text-[11px] font-medium">{lesson.note}</span>
+              <span className="leading-tight text-[11px] font-medium">{lesson.note.trim()}</span>
             </div>
           )}
         </div>
