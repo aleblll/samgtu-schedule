@@ -560,14 +560,14 @@ const App: React.FC = () => {
 
           {/* Group and Week Controls */}
           <div className="mt-3 space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <GraduationCap className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
                 <div className="relative">
                   <select
                     value={currentGroupId}
                     onChange={(e) => setCurrentGroupId(e.target.value)}
-                    className="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 pr-7 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer appearance-none transition-colors"
+                    className="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 min-h-[36px] pr-7 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer appearance-none transition-colors"
                   >
                     {AVAILABLE_GROUPS.map(g => (
                       <option key={g.id} value={g.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">

@@ -200,7 +200,7 @@ const SubjectTeachersModal: React.FC<SubjectTeachersModalProps> = ({
         </div>
 
         {/* List of subjects */}
-        <form id="teachers-form" onSubmit={handleSubmit} className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-4 pr-1">
+        <form id="teachers-form" onSubmit={handleSubmit} className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-4 px-4 pr-3">
           {filteredGroups.map(group => (
             <div 
               key={group.subject}
@@ -274,7 +274,7 @@ const SubjectTeachersModal: React.FC<SubjectTeachersModalProps> = ({
         </form>
 
         {/* Fixed Footer with Safe Area */}
-        <div className="flex gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 shrink-0 pb-safe bg-white dark:bg-slate-900">
+        <div className="flex gap-2 p-4 pt-3 border-t border-slate-100 dark:border-slate-800 shrink-0 pb-safe bg-white dark:bg-slate-900">
           <button
             type="button"
             onClick={onClose}

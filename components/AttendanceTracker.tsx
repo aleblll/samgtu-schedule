@@ -170,7 +170,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">Журнал посещаемости</h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Группа: <span className="font-semibold text-indigo-600 dark:text-indigo-400">3-ИНГТ-110</span> • Режим: <span className="font-bold uppercase text-indigo-600 dark:text-indigo-400">{userRole}</span>
+            Группа: <span className="font-semibold text-indigo-600 dark:text-indigo-400">{AVAILABLE_GROUPS.find(g => g.id === currentGroupId)?.name || currentGroupId}</span> • Режим: <span className="font-bold uppercase text-indigo-600 dark:text-indigo-400">{userRole}</span>
           </p>
         </div>
 
