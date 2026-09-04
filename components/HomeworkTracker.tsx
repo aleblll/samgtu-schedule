@@ -4,7 +4,7 @@ import {
   Trash2, Edit3, X, Check, Download, AlertCircle, FileText, ExternalLink, Filter 
 } from 'lucide-react';
 import { HomeworkItem, HomeworkAttachment } from '../types';
-import { SCHEDULE_REGISTRY } from '../constants';
+import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, getGroupTag } from '../constants';
 import { getSamaraDate, getSamaraISODate } from '../attendance';
 import { db } from '../firebase';
 import { collection, doc, setDoc, deleteDoc, onSnapshot, query, where } from 'firebase/firestore';
@@ -41,6 +41,12 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
     });
     return Array.from(subjects).sort();
   }, [currentGroupId]);
+
+  const groupConfig = useMemo(() => {
+    return AVAILABLE_GROUPS.find(g => g.id === currentGroupId);
+  }, [currentGroupId]);
+  const groupName = groupConfig?.name || currentGroupId;
+  const groupTag = groupConfig?.name ? getGroupTag(groupConfig.name) : currentGroupId;
 
   // Homework items state
   const [items, setItems] = useState<HomeworkItem[]>(() => {
@@ -209,9 +215,13 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
     const toastId = toast.loading(`Загрузка «${file.name}» в хранилище Telegram...`);
 
     try {
+      const groupConfig = AVAILABLE_GROUPS.find(g => g.id === currentGroupId);
+      const groupName = groupConfig?.name || currentGroupId;
+      const groupTag = groupConfig?.name ? getGroupTag(groupConfig.name) : currentGroupId;
+
       const formData = new FormData();
       formData.append('document', file, file.name);
-      formData.append('caption', `ДЗ: ${file.name}`);
+      formData.append('caption', `[${groupName}] 📚 ДЗ: ${file.name} #${groupTag}`);
 
       const res = await fetch(`${TG_WORKER_URL}/upload`, {
         method: 'POST',
@@ -462,9 +472,21 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
             <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             <h2 className="text-base font-bold text-slate-900 dark:text-white">Домашние задания и дедлайны</h2>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Актуальные задания, методички и файлы для группы 3-ИНГТ-110
-          </p>
+          <div className="flex flex-wrap items-center gap-2 mt-1">
+            <p className="text-xs text-slate-400">
+              Задания и файлы для группы <span className="font-semibold text-slate-700 dark:text-slate-300">{groupName}</span>
+            </p>
+            <a
+              href="https://t.me/raspisanie_samgtu"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 px-2 py-0.5 rounded-lg transition-colors"
+              title="Открыть канал СамГТУ в Telegram"
+            >
+              <span>#{groupTag} в @raspisanie_samgtu</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
         </div>
 
         {canEdit && (
@@ -661,16 +683,27 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                   Предмет
                 </label>
-                <select
-                  value={formSubject}
-                  onChange={(e) => setFormSubject(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none text-slate-900 dark:text-white"
-                  required
-                >
-                  {availableSubjects.map(sub => (
-                    <option key={sub} value={sub}>{sub}</option>
-                  ))}
-                </select>
+                {availableSubjects.length > 0 ? (
+                  <select
+                    value={formSubject}
+                    onChange={(e) => setFormSubject(e.target.value)}
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none text-slate-900 dark:text-white"
+                    required
+                  >
+                    {availableSubjects.map(sub => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    placeholder="Введите название предмета (напр. Высшая математика)"
+                    value={formSubject}
+                    onChange={(e) => setFormSubject(e.target.value)}
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none text-slate-900 dark:text-white"
+                    required
+                  />
+                )}
               </div>
 
               <div>

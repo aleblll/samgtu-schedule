@@ -19,6 +19,7 @@ const DayColumn: React.FC<DayColumnProps> = ({
   onUpdateLesson,
   onResetLesson,
 }) => {
+  if (!daySchedule) return null;
   const calendarDate = getDayCalendarDate(daySchedule.dayName, weekNumber);
 
   return (
@@ -56,7 +57,9 @@ const DayColumn: React.FC<DayColumnProps> = ({
             <div className="text-[11px] text-slate-400">
               {daySchedule.dayName === 'Четверг' 
                 ? 'День самостоятельной работы / Военная кафедра' 
-                : 'Выходной день'}
+                : daySchedule.dayName === 'Воскресенье'
+                  ? 'Выходной день'
+                  : 'Занятия не добавлены (староста группы может внести пары)'}
             </div>
           </div>
         )}

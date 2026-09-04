@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, FACULTIES } from './constants';
+import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, FACULTIES, ADMIN_PIN, GROUP_STAROSTA_PINS } from './constants';
 import { getSemesterWeek, getWeekDateRange, getDayISODate, useAttendance, getSamaraDate, getSamaraISODate } from './attendance';
 import AttendanceTracker from './components/AttendanceTracker';
 import HomeworkTracker from './components/HomeworkTracker';
@@ -52,14 +52,34 @@ const App: React.FC = () => {
   const [quickPin, setQuickPin] = useState('');
   const [isSubjectTeachersModalOpen, setIsSubjectTeachersModalOpen] = useState(false);
 
-  // Multi-group state: defaults to 3-ИНГТ-110, switchable to any group
+  // Student group binding: check if student has already bound their group
+  const [boundGroupId, setBoundGroupId] = useState<string | null>(() => {
+    return localStorage.getItem('my_group_id') || null;
+  });
+  const [isGroupSelectionModalOpen, setIsGroupSelectionModalOpen] = useState(() => {
+    return !localStorage.getItem('my_group_id');
+  });
+
+  // Multi-group state: defaults to bound group, then saved selection, then 3-ИНГТ-110
   const [currentGroupId, setCurrentGroupId] = useState<string>(() => {
+    const bound = localStorage.getItem('my_group_id');
+    if (bound && AVAILABLE_GROUPS.some(g => g.id === bound)) return bound;
     const saved = localStorage.getItem('selected_group_id');
     if (saved === 'ingt-1') return 'ingt-301';
     if (saved === 'faid-110') return 'faid-310';
     if (saved && AVAILABLE_GROUPS.some(g => g.id === saved)) return saved;
     return 'ingt-310';
   });
+
+  const handleSelectGroup = (groupId: string) => {
+    setBoundGroupId(groupId);
+    setCurrentGroupId(groupId);
+    localStorage.setItem('my_group_id', groupId);
+    localStorage.setItem('selected_group_id', groupId);
+    setIsGroupSelectionModalOpen(false);
+    const grp = AVAILABLE_GROUPS.find(g => g.id === groupId);
+    toast.success(`Выбрана группа ${grp?.name || groupId}`);
+  };
 
   const currentGroupConfig = useMemo(() => {
     return AVAILABLE_GROUPS.find(g => g.id === currentGroupId) || AVAILABLE_GROUPS[0];
@@ -250,13 +270,42 @@ const App: React.FC = () => {
   };
 
   const handleQuickPinLogin = () => {
-    if (quickPin === '110') {
-      setUserRole('starosta');
-      toast.success('Активирован режим СТАРОСТЫ (3-ИНГТ-110)');
-      setQuickPin('');
-    } else if (quickPin === '2808') {
+    const pin = quickPin.trim().toLowerCase();
+    if (pin === ADMIN_PIN) {
       setUserRole('admin');
       toast.success('Активирован режим ГЛАВНОГО АДМИНИСТРАТОРА');
+      setQuickPin('');
+    } else if (pin === '101') {
+      setUserRole('starosta');
+      setCurrentGroupId('ingt-301');
+      localStorage.setItem('my_group_id', 'ingt-301');
+      setBoundGroupId('ingt-301');
+      toast.success('Активирован режим СТАРОСТЫ (3-ИНГТ-101)');
+      setQuickPin('');
+    } else if (pin === '103') {
+      setUserRole('starosta');
+      setCurrentGroupId('ingt-303');
+      localStorage.setItem('my_group_id', 'ingt-303');
+      setBoundGroupId('ingt-303');
+      toast.success('Активирован режим СТАРОСТЫ (3-ИНГТ-103)');
+      setQuickPin('');
+    } else if (pin === '110') {
+      setUserRole('starosta');
+      if (currentGroupId === 'faid-310') {
+        toast.success('Активирован режим СТАРОСТЫ (3-ФАИД-110)');
+      } else {
+        setCurrentGroupId('ingt-310');
+        localStorage.setItem('my_group_id', 'ingt-310');
+        setBoundGroupId('ingt-310');
+        toast.success('Активирован режим СТАРОСТЫ (3-ИНГТ-110)');
+      }
+      setQuickPin('');
+    } else if (pin === 'faid110' || pin === '3110') {
+      setUserRole('starosta');
+      setCurrentGroupId('faid-310');
+      localStorage.setItem('my_group_id', 'faid-310');
+      setBoundGroupId('faid-310');
+      toast.success('Активирован режим СТАРОСТЫ (3-ФАИД-110)');
       setQuickPin('');
     } else {
       toast.error('Неверный PIN-код доступа');
@@ -567,20 +616,30 @@ const App: React.FC = () => {
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <GraduationCap className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                <div className="relative">
-                  <select
-                    value={currentGroupId}
-                    onChange={(e) => setCurrentGroupId(e.target.value)}
-                    className="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 min-h-[36px] pr-7 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer appearance-none transition-colors"
-                  >
-                    {AVAILABLE_GROUPS.map(g => (
-                      <option key={g.id} value={g.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                        {g.name} ({g.course} курс)
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
+                {userRole === 'student' ? (
+                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-1.5 min-h-[36px] flex items-center gap-1.5">
+                    <span>{currentGroupConfig.name}</span>
+                    <span className="text-[10px] text-slate-400 font-normal">({currentGroupConfig.course} курс)</span>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <select
+                      value={currentGroupId}
+                      onChange={(e) => {
+                        setCurrentGroupId(e.target.value);
+                        localStorage.setItem('selected_group_id', e.target.value);
+                      }}
+                      className="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 min-h-[36px] pr-7 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer appearance-none transition-colors"
+                    >
+                      {AVAILABLE_GROUPS.map(g => (
+                        <option key={g.id} value={g.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                          {g.name} ({g.course} курс)
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                )}
               </div>
               
               <div className="flex items-center gap-2">
@@ -673,7 +732,14 @@ const App: React.FC = () => {
         {activeTab === 'admin' && (
           <AdminPanel
             currentRole={userRole}
-            onRoleChange={setUserRole}
+            onRoleChange={(role, targetGroup) => {
+              setUserRole(role);
+              if (targetGroup) {
+                setCurrentGroupId(targetGroup);
+                localStorage.setItem('my_group_id', targetGroup);
+                setBoundGroupId(targetGroup);
+              }
+            }}
             userEmail={user?.email || null}
           />
         )}
@@ -696,6 +762,29 @@ const App: React.FC = () => {
               }`}>
                 Роль: {userRole}
               </span>
+            </div>
+
+            {/* Academic Group Binding */}
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <GraduationCap className="w-4 h-4 text-indigo-500" />
+                  <span>Ваша учебная группа</span>
+                </div>
+                <span className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-0.5 rounded-lg">
+                  {currentGroupConfig.name}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Расписание, посещаемость и домашние задания привязаны к этой группе.
+              </p>
+              <button
+                onClick={() => setIsGroupSelectionModalOpen(true)}
+                className="w-full py-2.5 px-4 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-xs rounded-xl transition-all shadow-sm min-h-[44px] flex items-center justify-center gap-2"
+              >
+                <Users className="w-3.5 h-3.5 text-indigo-500" />
+                Сменить учебную группу
+              </button>
             </div>
 
             {/* Quick PIN Login Form */}
@@ -754,6 +843,67 @@ const App: React.FC = () => {
           subjectTeachers={subjectTeachers}
           onSave={handleSaveSubjectTeachers}
         />
+      )}
+
+      {/* Group Selection Modal (Onboarding & Switching) */}
+      {isGroupSelectionModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 space-y-4">
+            <div className="text-center space-y-1.5">
+              <div className="w-12 h-12 mx-auto bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                <GraduationCap className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Выберите вашу группу
+              </h3>
+              <p className="text-xs text-slate-400">
+                Расписание и задания будут настроены для вашей группы СамГТУ:
+              </p>
+            </div>
+
+            <div className="space-y-2 pt-1">
+              {AVAILABLE_GROUPS.map((grp) => {
+                const isSelected = currentGroupId === grp.id;
+                const faculty = FACULTIES.find(f => f.id === grp.facultyId);
+                return (
+                  <button
+                    key={grp.id}
+                    onClick={() => handleSelectGroup(grp.id)}
+                    className={`w-full p-3.5 rounded-2xl border text-left flex items-center justify-between transition-all min-h-[52px] ${
+                      isSelected
+                        ? 'border-indigo-600 bg-indigo-50/70 dark:bg-indigo-900/20 text-indigo-900 dark:text-indigo-100 shadow-sm'
+                        : 'border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200'
+                    }`}
+                  >
+                    <div>
+                      <div className="text-xs font-bold">{grp.name}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">
+                        {faculty?.shortName || grp.facultyId.toUpperCase()} • {grp.course} курс
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">
+                        ✓
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {boundGroupId && (
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsGroupSelectionModalOpen(false)}
+                  className="w-full py-2.5 text-center text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                >
+                  Закрыть
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

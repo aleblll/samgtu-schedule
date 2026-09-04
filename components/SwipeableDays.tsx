@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { DaySchedule, Lesson } from '../types';
 import DayColumn from './DayColumn';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { getDayCalendarDate, getSamaraDate, getSemesterWeek, getDayName } from '../attendance';
 import { TeacherAssignmentScope } from './EditLessonModal';
 
@@ -213,6 +213,22 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
       default: return dayName.slice(0, 2);
     }
   };
+
+  if (!days || days.length === 0) {
+    return (
+      <div className="text-center py-16 px-4 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-3">
+        <div className="w-12 h-12 mx-auto bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+          <Calendar className="w-6 h-6" />
+        </div>
+        <h3 className="font-bold text-base text-slate-900 dark:text-white">
+          Расписание еще не заполнено
+        </h3>
+        <p className="text-xs text-slate-400 max-w-sm mx-auto">
+          Староста группы или администратор могут внести пары и расписание занятий на эту неделю.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 w-full max-w-full overflow-x-clip">

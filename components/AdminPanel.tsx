@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 interface AdminPanelProps {
   currentRole: UserRole;
-  onRoleChange: (role: UserRole) => void;
+  onRoleChange: (role: UserRole, targetGroupId?: string) => void;
   userEmail: string | null;
 }
 
@@ -13,13 +13,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentRole, onRoleChange }) =>
   const [pinCode, setPinCode] = useState('');
 
   const handleVerifyPin = () => {
-    if (pinCode === '2808') {
+    const pin = pinCode.trim().toLowerCase();
+    if (pin === '2808') {
       onRoleChange('admin');
       toast.success('Авторизован режим Главного Администратора');
       setPinCode('');
-    } else if (pinCode === '110') {
-      onRoleChange('starosta');
+    } else if (pin === '101') {
+      onRoleChange('starosta', 'ingt-301');
+      toast.success('Авторизован режим Старосты (3-ИНГТ-101)');
+      setPinCode('');
+    } else if (pin === '103') {
+      onRoleChange('starosta', 'ingt-303');
+      toast.success('Авторизован режим Старосты (3-ИНГТ-103)');
+      setPinCode('');
+    } else if (pin === '110') {
+      onRoleChange('starosta', 'ingt-310');
       toast.success('Авторизован режим Старосты (3-ИНГТ-110)');
+      setPinCode('');
+    } else if (pin === 'faid110' || pin === '3110') {
+      onRoleChange('starosta', 'faid-310');
+      toast.success('Авторизован режим Старосты (3-ФАИД-110)');
       setPinCode('');
     } else {
       toast.error('Неверный PIN-код доступа');
