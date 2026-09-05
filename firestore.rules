@@ -110,13 +110,27 @@ service cloud.firestore {
     }
 
     match /attendance/{recordId} {
-      // Anyone authenticated can read attendance records
-      allow read: if isAuthenticated();
-      
-      // Editors and admins can create/update attendance records
+      // Allow reading attendance for students in Telegram Mini App
+      allow read: if true;
       allow create: if isEditorForGroup(request.resource.data.groupId) && isValidAttendanceRecord(request.resource.data);
       allow update: if isEditorForGroup(resource.data.groupId) && isEditorForGroup(request.resource.data.groupId) && isValidAttendanceRecord(request.resource.data);
       allow delete: if isAdmin();
+    }
+
+    match /homework/{homeworkId} {
+      allow read: if true;
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    match /subject_teachers/{groupId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /schedule_overrides/{lessonId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
     }
   }
 }

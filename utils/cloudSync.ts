@@ -26,10 +26,48 @@ export interface GroupCloudData {
   lastUpdated?: number;
 }
 
-let lastFetchedData: GroupCloudData | null = null;
-let lastFetchTime = 0;
-
 import { SEED_SCHEDULE_OVERRIDES, SEED_SUBJECT_TEACHERS, SEED_ATTENDANCE, SEED_HOMEWORK } from '../defaultData';
+
+// Module-level cache per group to prevent cross-group cache pollution (Senior Review 2.3)
+const lastFetchedDataMap: Record<string, GroupCloudData> = {};
+const lastFetchTimeMap: Record<string, number> = {};
+
+// Sanitize teacher names: replace outdated generic "Кафедра ИНГТ" with verified professors
+export const sanitizeTeachers = (teachers: Record<string, string>, groupId = 'ingt-310'): Record<string, string> => {
+  if (!teachers || typeof teachers !== 'object') return {};
+  const res: Record<string, string> = { ...teachers };
+  for (const [key, val] of Object.entries(res)) {
+    if (val === 'Кафедра ИНГТ' || !val) {
+      if (groupId === 'ingt-310' && SEED_SUBJECT_TEACHERS[key]) {
+        res[key] = SEED_SUBJECT_TEACHERS[key];
+      } else if (key.includes('бурения')) {
+        res[key] = 'Драницына Елена Геннадьевна';
+      } else if (key.includes('сосудов')) {
+        res[key] = 'Крючков Дмитрий Александрович';
+      } else if (key.includes('Практико-ориентированный')) {
+        res[key] = 'Колибасов Владимир Александрович';
+      } else if (groupId === 'ingt-310') {
+        res[key] = SEED_SUBJECT_TEACHERS[key] || '';
+      }
+    }
+  }
+  return res;
+};
+
+// Sanitize schedule overrides: clear outdated "Кафедра ИНГТ" overrides
+export const sanitizeOverrides = (overrides: Record<string, Partial<Lesson>>): Record<string, Partial<Lesson>> => {
+  if (!overrides || typeof overrides !== 'object') return {};
+  const res: Record<string, Partial<Lesson>> = {};
+  for (const [id, ov] of Object.entries(overrides)) {
+    if (!ov) continue;
+    const clean = { ...ov };
+    if (clean.teacher === 'Кафедра ИНГТ') {
+      delete clean.teacher;
+    }
+    res[id] = clean;
+  }
+  return res;
+};
 
 export const getLocalBackup = (groupId = 'ingt-310'): GroupCloudData => {
   try {
@@ -46,23 +84,25 @@ export const getLocalBackup = (groupId = 'ingt-310'): GroupCloudData => {
     const deletedHw: string[] = JSON.parse(localStorage.getItem(`deleted_hw_${groupId}`) || '[]');
     const deletedSet = new Set(deletedHw);
 
-    const localHw: HomeworkItem[] = hw ? JSON.parse(hw) : [];
+    const rawLocalHw: HomeworkItem[] = hw ? JSON.parse(hw) : [];
+    // Strict isolation: only keep items belonging to this groupId
+    const localHw = rawLocalHw.filter(it => it && (!it.groupId || it.groupId === groupId));
     const localOv = ov ? JSON.parse(ov) : {};
     const localSt = st ? JSON.parse(st) : {};
     const localAtt: AttendanceRecord[] = att ? JSON.parse(att) : [];
 
     const hwMap = new Map<string, HomeworkItem>();
-    defaultHw.forEach(it => { if (it && it.id && !deletedSet.has(it.id)) hwMap.set(it.id, it); });
-    localHw.forEach(it => { if (it && it.id && !deletedSet.has(it.id)) hwMap.set(it.id, it); });
+    defaultHw.forEach(it => { if (it && it.id && !deletedSet.has(it.id)) hwMap.set(it.id, { ...it, groupId: it.groupId || groupId }); });
+    localHw.forEach(it => { if (it && it.id && !deletedSet.has(it.id)) hwMap.set(it.id, { ...it, groupId: it.groupId || groupId }); });
 
     const attMap = new Map<string, AttendanceRecord>();
-    defaultAtt.forEach(it => { if (it) attMap.set(it.docId || `${it.groupId}_${it.date}_${it.lessonId}`, it); });
-    localAtt.forEach(it => { if (it) attMap.set(it.docId || `${it.groupId}_${it.date}_${it.lessonId}`, it); });
+    defaultAtt.forEach(it => { if (it) attMap.set(it.docId || `${it.groupId || groupId}_${it.date}_${it.lessonId}`, { ...it, groupId: it.groupId || groupId }); });
+    localAtt.forEach(it => { if (it) attMap.set(it.docId || `${it.groupId || groupId}_${it.date}_${it.lessonId}`, { ...it, groupId: it.groupId || groupId }); });
 
     return {
       homework: Array.from(hwMap.values()),
-      scheduleOverrides: { ...defaultOv, ...localOv },
-      subjectTeachers: { ...defaultSt, ...localSt },
+      scheduleOverrides: sanitizeOverrides({ ...defaultOv, ...localOv }),
+      subjectTeachers: sanitizeTeachers({ ...defaultSt, ...localSt }, groupId),
       attendance: Array.from(attMap.values()),
       lastUpdated: 0
     };
@@ -72,10 +112,10 @@ export const getLocalBackup = (groupId = 'ingt-310'): GroupCloudData => {
       safeDeletedSet = new Set(JSON.parse(localStorage.getItem(`deleted_hw_${groupId}`) || '[]'));
     } catch {}
     return {
-      homework: SEED_HOMEWORK.filter(it => it && it.id && !safeDeletedSet.has(it.id)),
-      scheduleOverrides: SEED_SCHEDULE_OVERRIDES,
-      subjectTeachers: SEED_SUBJECT_TEACHERS,
-      attendance: SEED_ATTENDANCE,
+      homework: groupId === 'ingt-310' ? SEED_HOMEWORK.filter(it => it && it.id && !safeDeletedSet.has(it.id)) : [],
+      scheduleOverrides: groupId === 'ingt-310' ? sanitizeOverrides(SEED_SCHEDULE_OVERRIDES) : {},
+      subjectTeachers: groupId === 'ingt-310' ? sanitizeTeachers(SEED_SUBJECT_TEACHERS, groupId) : {},
+      attendance: groupId === 'ingt-310' ? SEED_ATTENDANCE : [],
       lastUpdated: 0
     };
   }
@@ -165,21 +205,27 @@ const parseCloudPayload = (raw: any): any => {
   return raw;
 };
 
+const fetchWithFallback = async (primaryUrl: string, fallbackUrl: string) => {
+  const p = await fetchJson(primaryUrl, 3500);
+  if (p !== null) return p;
+  return await fetchJson(fallbackUrl, 3500);
+};
+
+const safePut = async (primaryUrl: string, fallbackUrl: string, body: any) => {
+  const ok = await putJson(primaryUrl, body);
+  if (ok) return true;
+  return await putJson(fallbackUrl, body);
+};
+
 export const fetchGroupCloudData = async (force: boolean = false, groupId = 'ingt-310'): Promise<GroupCloudData | null> => {
   const now = Date.now();
-  if (!force && lastFetchedData && now - lastFetchTime < 4000) {
-    return lastFetchedData;
+  if (!force && lastFetchedDataMap[groupId] && now - (lastFetchTimeMap[groupId] || 0) < 4000) {
+    return lastFetchedDataMap[groupId];
   }
 
   const localBackup = getLocalBackup(groupId);
 
   try {
-    const fetchWithFallback = async (primaryUrl: string, fallbackUrl: string) => {
-      const p = await fetchJson(primaryUrl, 3500);
-      if (p !== null) return p;
-      return await fetchJson(fallbackUrl, 3500);
-    };
-
     // Fetch all 3 dedicated endpoints in parallel with fallback
     const [schedRes, hwRes, attRes] = await Promise.allSettled([
       fetchWithFallback(ENDPOINTS.schedule, FALLBACK_BINS.schedule),
@@ -192,14 +238,24 @@ export const fetchGroupCloudData = async (force: boolean = false, groupId = 'ing
     if (schedRes.status === 'fulfilled' && schedRes.value) {
       const d = parseCloudPayload(schedRes.value);
       if (d && typeof d === 'object') {
-        if (d.overrides !== undefined) {
-          cloudScheduleOverrides = d.overrides;
-          try { localStorage.setItem(`schedule_overrides_${groupId}`, JSON.stringify(d.overrides)); } catch (e) {}
+        if (d.byGroup && d.byGroup[groupId]) {
+          const gData = d.byGroup[groupId];
+          if (gData.overrides !== undefined) cloudScheduleOverrides = gData.overrides;
+          if (gData.teachers !== undefined) cloudSubjectTeachers = gData.teachers;
+        } else if (groupId === 'ingt-310') {
+          if (d.overrides !== undefined) cloudScheduleOverrides = d.overrides;
+          if (d.teachers !== undefined) cloudSubjectTeachers = d.teachers;
+        } else {
+          cloudScheduleOverrides = {};
+          cloudSubjectTeachers = {};
         }
-        if (d.teachers !== undefined) {
-          cloudSubjectTeachers = d.teachers;
-          try { localStorage.setItem(`subject_teachers_${groupId}`, JSON.stringify(d.teachers)); } catch (e) {}
-        }
+
+        // Sanitize out old generic "Кафедра ИНГТ"
+        cloudScheduleOverrides = sanitizeOverrides(cloudScheduleOverrides);
+        cloudSubjectTeachers = sanitizeTeachers(cloudSubjectTeachers, groupId);
+
+        try { localStorage.setItem(`schedule_overrides_${groupId}`, JSON.stringify(cloudScheduleOverrides)); } catch (e) {}
+        try { localStorage.setItem(`subject_teachers_${groupId}`, JSON.stringify(cloudSubjectTeachers)); } catch (e) {}
       }
     }
 
@@ -212,45 +268,55 @@ export const fetchGroupCloudData = async (force: boolean = false, groupId = 'ing
     if (hwRes.status === 'fulfilled' && hwRes.value) {
       const d = parseCloudPayload(hwRes.value);
       if (d && typeof d === 'object') {
-        // 1. Synchronize remote tombstones (deletedIds) from cloud into local device storage
-        if (Array.isArray(d.deletedIds)) {
-          d.deletedIds.forEach((id: any) => {
-            if (id) deletedSet.add(String(id));
-          });
-          try {
-            localStorage.setItem(`deleted_hw_${groupId}`, JSON.stringify(Array.from(deletedSet)));
-          } catch (e) {}
+        let rawItems: any[] = [];
+        let rawDeletedIds: any[] = [];
+
+        if (d.byGroup && d.byGroup[groupId]) {
+          rawItems = Array.isArray(d.byGroup[groupId].items) ? d.byGroup[groupId].items : [];
+          rawDeletedIds = Array.isArray(d.byGroup[groupId].deletedIds) ? d.byGroup[groupId].deletedIds : [];
+        } else if (Array.isArray(d.items)) {
+          rawItems = d.items.filter((h: any) => (h.groupId || 'ingt-310') === groupId);
+          rawDeletedIds = Array.isArray(d.deletedIds) ? d.deletedIds : [];
         }
 
-        // 2. Cloud homework items are authoritative for the group (even if items is empty!)
-        if (Array.isArray(d.items)) {
-          const raw = d.items;
-          cloudHomework = raw
-            .filter((h: any) => h && h.id && !deletedSet.has(String(h.id)))
-            .map((h: any) => ({
-              id: String(h.id),
-              groupId: String(h.groupId || groupId),
-              subject: String(h.subject || ''),
-              title: String(h.title || ''),
-              description: String(h.description || ''),
-              assignedDate: String(h.assignedDate || ''),
-              dueDate: String(h.dueDate || ''),
-              attachments: Array.isArray(h.attachments) ? h.attachments : [],
-              createdAt: String(h.createdAt || '')
-            }))
-            .sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+        rawDeletedIds.forEach((id: any) => {
+          if (id) deletedSet.add(String(id));
+        });
+        try {
+          localStorage.setItem(`deleted_hw_${groupId}`, JSON.stringify(Array.from(deletedSet)));
+        } catch (e) {}
 
-          try { localStorage.setItem(`homework_${groupId}`, JSON.stringify(cloudHomework)); } catch (e) {}
-        }
+        cloudHomework = rawItems
+          .filter((h: any) => h && h.id && !deletedSet.has(String(h.id)))
+          .map((h: any) => ({
+            id: String(h.id),
+            groupId: String(h.groupId || groupId),
+            subject: String(h.subject || ''),
+            title: String(h.title || ''),
+            description: String(h.description || ''),
+            assignedDate: String(h.assignedDate || ''),
+            dueDate: String(h.dueDate || ''),
+            attachments: Array.isArray(h.attachments) ? h.attachments : [],
+            createdAt: String(h.createdAt || '')
+          }))
+          .sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+
+        try { localStorage.setItem(`homework_${groupId}`, JSON.stringify(cloudHomework)); } catch (e) {}
       }
     }
 
     let cloudAttendance: AttendanceRecord[] = localBackup.attendance || [];
     if (attRes.status === 'fulfilled' && attRes.value) {
       const d = parseCloudPayload(attRes.value);
-      if (d && typeof d === 'object' && Array.isArray(d.records)) {
-        const raw = d.records;
-        cloudAttendance = raw.map((a: any) => ({
+      if (d && typeof d === 'object') {
+        let rawRecords: any[] = [];
+        if (d.byGroup && d.byGroup[groupId] && Array.isArray(d.byGroup[groupId].records)) {
+          rawRecords = d.byGroup[groupId].records;
+        } else if (Array.isArray(d.records)) {
+          rawRecords = d.records.filter((a: any) => (a.groupId || 'ingt-310') === groupId);
+        }
+
+        cloudAttendance = rawRecords.map((a: any) => ({
           docId: String(a.docId || `${groupId}_${a.date}_${a.lessonId}`),
           groupId: String(a.groupId || groupId),
           date: String(a.date || ''),
@@ -274,42 +340,51 @@ export const fetchGroupCloudData = async (force: boolean = false, groupId = 'ing
       lastUpdated: now
     };
 
-    lastFetchedData = result;
-    lastFetchTime = now;
+    lastFetchedDataMap[groupId] = result;
+    lastFetchTimeMap[groupId] = now;
     return result;
   } catch (e) {
     console.warn('Cloud sync parallel fetch error:', e);
-    return lastFetchedData || localBackup;
+    return lastFetchedDataMap[groupId] || localBackup;
   }
 };
 
 export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>, groupId = 'ingt-310'): Promise<boolean> => {
   const promises: Promise<boolean>[] = [];
 
-  const safePut = async (primaryUrl: string, fallbackUrl: string, body: any) => {
-    const ok = await putJson(primaryUrl, body);
-    if (ok) return true;
-    return await putJson(fallbackUrl, body);
-  };
-
-  // 1. Schedule overrides / teachers push
+  // 1. Schedule overrides / teachers push with multi-group preservation
   if (partialUpdate.scheduleOverrides !== undefined || partialUpdate.subjectTeachers !== undefined) {
     const local = getLocalBackup(groupId);
     const overrides = partialUpdate.scheduleOverrides !== undefined 
-      ? partialUpdate.scheduleOverrides 
-      : { ...(lastFetchedData?.scheduleOverrides || {}), ...(local.scheduleOverrides || {}) };
+      ? sanitizeOverrides(partialUpdate.scheduleOverrides)
+      : sanitizeOverrides({ ...(lastFetchedDataMap[groupId]?.scheduleOverrides || {}), ...(local.scheduleOverrides || {}) });
     const teachers = partialUpdate.subjectTeachers !== undefined 
-      ? partialUpdate.subjectTeachers 
-      : { ...(SEED_SUBJECT_TEACHERS || {}), ...(lastFetchedData?.subjectTeachers || {}), ...(local.subjectTeachers || {}) };
-    promises.push(
-      safePut(ENDPOINTS.schedule, FALLBACK_BINS.schedule, {
-        payload: JSON.stringify({ overrides, teachers }),
+      ? sanitizeTeachers(partialUpdate.subjectTeachers, groupId)
+      : sanitizeTeachers({ ...(lastFetchedDataMap[groupId]?.subjectTeachers || {}), ...(local.subjectTeachers || {}) }, groupId);
+
+    promises.push((async () => {
+      const currentRaw = await fetchWithFallback(ENDPOINTS.schedule, FALLBACK_BINS.schedule);
+      const current = parseCloudPayload(currentRaw) || {};
+      const byGroup = current.byGroup || {};
+      byGroup[groupId] = { overrides, teachers, updatedAt: Date.now() };
+
+      const payload: any = { byGroup, updatedAt: Date.now() };
+      if (groupId === 'ingt-310') {
+        payload.overrides = overrides;
+        payload.teachers = teachers;
+      } else if (current.overrides) {
+        payload.overrides = sanitizeOverrides(current.overrides);
+        payload.teachers = sanitizeTeachers(current.teachers, 'ingt-310');
+      }
+
+      return await safePut(ENDPOINTS.schedule, FALLBACK_BINS.schedule, {
+        payload: JSON.stringify(payload),
         updatedAt: Date.now()
-      })
-    );
+      });
+    })());
   }
 
-  // 2. Homework push
+  // 2. Homework push with multi-group preservation (Senior 2.2 & User Report)
   if (partialUpdate.homework !== undefined) {
     let localDeleted: string[] = [];
     try {
@@ -319,7 +394,6 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
     const passedDeleted = partialUpdate.deletedIds || [];
     const allDeleted = Array.from(new Set([...localDeleted, ...passedDeleted]));
 
-    // Sanitize attachments: normalize MIME types and limit heavy base64 to avoid 413 (>100KB) errors
     const normalizeType = (t?: string) => {
       if (!t) return 'file';
       if (t === 'link' || t.includes('link')) return 'link';
@@ -332,6 +406,7 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
 
     const sanitizedHw = partialUpdate.homework.map(item => ({
       ...item,
+      groupId: item.groupId || groupId,
       attachments: (item.attachments || []).map(att => {
         const cleanType = normalizeType(att.type);
         if (att.data && att.data.length > 75000) {
@@ -349,25 +424,61 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
       })
     }));
 
-    promises.push(
-      safePut(ENDPOINTS.homework, FALLBACK_BINS.homework, {
+    promises.push((async () => {
+      const currentRaw = await fetchWithFallback(ENDPOINTS.homework, FALLBACK_BINS.homework);
+      const current = parseCloudPayload(currentRaw) || {};
+      const byGroup = current.byGroup || {};
+      byGroup[groupId] = {
+        items: sanitizedHw,
+        deletedIds: allDeleted,
+        updatedAt: Date.now()
+      };
+
+      // Aggregate all items with group tags for backward compatibility
+      const allItems: HomeworkItem[] = [];
+      const allDeletedSet = new Set<string>();
+      Object.entries(byGroup).forEach(([gid, grp]: [string, any]) => {
+        (grp.items || []).forEach((it: HomeworkItem) => allItems.push({ ...it, groupId: it.groupId || gid }));
+        (grp.deletedIds || []).forEach((id: string) => allDeletedSet.add(id));
+      });
+
+      return await safePut(ENDPOINTS.homework, FALLBACK_BINS.homework, {
         payload: JSON.stringify({
-          items: sanitizedHw,
-          deletedIds: allDeleted
+          byGroup,
+          items: allItems,
+          deletedIds: Array.from(allDeletedSet)
         }),
         updatedAt: Date.now()
-      })
-    );
+      });
+    })());
   }
 
-  // 3. Attendance push
+  // 3. Attendance push with multi-group preservation
   if (partialUpdate.attendance !== undefined) {
-    promises.push(
-      safePut(ENDPOINTS.attendance, FALLBACK_BINS.attendance, {
-        payload: JSON.stringify({ records: partialUpdate.attendance }),
+    const updatedAtt = partialUpdate.attendance.map(r => ({ ...r, groupId: r.groupId || groupId }));
+
+    promises.push((async () => {
+      const currentRaw = await fetchWithFallback(ENDPOINTS.attendance, FALLBACK_BINS.attendance);
+      const current = parseCloudPayload(currentRaw) || {};
+      const byGroup = current.byGroup || {};
+      byGroup[groupId] = {
+        records: updatedAtt,
         updatedAt: Date.now()
-      })
-    );
+      };
+
+      const allRecords: AttendanceRecord[] = [];
+      Object.entries(byGroup).forEach(([gid, grp]: [string, any]) => {
+        (grp.records || []).forEach((r: AttendanceRecord) => allRecords.push({ ...r, groupId: r.groupId || gid }));
+      });
+
+      return await safePut(ENDPOINTS.attendance, FALLBACK_BINS.attendance, {
+        payload: JSON.stringify({
+          byGroup,
+          records: allRecords
+        }),
+        updatedAt: Date.now()
+      });
+    })());
   }
 
   if (promises.length === 0) return true;

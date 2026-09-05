@@ -12,8 +12,8 @@ export default {
     }
 
     const url = new URL(request.url);
-    const BOT_TOKEN = "8825340055:AAGn_-hHvJsP5Ny_ZTNGCGNfRZSUG4gHW3k";
-    const CHANNEL_ID = "@raspisanie_samgtu";
+    const BOT_TOKEN = (env && env.TELEGRAM_BOT_TOKEN) ? env.TELEGRAM_BOT_TOKEN : "8825340055:AAGn_-hHvJsP5Ny_ZTNGCGNfRZSUG4gHW3k";
+    const CHANNEL_ID = (env && env.TELEGRAM_CHANNEL_ID) ? env.TELEGRAM_CHANNEL_ID : "@raspisanie_samgtu";
 
     const BINS = {
       schedule: "https://extendsclass.com/api/json-storage/bin/cecbcbf",
@@ -70,12 +70,9 @@ export default {
         }
       }
 
-      // 2. Unlimited File Upload to Telegram Channel
       if (url.pathname === "/upload" && request.method === "POST") {
         const formData = await request.formData();
-        if (!formData.has("chat_id")) {
-          formData.append("chat_id", CHANNEL_ID);
-        }
+        formData.set("chat_id", CHANNEL_ID);
 
         const tgRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, {
           method: "POST",

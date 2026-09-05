@@ -40,6 +40,7 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
   const startX = useRef<number | null>(null);
   const startY = useRef<number | null>(null);
   const startTime = useRef<number>(0);
+  const lastWheelTime = useRef<number>(0);
 
   // Day chips scroll container
   const chipsContainerRef = useRef<HTMLDivElement>(null);
@@ -120,15 +121,19 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
     startX.current = e.clientX;
     startY.current = e.clientY;
     startTime.current = Date.now();
-    try {
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    } catch (err) {}
+    if (e.pointerType === 'mouse') {
+      try {
+        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      } catch (err) {}
+    }
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
-    try {
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch (err) {}
+    if (e.pointerType === 'mouse') {
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch (err) {}
+    }
 
     if (startX.current === null || startY.current === null) return;
     const diffX = startX.current - e.clientX;
@@ -152,16 +157,22 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
   };
 
   const handlePointerCancel = (e: React.PointerEvent) => {
-    try {
-      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch (err) {}
+    if (e.pointerType === 'mouse') {
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch (err) {}
+    }
     startX.current = null;
     startY.current = null;
   };
 
-  // Horizontal mouse wheel or trackpad swipe
+  // Horizontal mouse wheel or trackpad swipe with 400ms cooldown (prevents wheel thrashing)
   const handleWheel = (e: React.WheelEvent) => {
+    const now = Date.now();
+    if (now - lastWheelTime.current < 400) return;
+
     if (Math.abs(e.deltaX) > 35 && Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      lastWheelTime.current = now;
       if (e.deltaX > 0) {
         goToNextDay();
       } else {
@@ -199,6 +210,11 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
         goToPrevDay();
       }
     }
+  };
+
+  const handleTouchCancel = () => {
+    startX.current = null;
+    startY.current = null;
   };
 
   const getShortDayName = (dayName: string) => {
@@ -276,12 +292,13 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
 
       {/* Swipe Container - Supports Touch (phones) and Pointer Drag (PC / Telegram Desktop) */}
       <div
-        className="lg:hidden relative w-full max-w-full touch-pan-y select-none cursor-grab active:cursor-grabbing"
+        className="lg:hidden relative w-full max-w-full touch-pan-y cursor-grab active:cursor-grabbing"
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerCancel}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchCancel}
         onWheel={handleWheel}
       >
         <div 

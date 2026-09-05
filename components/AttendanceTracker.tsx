@@ -37,7 +37,17 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
     if (!currentGroupId) return [];
     try {
       const saved = localStorage.getItem(`students_${currentGroupId}`);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed: Student[] = JSON.parse(saved);
+        if (currentGroupId === 'ingt-310') {
+          // If cached array still contains removed student Pronin or wrong count, heal with official registry
+          if (parsed.length !== 16 || parsed.some(s => s.name.includes('Пронин'))) {
+            localStorage.setItem(`students_ingt-310`, JSON.stringify(STUDENTS_REGISTRY['ingt-310']));
+            return STUDENTS_REGISTRY['ingt-310'];
+          }
+        }
+        return parsed;
+      }
     } catch (e) {}
     return STUDENTS_REGISTRY[currentGroupId] || [];
   }, [currentGroupId, refreshTrigger]);
@@ -320,7 +330,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
                     )}
 
                     <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {students.map(student => {
+                      {students.map((student, idx) => {
                         const record = getAttendance(selectedDate, selectedLesson.id);
                         const isAbsent = record.absentStudentIds.includes(student.id);
                         const isExcused = (record.excusedStudentIds || []).includes(student.id);
@@ -329,7 +339,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
                         return (
                           <div key={student.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 gap-2 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                             <span className={`text-sm font-semibold ${isAbsent ? 'text-red-500' : isExcused ? 'text-amber-500' : 'text-slate-800 dark:text-slate-200'}`}>
-                              {student.id}. {student.name}
+                              {idx + 1}. {student.name}
                             </span>
 
                             {canEdit ? (

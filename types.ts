@@ -55,6 +55,7 @@ export interface Lesson {
   subgroup?: number;
   note?: string;
   isCancelled?: boolean;
+  order?: number;
 }
 
 export interface DaySchedule {

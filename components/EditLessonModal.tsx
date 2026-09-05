@@ -41,7 +41,7 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[90dvh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
         {/* Header */}
         <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 p-4 sm:p-5 shrink-0">
@@ -180,7 +180,7 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
         </form>
 
         {/* Fixed Footer with Safe Area */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 shrink-0 flex gap-2 pb-safe bg-white dark:bg-slate-900">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800 shrink-0 flex gap-2 pb-[max(1rem,env(safe-area-inset-bottom,0px))] bg-white dark:bg-slate-900">
           <button
             type="button"
             onClick={() => {

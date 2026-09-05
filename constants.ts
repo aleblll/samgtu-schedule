@@ -1,4 +1,4 @@
-import { WeekData, Faculty, GroupConfig, Registry } from './types';
+import { WeekData, Faculty, GroupConfig, Registry, DaySchedule } from './types';
 
 export const FACULTIES: Faculty[] = [
   { id: 'vbs', name: 'Высшая биотехнологическая школа', shortName: 'ВБШ' },
@@ -263,7 +263,7 @@ export const ADMIN_PIN = '2808';
 
 // Helper for Telegram tags
 export const getGroupTag = (groupName: string): string => {
-  return groupName.replace(/^3-/, '').replace(/-/g, '');
+  return groupName.replace(/-/g, '');
 };
 
 // Backwards compatibility aliases

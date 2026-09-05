@@ -246,6 +246,47 @@ export const exportAttendanceToWord = async (
     }
   }
 
+  // Check if running in Telegram WebApp
+  const isTg = typeof window !== 'undefined' && !!(window as any).Telegram?.WebApp;
+  const tg = isTg ? (window as any).Telegram.WebApp : null;
+
+  if (isTg && tg) {
+    try {
+      // In Telegram WebApp, upload the file to worker /upload, then open the telegram link or stream url!
+      const formData = new FormData();
+      formData.append('document', blob, filename);
+      const tag = (groupConfig.name || '3ИНГТ110').replace(/-/g, '');
+      formData.append('caption', `[${groupConfig.name}] 📄 Официальный отчет посещаемости #${tag}`);
+
+      const res = await fetch('https://floral-union-26d1.alexeyberezin2.workers.dev/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.ok && json.result) {
+          const docRes = json.result.document || (json.result.photo ? json.result.photo[json.result.photo.length - 1] : null);
+          const messageId = json.result.message_id;
+          const fileId = docRes?.file_id;
+          const downloadUrl = `https://floral-union-26d1.alexeyberezin2.workers.dev/file?file_id=${fileId}`;
+          const tgUrl = `https://t.me/raspisanie_samgtu/${messageId}`;
+
+          if (typeof tg.openTelegramLink === 'function') {
+            tg.openTelegramLink(tgUrl);
+          } else if (typeof tg.openLink === 'function') {
+            tg.openLink(downloadUrl);
+          } else {
+            window.open(downloadUrl, '_blank');
+          }
+          return;
+        }
+      }
+    } catch (tgErr) {
+      console.warn('Telegram upload export error:', tgErr);
+    }
+  }
+
   // Fallback: Standard browser / webview download
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');

@@ -14,7 +14,7 @@ import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firesto
 import { Toaster, toast } from 'sonner';
 import { UserRole, Lesson } from './types';
 import { TeacherAssignmentScope } from './components/EditLessonModal';
-import { fetchGroupCloudData, pushGroupCloudData } from './utils/cloudSync';
+import { fetchGroupCloudData, pushGroupCloudData, sanitizeTeachers, sanitizeOverrides } from './utils/cloudSync';
 import { SEED_SCHEDULE_OVERRIDES, SEED_SUBJECT_TEACHERS } from './defaultData';
 import {
   LogIn, LogOut, Calendar, BookOpen, ClipboardCheck, Sun, Moon,
@@ -46,6 +46,11 @@ const App: React.FC = () => {
     return (localStorage.getItem('user_role') as UserRole) || 'student';
   });
 
+  // Track which group this starosta has authority over
+  const [starostaGroupId, setStarostaGroupId] = useState<string | null>(() => {
+    return localStorage.getItem('starosta_group_id') || null;
+  });
+
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -71,6 +76,22 @@ const App: React.FC = () => {
     return 'ingt-310';
   });
 
+  // Effective Role: Starosta only has edit rights in their designated group.
+  // When viewing other groups, they become a read-only 'student'.
+  // Global admin PIN 2808 has full access across all groups.
+  const effectiveRole: UserRole = useMemo(() => {
+    if (userRole === 'admin') return 'admin';
+    if (userRole === 'starosta') {
+      if (starostaGroupId && currentGroupId === starostaGroupId) {
+        return 'starosta';
+      }
+      return 'student';
+    }
+    return 'student';
+  }, [userRole, starostaGroupId, currentGroupId]);
+
+  const canEdit = effectiveRole === 'admin' || effectiveRole === 'starosta';
+
   const handleSelectGroup = (groupId: string) => {
     setBoundGroupId(groupId);
     setCurrentGroupId(groupId);
@@ -91,7 +112,7 @@ const App: React.FC = () => {
 
   // Load attendance records and markAttendance for cross-linking cancelled lessons
   const { records: attendanceRecords, markAttendance } = useAttendance(
-    userRole === 'admin' || userRole === 'starosta', 
+    canEdit, 
     currentGroupId, 
     refreshTrigger
   );
@@ -106,9 +127,9 @@ const App: React.FC = () => {
     try {
       const saved = localStorage.getItem(`subject_teachers_${currentGroupId}`);
       const parsed = saved ? JSON.parse(saved) : {};
-      return { ...SEED_SUBJECT_TEACHERS, ...parsed };
+      return sanitizeTeachers({ ...SEED_SUBJECT_TEACHERS, ...parsed });
     } catch (e) {
-      return { ...SEED_SUBJECT_TEACHERS };
+      return sanitizeTeachers({ ...SEED_SUBJECT_TEACHERS });
     }
   });
 
@@ -117,11 +138,11 @@ const App: React.FC = () => {
     try {
       const saved = localStorage.getItem(`schedule_overrides_${currentGroupId}`);
       if (saved !== null) {
-        return JSON.parse(saved);
+        return sanitizeOverrides(JSON.parse(saved));
       }
-      return { ...SEED_SCHEDULE_OVERRIDES };
+      return sanitizeOverrides({ ...SEED_SCHEDULE_OVERRIDES });
     } catch (e) {
-      return { ...SEED_SCHEDULE_OVERRIDES };
+      return sanitizeOverrides({ ...SEED_SCHEDULE_OVERRIDES });
     }
   });
 
@@ -134,15 +155,15 @@ const App: React.FC = () => {
     localStorage.setItem('selected_group_id', currentGroupId);
     try {
       const savedOv = localStorage.getItem(`schedule_overrides_${currentGroupId}`);
-      setScheduleOverrides(savedOv ? JSON.parse(savedOv) : { ...SEED_SCHEDULE_OVERRIDES });
+      setScheduleOverrides(savedOv ? sanitizeOverrides(JSON.parse(savedOv)) : sanitizeOverrides({ ...SEED_SCHEDULE_OVERRIDES }));
     } catch {
-      setScheduleOverrides({ ...SEED_SCHEDULE_OVERRIDES });
+      setScheduleOverrides(sanitizeOverrides({ ...SEED_SCHEDULE_OVERRIDES }));
     }
     try {
       const savedSt = localStorage.getItem(`subject_teachers_${currentGroupId}`);
-      setSubjectTeachers(savedSt ? { ...SEED_SUBJECT_TEACHERS, ...JSON.parse(savedSt) } : { ...SEED_SUBJECT_TEACHERS });
+      setSubjectTeachers(savedSt ? sanitizeTeachers({ ...SEED_SUBJECT_TEACHERS, ...JSON.parse(savedSt) }) : sanitizeTeachers({ ...SEED_SUBJECT_TEACHERS }));
     } catch {
-      setSubjectTeachers({ ...SEED_SUBJECT_TEACHERS });
+      setSubjectTeachers(sanitizeTeachers({ ...SEED_SUBJECT_TEACHERS }));
     }
   }, [currentGroupId]);
 
@@ -205,15 +226,17 @@ const App: React.FC = () => {
       const cloud = await fetchGroupCloudData(force, currentGroupId);
       if (cloud && isMounted) {
         if (cloud.scheduleOverrides !== undefined) {
-          setScheduleOverrides(cloud.scheduleOverrides);
+          const cleanOv = sanitizeOverrides(cloud.scheduleOverrides);
+          setScheduleOverrides(cleanOv);
           try {
-            localStorage.setItem(`schedule_overrides_${currentGroupId}`, JSON.stringify(cloud.scheduleOverrides));
+            localStorage.setItem(`schedule_overrides_${currentGroupId}`, JSON.stringify(cleanOv));
           } catch (e) {}
         }
         if (cloud.subjectTeachers !== undefined) {
-          setSubjectTeachers(cloud.subjectTeachers);
+          const cleanSt = sanitizeTeachers(cloud.subjectTeachers);
+          setSubjectTeachers(cleanSt);
           try {
-            localStorage.setItem(`subject_teachers_${currentGroupId}`, JSON.stringify(cloud.subjectTeachers));
+            localStorage.setItem(`subject_teachers_${currentGroupId}`, JSON.stringify(cleanSt));
           } catch (e) {}
         }
       }
@@ -261,8 +284,14 @@ const App: React.FC = () => {
     try {
       const cloud = await fetchGroupCloudData(true, currentGroupId);
       if (cloud) {
-        if (cloud.scheduleOverrides !== undefined) setScheduleOverrides(cloud.scheduleOverrides);
-        if (cloud.subjectTeachers !== undefined) setSubjectTeachers(cloud.subjectTeachers);
+        if (cloud.scheduleOverrides !== undefined) {
+          const cleanOv = sanitizeOverrides(cloud.scheduleOverrides);
+          setScheduleOverrides(cleanOv);
+        }
+        if (cloud.subjectTeachers !== undefined) {
+          const cleanSt = sanitizeTeachers(cloud.subjectTeachers);
+          setSubjectTeachers(cleanSt);
+        }
       }
     } catch (e) {}
     toast.success('Данные обновлены');
@@ -273,10 +302,14 @@ const App: React.FC = () => {
     const pin = quickPin.trim().toLowerCase();
     if (pin === ADMIN_PIN) {
       setUserRole('admin');
-      toast.success('Активирован режим ГЛАВНОГО АДМИНИСТРАТОРА');
+      setStarostaGroupId(null);
+      localStorage.removeItem('starosta_group_id');
+      toast.success('Активирован режим ГЛАВНОГО АДМИНИСТРАТОРА (все группы)');
       setQuickPin('');
     } else if (pin === '101') {
       setUserRole('starosta');
+      setStarostaGroupId('ingt-301');
+      localStorage.setItem('starosta_group_id', 'ingt-301');
       setCurrentGroupId('ingt-301');
       localStorage.setItem('my_group_id', 'ingt-301');
       setBoundGroupId('ingt-301');
@@ -284,6 +317,8 @@ const App: React.FC = () => {
       setQuickPin('');
     } else if (pin === '103') {
       setUserRole('starosta');
+      setStarostaGroupId('ingt-303');
+      localStorage.setItem('starosta_group_id', 'ingt-303');
       setCurrentGroupId('ingt-303');
       localStorage.setItem('my_group_id', 'ingt-303');
       setBoundGroupId('ingt-303');
@@ -292,8 +327,12 @@ const App: React.FC = () => {
     } else if (pin === '110') {
       setUserRole('starosta');
       if (currentGroupId === 'faid-310') {
+        setStarostaGroupId('faid-310');
+        localStorage.setItem('starosta_group_id', 'faid-310');
         toast.success('Активирован режим СТАРОСТЫ (3-ФАИД-110)');
       } else {
+        setStarostaGroupId('ingt-310');
+        localStorage.setItem('starosta_group_id', 'ingt-310');
         setCurrentGroupId('ingt-310');
         localStorage.setItem('my_group_id', 'ingt-310');
         setBoundGroupId('ingt-310');
@@ -302,6 +341,8 @@ const App: React.FC = () => {
       setQuickPin('');
     } else if (pin === 'faid110' || pin === '3110') {
       setUserRole('starosta');
+      setStarostaGroupId('faid-310');
+      localStorage.setItem('starosta_group_id', 'faid-310');
       setCurrentGroupId('faid-310');
       localStorage.setItem('my_group_id', 'faid-310');
       setBoundGroupId('faid-310');
@@ -315,13 +356,15 @@ const App: React.FC = () => {
   const handleLogout = async () => {
     await logout();
     setUserRole('student');
+    setStarostaGroupId(null);
+    localStorage.removeItem('starosta_group_id');
     toast.success('Вы перешли в режим Студента');
   };
 
   // Schedule Customization Handlers (Editing Teacher, Room, Notes)
   const handleUpdateLesson = async (lessonId: string, updatedLesson: Partial<Lesson>, applyScope: TeacherAssignmentScope = 'type') => {
-    if (userRole === 'student') {
-      toast.error('Только Староста или Админ могут редактировать пары');
+    if (!canEdit) {
+      toast.error('Только Староста своей группы или Администратор могут редактировать пары');
       return;
     }
 
@@ -509,7 +552,7 @@ const App: React.FC = () => {
   };
 
   const handleResetLesson = async (lessonId: string) => {
-    if (userRole === 'student') return;
+    if (!canEdit) return;
 
     const updated = { ...scheduleOverrides };
     delete updated[lessonId];
@@ -539,36 +582,64 @@ const App: React.FC = () => {
     } catch (e) {}
   };
 
-  // Merge default schedule with subject teachers, attendance cancellations & overrides
+  // Merge default schedule with subject teachers, attendance cancellations, overrides & custom lessons
   const currentSchedule = useMemo(() => {
     const rawSchedule = SCHEDULE_REGISTRY[currentGroupId]?.[selectedWeek] || [];
     return rawSchedule.map(day => {
       const isoDate = getDayISODate(day.dayName, selectedWeek);
+      const standardLessons = day.lessons.map(lesson => {
+        const override = scheduleOverrides[lesson.id] || {};
+        const teacherByType = subjectTeachers[`${lesson.subject}::${lesson.type}`];
+        const flatTeacher = subjectTeachers[lesson.subject];
+        const resolvedTeacher = override.teacher !== undefined ? override.teacher : (teacherByType || flatTeacher || lesson.teacher);
+        
+        // Check if this lesson is marked as cancelled on this specific date in Attendance tracker
+        const isCancelledInAttendance = attendanceRecords.some(
+          r => r.date === isoDate && r.lessonId === lesson.id && r.isCancelled
+        );
+
+        return {
+          ...lesson,
+          teacher: resolvedTeacher,
+          ...override,
+          isCancelled: isCancelledInAttendance || !!override.isCancelled
+        };
+      });
+
+      // Include dynamically added custom lessons for empty days / weeks
+      const customLessons: Lesson[] = Object.entries(scheduleOverrides)
+        .filter(([id, rawOv]) => {
+          const ov = rawOv as Partial<Lesson> & { dayName?: string };
+          const isCustom = id.includes('_extra_') || id.includes('_custom_');
+          const matchesDay = ov.dayName === day.dayName || id.startsWith(`${day.dayName.toLowerCase()}_w${selectedWeek}_`);
+          const notAlreadyIncluded = !day.lessons.some(l => l.id === id);
+          return isCustom && matchesDay && notAlreadyIncluded;
+        })
+        .map(([id, rawOv]) => {
+          const ov = rawOv as Partial<Lesson>;
+          return {
+            id,
+            timeStart: ov.timeStart || '08:00',
+            timeEnd: ov.timeEnd || '09:35',
+            subject: ov.subject || 'Новая пара',
+            type: ov.type || 'Лекции',
+            location: ov.location || '',
+            teacher: ov.teacher || '',
+            order: ov.order || (standardLessons.length + 1),
+            ...ov
+          } as Lesson;
+        });
+
+      const allLessons = [...standardLessons, ...customLessons].sort((a, b) => 
+        (a.timeStart || '').localeCompare(b.timeStart || '')
+      );
+
       return {
         ...day,
-        lessons: day.lessons.map(lesson => {
-          const override = scheduleOverrides[lesson.id] || {};
-          const teacherByType = subjectTeachers[`${lesson.subject}::${lesson.type}`];
-          const flatTeacher = subjectTeachers[lesson.subject];
-          const resolvedTeacher = override.teacher !== undefined ? override.teacher : (teacherByType || flatTeacher || lesson.teacher);
-          
-          // Check if this lesson is marked as cancelled on this specific date in Attendance tracker
-          const isCancelledInAttendance = attendanceRecords.some(
-            r => r.date === isoDate && r.lessonId === lesson.id && r.isCancelled
-          );
-
-          return {
-            ...lesson,
-            teacher: resolvedTeacher,
-            ...override,
-            isCancelled: isCancelledInAttendance || !!override.isCancelled
-          };
-        })
+        lessons: allLessons
       };
     });
   }, [currentGroupId, selectedWeek, scheduleOverrides, attendanceRecords, subjectTeachers]);
-
-  const canEdit = userRole === 'admin' || userRole === 'starosta';
 
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-clip bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-200 pb-28">
@@ -591,6 +662,72 @@ const App: React.FC = () => {
                 </p>
               </div>
             </div>
+
+            {/* Desktop Navigation Tabs (Senior Review P0) */}
+            <nav className="hidden sm:flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl">
+              <button
+                onClick={() => setActiveTab('schedule')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeTab === 'schedule'
+                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5" /> Расписание
+              </button>
+              <button
+                onClick={() => setActiveTab('homework')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeTab === 'homework'
+                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5" /> ДЗ
+              </button>
+              <button
+                onClick={() => setActiveTab('attendance')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeTab === 'attendance'
+                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                <ClipboardCheck className="w-3.5 h-3.5" /> Посещение
+              </button>
+              <button
+                onClick={() => setActiveTab('group')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeTab === 'group'
+                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" /> Группа
+              </button>
+              {effectiveRole === 'admin' && (
+                <button
+                  onClick={() => setActiveTab('admin')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    activeTab === 'admin'
+                      ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <Shield className="w-3.5 h-3.5" /> Админ
+                </button>
+              )}
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeTab === 'profile'
+                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                }`}
+              >
+                <UserIcon className="w-3.5 h-3.5" /> Профиль
+              </button>
+            </nav>
 
             <div className="flex items-center gap-2">
               <button
@@ -653,13 +790,13 @@ const App: React.FC = () => {
                 )}
                 
                 <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
-                  userRole === 'admin' 
+                  effectiveRole === 'admin' 
                     ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' 
-                    : userRole === 'starosta' 
+                    : effectiveRole === 'starosta' 
                       ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' 
                       : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                 }`}>
-                  {userRole}
+                  {effectiveRole === 'admin' ? 'admin' : (userRole === 'starosta' ? (effectiveRole === 'starosta' ? 'starosta' : 'гость (студент)') : 'student')}
                 </span>
               </div>
             </div>
@@ -698,7 +835,7 @@ const App: React.FC = () => {
           <SwipeableDays 
             days={currentSchedule} 
             weekNumber={selectedWeek}
-            userRole={userRole}
+            userRole={effectiveRole}
             onUpdateLesson={handleUpdateLesson}
             onResetLesson={handleResetLesson}
           />
@@ -707,15 +844,15 @@ const App: React.FC = () => {
         {activeTab === 'homework' && (
           <HomeworkTracker
             currentGroupId={currentGroupId}
-            userRole={userRole}
+            userRole={effectiveRole}
             refreshTrigger={refreshTrigger}
           />
         )}
 
         {activeTab === 'attendance' && (
           <AttendanceTracker
-            isAuthenticated={userRole === 'admin' || userRole === 'starosta'}
-            userRole={userRole}
+            isAuthenticated={canEdit}
+            userRole={effectiveRole}
             userEmail={user?.email || null}
             currentGroupId={currentGroupId}
             refreshTrigger={refreshTrigger}
@@ -725,15 +862,22 @@ const App: React.FC = () => {
         {activeTab === 'group' && (
           <GroupManager
             currentGroupId={currentGroupId}
-            userRole={userRole}
+            userRole={effectiveRole}
           />
         )}
 
         {activeTab === 'admin' && (
           <AdminPanel
-            currentRole={userRole}
+            currentRole={effectiveRole}
             onRoleChange={(role, targetGroup) => {
               setUserRole(role);
+              if (role === 'starosta' && targetGroup) {
+                setStarostaGroupId(targetGroup);
+                localStorage.setItem('starosta_group_id', targetGroup);
+              } else if (role !== 'starosta') {
+                setStarostaGroupId(null);
+                localStorage.removeItem('starosta_group_id');
+              }
               if (targetGroup) {
                 setCurrentGroupId(targetGroup);
                 localStorage.setItem('my_group_id', targetGroup);
@@ -754,13 +898,13 @@ const App: React.FC = () => {
                 {user ? user.displayName || user.email : `Студент ${currentGroupConfig.name}`}
               </h2>
               <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                userRole === 'admin' 
+                effectiveRole === 'admin' 
                   ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30' 
-                  : userRole === 'starosta' 
+                  : effectiveRole === 'starosta' 
                     ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30' 
                     : 'bg-slate-100 text-slate-600 dark:bg-slate-800'
               }`}>
-                Роль: {userRole}
+                Роль: {effectiveRole} {userRole === 'starosta' && effectiveRole === 'student' && `(Староста группы ${AVAILABLE_GROUPS.find(g => g.id === starostaGroupId)?.name || starostaGroupId})`}
               </span>
             </div>
 
@@ -830,8 +974,8 @@ const App: React.FC = () => {
       <BottomNav
         currentTab={activeTab}
         onTabChange={setActiveTab}
-        userRole={userRole}
-        isLoggedIn={userRole !== 'student' || !!user}
+        userRole={effectiveRole}
+        isLoggedIn={canEdit || !!user}
       />
 
       {/* Global Subject Teachers Modal */}

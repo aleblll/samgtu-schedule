@@ -82,7 +82,10 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
   const [formDueDate, setFormDueDate] = useState(() => {
     const d = getSamaraDate();
     d.setDate(d.getDate() + 7);
-    return d.toISOString().split('T')[0];
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   });
   const [formAttachments, setFormAttachments] = useState<HomeworkAttachment[]>([]);
   const [linkInput, setLinkInput] = useState('');
@@ -112,17 +115,17 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
       } catch (e) {}
 
       const itemMap = new Map<string, HomeworkItem>();
-      // 1. Cloud items are authoritative for the group
+      // 1. Cloud items are authoritative for the group (Strict isolation: only currentGroupId!)
       (cloud.homework || []).forEach(it => {
-        if (it && it.id && !deletedSet.has(it.id)) {
-          itemMap.set(it.id, it);
+        if (it && it.id && !deletedSet.has(it.id) && (it.groupId || 'ingt-310') === currentGroupId) {
+          itemMap.set(it.id, { ...it, groupId: currentGroupId });
         }
       });
       // 2. Preserve any local items that are NOT deleted and not yet in cloud
       let hasUnsyncedLocal = false;
       localItems.forEach(it => {
-        if (it && it.id && !deletedSet.has(it.id) && !itemMap.has(it.id)) {
-          itemMap.set(it.id, it);
+        if (it && it.id && !deletedSet.has(it.id) && (it.groupId || 'ingt-310') === currentGroupId && !itemMap.has(it.id)) {
+          itemMap.set(it.id, { ...it, groupId: currentGroupId });
           hasUnsyncedLocal = true;
         }
       });
@@ -416,6 +419,11 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
   const todayISO = getSamaraISODate();
   const filteredItems = useMemo(() => {
     return items.filter(item => {
+      // Group isolation: only show items belonging to currentGroupId
+      if (item.groupId && item.groupId !== currentGroupId) {
+        return false;
+      }
+
       // Subject filter
       if (subjectFilter !== 'all' && item.subject !== subjectFilter) {
         return false;
@@ -430,7 +438,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
       }
       return true;
     });
-  }, [items, filterMode, subjectFilter, todayISO]);
+  }, [items, filterMode, subjectFilter, todayISO, currentGroupId]);
 
   const getDueBadge = (dueDate: string) => {
     if (dueDate < todayISO) {
@@ -657,7 +665,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
 
       {/* Add / Edit Homework Modal (Mobile Bottom Sheet Pattern) */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[90dvh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
             {/* Modal Header */}
             <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 p-4 sm:p-5 shrink-0">
@@ -666,7 +674,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
                   {editingItem ? 'Редактировать ДЗ' : 'Новое домашнее задание'}
                 </h3>
                 <p className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5">
-                  Для всей группы 3-ИНГТ-110
+                  Для всей группы {AVAILABLE_GROUPS.find(g => g.id === currentGroupId)?.name || currentGroupId}
                 </p>
               </div>
               <button
