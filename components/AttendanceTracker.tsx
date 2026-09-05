@@ -27,7 +27,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   
-  const { records, markAttendance, getAttendance } = useAttendance(isAuthenticated, currentGroupId, refreshTrigger);
+  const { records, markAttendance, markBatchAttendance, getAttendance } = useAttendance(isAuthenticated, currentGroupId, refreshTrigger);
 
   // Strictly enforce edit permissions: ONLY Starosta or Admin can edit attendance!
   const normalizedRole = userRole.toLowerCase();
@@ -97,6 +97,14 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
     }
     if (lessons.length === 0) return;
     
+    const updates: Array<{
+      date: string;
+      lessonId: string;
+      absentStudentIds: number[];
+      excusedStudentIds?: number[];
+      isCancelled?: boolean;
+    }> = [];
+
     lessons.forEach(lesson => {
       const record = getAttendance(selectedDate, lesson.id);
       // Skip cancelled lessons so absent status is never marked on cancelled classes!
@@ -111,10 +119,19 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
         newExcusedIds.push(studentId);
       }
 
-      markAttendance(selectedDate, lesson.id, newAbsentIds, newExcusedIds, record.isCancelled);
+      updates.push({
+        date: selectedDate,
+        lessonId: lesson.id,
+        absentStudentIds: newAbsentIds,
+        excusedStudentIds: newExcusedIds,
+        isCancelled: record.isCancelled
+      });
     });
 
-    toast.success(`Статус "${status === 'absent' ? 'Н' : 'У'}" установлен на все пары дня`);
+    if (updates.length > 0) {
+      markBatchAttendance(updates);
+      toast.success(`Статус "${status === 'absent' ? 'Н' : 'УП'}" установлен на все пары дня`);
+    }
   };
 
   const handleToggleLessonCancelled = (lessonId: string, e: React.MouseEvent) => {

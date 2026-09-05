@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { collection, doc, setDoc, onSnapshot, serverTimestamp, query, where } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import { toast } from 'sonner';
@@ -86,6 +86,11 @@ export const useAttendance = (isAuthenticated: boolean, currentGroupId: string |
       return defaultList;
     }
   });
+
+  const recordsRef = useRef<AttendanceRecord[]>(records);
+  useEffect(() => {
+    recordsRef.current = records;
+  }, [records]);
 
   // 1. Instant local storage load
   useEffect(() => {
@@ -191,30 +196,18 @@ export const useAttendance = (isAuthenticated: boolean, currentGroupId: string |
     };
   }, [currentGroupId, refreshTrigger]);
 
-  const markAttendance = async (
-    date: string, 
-    lessonId: string, 
-    absentStudentIds: number[], 
-    excusedStudentIds: number[] = [], 
-    isCancelled: boolean = false
-  ) => {
+  const markBatchAttendance = async (updates: Array<{
+    date: string;
+    lessonId: string;
+    absentStudentIds: number[];
+    excusedStudentIds?: number[];
+    isCancelled?: boolean;
+  }>) => {
+    if (!updates || updates.length === 0) return;
     const groupId = currentGroupId || 'ingt-310';
-    const recordId = `${groupId}_${date}_${lessonId}`;
 
-    const newRecord: AttendanceRecord = {
-      docId: recordId,
-      groupId,
-      date,
-      lessonId,
-      absentStudentIds,
-      excusedStudentIds,
-      isCancelled,
-      updatedAt: new Date().toISOString(),
-      updatedBy: auth.currentUser?.uid || 'starosta_pin'
-    };
-
-    // 1. Synchronously compute updated array from current state or localStorage
-    let baseList = records;
+    // 1. Synchronously get current records from ref, state, or localStorage
+    let baseList = recordsRef.current && recordsRef.current.length > 0 ? recordsRef.current : records;
     if (baseList.length === 0) {
       try {
         const saved = localStorage.getItem(`attendance_${groupId}`);
@@ -222,38 +215,82 @@ export const useAttendance = (isAuthenticated: boolean, currentGroupId: string |
       } catch (e) {}
     }
 
-    const filtered = baseList.filter(r => !(r.date === date && r.lessonId === lessonId));
-    const updatedRecords = [...filtered, newRecord];
+    // 2. Map keyed by date_lessonId for atomic in-memory update
+    const map = new Map<string, AttendanceRecord>();
+    baseList.forEach(r => map.set(`${r.date}_${r.lessonId}`, r));
 
-    // 2. Immediately update UI and LocalStorage
+    const createdRecords: AttendanceRecord[] = [];
+
+    for (const update of updates) {
+      const recordId = `${groupId}_${update.date}_${update.lessonId}`;
+      const newRecord: AttendanceRecord = {
+        docId: recordId,
+        groupId,
+        date: update.date,
+        lessonId: update.lessonId,
+        absentStudentIds: update.absentStudentIds,
+        excusedStudentIds: update.excusedStudentIds || [],
+        isCancelled: update.isCancelled ?? false,
+        updatedAt: new Date().toISOString(),
+        updatedBy: auth.currentUser?.uid || 'starosta_pin'
+      };
+      map.set(`${update.date}_${update.lessonId}`, newRecord);
+      createdRecords.push(newRecord);
+    }
+
+    const updatedRecords = Array.from(map.values());
+
+    // 3. Immediately update ref, React state, and LocalStorage
+    recordsRef.current = updatedRecords;
     setRecords(updatedRecords);
     try {
       localStorage.setItem(`attendance_${groupId}`, JSON.stringify(updatedRecords));
     } catch (e) {}
 
-    toast.success(isCancelled ? 'Пара отмечена как отмененная' : 'Посещаемость сохранена');
-
-    // 3. Push the GUARANTEED valid array to REST Cloud immediately (syncs to all classmates)
+    // 4. Push the GUARANTEED valid array to REST Cloud immediately (syncs to all classmates)
     pushGroupCloudData({ attendance: updatedRecords }, groupId);
 
-    // 3. Sync to Firestore Cloud as well
+    // 5. Sync to Firestore Cloud as well in the background
     try {
-      const recordRef = doc(db, 'attendance', recordId);
-      await setDoc(recordRef, {
-        ...newRecord,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
+      for (const rec of createdRecords) {
+        if (rec.docId) {
+          const recordRef = doc(db, 'attendance', rec.docId);
+          setDoc(recordRef, {
+            ...rec,
+            updatedAt: serverTimestamp()
+          }, { merge: true }).catch(() => {});
+        }
+      }
     } catch (error) {
-      console.warn('Firestore write saved locally:', error);
+      console.warn('Firestore batch write saved locally:', error);
     }
   };
 
+  const markAttendance = async (
+    date: string, 
+    lessonId: string, 
+    absentStudentIds: number[], 
+    excusedStudentIds: number[] = [], 
+    isCancelled: boolean = false
+  ) => {
+    await markBatchAttendance([{
+      date,
+      lessonId,
+      absentStudentIds,
+      excusedStudentIds,
+      isCancelled
+    }]);
+
+    toast.success(isCancelled ? 'Пара отмечена как отмененная' : 'Посещаемость сохранена');
+  };
+
   const getAttendance = (date: string, lessonId: string): AttendanceRecord => {
-    const record = records.find(r => r.date === date && r.lessonId === lessonId);
+    const list = recordsRef.current && recordsRef.current.length > 0 ? recordsRef.current : records;
+    const record = list.find(r => r.date === date && r.lessonId === lessonId);
     return record || { groupId: currentGroupId || 'ingt-310', date, lessonId, absentStudentIds: [], excusedStudentIds: [], isCancelled: false };
   };
 
-  return { records, markAttendance, getAttendance };
+  return { records, markAttendance, markBatchAttendance, getAttendance };
 };
 
 export const BLOCKS = [
