@@ -51,18 +51,28 @@ export const sanitizeTeachers = (teachers: Record<string, string>, groupId = 'in
       }
     }
   }
+  // Ensure practicals of patent study are always Kolibasov V.A., not Parfenov K.V.
+  const patentPracticalsKey = 'Опытно-конструкторские работы и патентоведение в области нефтепромыслового оборудования::Практические занятия';
+  if (!res[patentPracticalsKey] || res[patentPracticalsKey].includes('Парфенов') || res[patentPracticalsKey].includes('Кафедра')) {
+    res[patentPracticalsKey] = 'Колибасов Владимир Александрович';
+  }
   return res;
 };
 
-// Sanitize schedule overrides: clear outdated "Кафедра ИНГТ" overrides
+// Sanitize schedule overrides: clear outdated "Кафедра ИНГТ" overrides & ensure correct teachers
 export const sanitizeOverrides = (overrides: Record<string, Partial<Lesson>>): Record<string, Partial<Lesson>> => {
   if (!overrides || typeof overrides !== 'object') return {};
   const res: Record<string, Partial<Lesson>> = {};
+  const patentPracticalIds = ['310-w1-fr-4', '310-w2-mo-4', '310-w3-fr-4', '310-w4-mo-4'];
   for (const [id, ov] of Object.entries(overrides)) {
     if (!ov) continue;
     const clean = { ...ov };
     if (clean.teacher === 'Кафедра ИНГТ') {
       delete clean.teacher;
+    }
+    // Practicals of patent studies must be Kolibasov, not Parfenov
+    if (patentPracticalIds.includes(id) && clean.teacher && clean.teacher.includes('Парфенов')) {
+      clean.teacher = 'Колибасов Владимир Александрович';
     }
     res[id] = clean;
   }

@@ -35,6 +35,17 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
 
   const [activeDayIndex, setActiveDayIndex] = useState<number>(initialIndex);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
+
+  // Track previous week to detect REAL week changes vs background data re-renders
+  const prevWeekRef = useRef<number>(weekNumber);
+  const currentDayNameRef = useRef<string>(days[initialIndex]?.dayName || '');
+
+  // Keep currentDayNameRef updated with the active day
+  useEffect(() => {
+    if (days[activeDayIndex]?.dayName) {
+      currentDayNameRef.current = days[activeDayIndex].dayName;
+    }
+  }, [activeDayIndex, days]);
   
   // Swipe tracking
   const startX = useRef<number | null>(null);
@@ -80,15 +91,35 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [days.length]);
 
-  // When weekNumber changes, auto-select today if on current week, or Monday
+  // Handle weekNumber change: preserve the selected day of the week (e.g. Friday remains Friday)!
+  // Background data updates (cloud sync, attendance, notes) will NEVER reset the user's active day!
   useEffect(() => {
-    if (weekNumber === currentSemesterWeek && days.length > 0) {
-      const idx = days.findIndex(d => d.dayName === todayDayName);
-      setActiveDayIndex(idx >= 0 ? idx : 0);
+    if (prevWeekRef.current !== weekNumber) {
+      prevWeekRef.current = weekNumber;
+
+      const preferredDayName = currentDayNameRef.current;
+      if (preferredDayName && days.length > 0) {
+        const matchingIdx = days.findIndex(d => d.dayName === preferredDayName);
+        if (matchingIdx >= 0) {
+          setActiveDayIndex(matchingIdx);
+          return;
+        }
+      }
+
+      if (weekNumber === currentSemesterWeek && days.length > 0) {
+        const idx = days.findIndex(d => d.dayName === todayDayName);
+        setActiveDayIndex(idx >= 0 ? idx : 0);
+      } else {
+        setActiveDayIndex(0);
+      }
     } else {
-      setActiveDayIndex(0);
+      // If weekNumber didn't change, just clamp if days array changed length
+      setActiveDayIndex(prev => {
+        if (days.length === 0) return 0;
+        return Math.min(prev, days.length - 1);
+      });
     }
-  }, [weekNumber, currentSemesterWeek, todayDayName, days]);
+  }, [weekNumber, days, currentSemesterWeek, todayDayName]);
 
   // Scroll active day chip horizontally WITHOUT jerking the main page!
   useEffect(() => {

@@ -12,13 +12,14 @@ import { auth, db, loginWithGoogle, logout } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { Toaster, toast } from 'sonner';
-import { UserRole, Lesson } from './types';
+import { UserRole, Lesson, GroupConfig } from './types';
 import { TeacherAssignmentScope } from './components/EditLessonModal';
 import { fetchGroupCloudData, pushGroupCloudData, sanitizeTeachers, sanitizeOverrides } from './utils/cloudSync';
 import { SEED_SCHEDULE_OVERRIDES, SEED_SUBJECT_TEACHERS } from './defaultData';
 import {
   LogIn, LogOut, Calendar, BookOpen, ClipboardCheck, Sun, Moon,
-  GraduationCap, Users, RefreshCw, Shield, User as UserIcon, Key, UserCheck, ChevronDown
+  GraduationCap, Users, RefreshCw, Shield, User as UserIcon, Key, UserCheck, ChevronDown,
+  Search, Plus, X
 } from 'lucide-react';
 
 declare global {
@@ -65,14 +66,40 @@ const App: React.FC = () => {
     return !localStorage.getItem('my_group_id');
   });
 
+  // Multi-group & custom groups state
+  const [customGroups, setCustomGroups] = useState<GroupConfig[]>(() => {
+    try {
+      const saved = localStorage.getItem('custom_groups');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const allAvailableGroups = useMemo(() => {
+    const map = new Map<string, GroupConfig>();
+    AVAILABLE_GROUPS.forEach(g => map.set(g.id, g));
+    customGroups.forEach(g => map.set(g.id, g));
+    return Array.from(map.values());
+  }, [customGroups]);
+
+  // Group selection filter states for the modal
+  const [selectedFacultyFilter, setSelectedFacultyFilter] = useState<string>('all');
+  const [selectedCourseFilter, setSelectedCourseFilter] = useState<number>(0);
+  const [groupSearchQuery, setGroupSearchQuery] = useState<string>('');
+  const [isAddingCustomGroup, setIsAddingCustomGroup] = useState<boolean>(false);
+  const [newGroupName, setNewGroupName] = useState<string>('');
+  const [newGroupFaculty, setNewGroupFaculty] = useState<string>('ingt');
+  const [newGroupCourse, setNewGroupCourse] = useState<number>(1);
+
   // Multi-group state: defaults to bound group, then saved selection, then 3-ИНГТ-110
   const [currentGroupId, setCurrentGroupId] = useState<string>(() => {
     const bound = localStorage.getItem('my_group_id');
-    if (bound && AVAILABLE_GROUPS.some(g => g.id === bound)) return bound;
+    if (bound) return bound;
     const saved = localStorage.getItem('selected_group_id');
     if (saved === 'ingt-1') return 'ingt-301';
     if (saved === 'faid-110') return 'faid-310';
-    if (saved && AVAILABLE_GROUPS.some(g => g.id === saved)) return saved;
+    if (saved) return saved;
     return 'ingt-310';
   });
 
@@ -98,13 +125,66 @@ const App: React.FC = () => {
     localStorage.setItem('my_group_id', groupId);
     localStorage.setItem('selected_group_id', groupId);
     setIsGroupSelectionModalOpen(false);
-    const grp = AVAILABLE_GROUPS.find(g => g.id === groupId);
+    const grp = allAvailableGroups.find(g => g.id === groupId);
     toast.success(`Выбрана группа ${grp?.name || groupId}`);
   };
 
+  const handleCreateCustomGroup = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanName = newGroupName.trim().toUpperCase();
+    if (!cleanName) {
+      toast.error('Введите номер группы');
+      return;
+    }
+    const firstChar = cleanName.charAt(0);
+    const detectedCourse = /^[1-6]$/.test(firstChar) ? parseInt(firstChar, 10) : newGroupCourse;
+    const generatedId = cleanName.toLowerCase().replace(/[^a-z0-9а-яё]/gi, '-');
+
+    const newGroup: GroupConfig = {
+      id: generatedId,
+      name: cleanName,
+      facultyId: newGroupFaculty,
+      course: detectedCourse,
+      degree: 'Бакалавриат'
+    };
+
+    const updated = [...customGroups.filter(g => g.id !== generatedId), newGroup];
+    setCustomGroups(updated);
+    try {
+      localStorage.setItem('custom_groups', JSON.stringify(updated));
+    } catch (e) {}
+
+    handleSelectGroup(generatedId);
+    setNewGroupName('');
+    setIsAddingCustomGroup(false);
+  };
+
+  const filteredGroups = useMemo(() => {
+    return allAvailableGroups.filter(grp => {
+      if (selectedFacultyFilter !== 'all') {
+        if (selectedFacultyFilter === 'asa' && grp.facultyId === 'faid') {
+          // match FAID as part of ASA
+        } else if (grp.facultyId !== selectedFacultyFilter) {
+          return false;
+        }
+      }
+      if (selectedCourseFilter !== 0 && grp.course !== selectedCourseFilter) {
+        return false;
+      }
+      if (groupSearchQuery.trim()) {
+        const q = groupSearchQuery.toLowerCase().trim();
+        const matchName = grp.name.toLowerCase().includes(q);
+        const fac = FACULTIES.find(f => f.id === grp.facultyId);
+        const matchFac = fac?.name.toLowerCase().includes(q) || fac?.shortName.toLowerCase().includes(q);
+        if (!matchName && !matchFac) return false;
+      }
+      return true;
+    });
+  }, [allAvailableGroups, selectedFacultyFilter, selectedCourseFilter, groupSearchQuery]);
+
   const currentGroupConfig = useMemo(() => {
-    return AVAILABLE_GROUPS.find(g => g.id === currentGroupId) || AVAILABLE_GROUPS[0];
-  }, [currentGroupId]);
+    return allAvailableGroups.find(g => g.id === currentGroupId) || allAvailableGroups[0];
+  }, [currentGroupId, allAvailableGroups]);
 
   const currentFaculty = useMemo(() => {
     return FACULTIES.find(f => f.id === currentGroupConfig?.facultyId) || FACULTIES[0];
@@ -752,31 +832,20 @@ const App: React.FC = () => {
           <div className="mt-3 space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <GraduationCap className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                {userRole === 'student' ? (
-                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-1.5 min-h-[36px] flex items-center gap-1.5">
-                    <span>{currentGroupConfig.name}</span>
-                    <span className="text-[10px] text-slate-400 font-normal">({currentGroupConfig.course} курс)</span>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <select
-                      value={currentGroupId}
-                      onChange={(e) => {
-                        setCurrentGroupId(e.target.value);
-                        localStorage.setItem('selected_group_id', e.target.value);
-                      }}
-                      className="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 min-h-[36px] pr-7 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer appearance-none transition-colors"
-                    >
-                      {AVAILABLE_GROUPS.map(g => (
-                        <option key={g.id} value={g.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                          {g.name} ({g.course} курс)
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  </div>
-                )}
+                <button
+                  onClick={() => {
+                    setSelectedFacultyFilter(currentGroupConfig.facultyId === 'faid' ? 'asa' : currentGroupConfig.facultyId);
+                    setSelectedCourseFilter(currentGroupConfig.course || 0);
+                    setIsGroupSelectionModalOpen(true);
+                  }}
+                  className="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-1.5 min-h-[36px] flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                  title="Выбрать факультет, курс и группу"
+                >
+                  {effectiveRole === 'starosta' && <Shield className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />}
+                  <span>{currentGroupConfig.name}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">({currentGroupConfig.course} курс)</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                </button>
               </div>
               
               <div className="flex items-center gap-2">
@@ -989,63 +1058,257 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Group Selection Modal (Onboarding & Switching) */}
+      {/* Group Selection Modal (Faculty / Course / Group Hierarchy) */}
       {isGroupSelectionModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 space-y-4">
-            <div className="text-center space-y-1.5">
-              <div className="w-12 h-12 mx-auto bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                <GraduationCap className="w-6 h-6" />
+        <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[92dvh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                    Выбор учебной группы
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Факультет • Курс • Номер группы СамГТУ
+                  </p>
+                </div>
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Выберите вашу группу
-              </h3>
-              <p className="text-xs text-slate-400">
-                Расписание и задания будут настроены для вашей группы СамГТУ:
-              </p>
+              {boundGroupId && (
+                <button
+                  onClick={() => setIsGroupSelectionModalOpen(false)}
+                  className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
             </div>
 
-            <div className="space-y-2 pt-1">
-              {AVAILABLE_GROUPS.map((grp) => {
-                const isSelected = currentGroupId === grp.id;
-                const faculty = FACULTIES.find(f => f.id === grp.facultyId);
-                return (
+            {/* Search and Filters */}
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 shrink-0 space-y-3">
+              {/* Quick Search */}
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={groupSearchQuery}
+                  onChange={(e) => setGroupSearchQuery(e.target.value)}
+                  placeholder="Поиск по номеру (например, 110, ИАИТ, 101)..."
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              {/* 1. Faculty filter chips */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Факультет / Институт</span>
+                  {selectedFacultyFilter !== 'all' && (
+                    <button
+                      onClick={() => setSelectedFacultyFilter('all')}
+                      className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                    >
+                      Сбросить
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
                   <button
-                    key={grp.id}
-                    onClick={() => handleSelectGroup(grp.id)}
-                    className={`w-full p-3.5 rounded-2xl border text-left flex items-center justify-between transition-all min-h-[52px] ${
-                      isSelected
-                        ? 'border-indigo-600 bg-indigo-50/70 dark:bg-indigo-900/20 text-indigo-900 dark:text-indigo-100 shadow-sm'
-                        : 'border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200'
+                    onClick={() => setSelectedFacultyFilter('all')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-xl whitespace-nowrap transition-all ${
+                      selectedFacultyFilter === 'all'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100'
                     }`}
                   >
-                    <div>
-                      <div className="text-xs font-bold">{grp.name}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">
-                        {faculty?.shortName || grp.facultyId.toUpperCase()} • {grp.course} курс
-                      </div>
-                    </div>
-                    {isSelected && (
-                      <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">
-                        ✓
-                      </span>
-                    )}
+                    Все ({FACULTIES.filter(f => f.id !== 'faid').length})
                   </button>
-                );
-              })}
+                  {FACULTIES.filter(f => f.id !== 'faid').map(fac => (
+                    <button
+                      key={fac.id}
+                      onClick={() => setSelectedFacultyFilter(fac.id)}
+                      className={`px-2.5 py-1 text-xs font-bold rounded-xl whitespace-nowrap transition-all ${
+                        selectedFacultyFilter === fac.id
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                      }`}
+                      title={fac.name}
+                    >
+                      {fac.shortName}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 2. Course filter chips */}
+              <div>
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Курс</span>
+                <div className="flex gap-1.5">
+                  {[
+                    { label: 'Все курсы', value: 0 },
+                    { label: '1 курс', value: 1 },
+                    { label: '2 курс', value: 2 },
+                    { label: '3 курс', value: 3 },
+                    { label: '4 курс', value: 4 }
+                  ].map(c => (
+                    <button
+                      key={c.value}
+                      onClick={() => setSelectedCourseFilter(c.value)}
+                      className={`flex-1 py-1 text-xs font-bold rounded-xl text-center transition-all ${
+                        selectedCourseFilter === c.value
+                          ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm'
+                          : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {boundGroupId && (
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsGroupSelectionModalOpen(false)}
-                  className="w-full py-2.5 text-center text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-                >
-                  Закрыть
-                </button>
-              </div>
-            )}
+            {/* 3. Group List Body */}
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-2">
+              {filteredGroups.length > 0 ? (
+                filteredGroups.map(grp => {
+                  const isSelected = currentGroupId === grp.id;
+                  const faculty = FACULTIES.find(f => f.id === grp.facultyId);
+                  return (
+                    <button
+                      key={grp.id}
+                      onClick={() => handleSelectGroup(grp.id)}
+                      className={`w-full p-3.5 rounded-2xl border text-left flex items-center justify-between transition-all ${
+                        isSelected
+                          ? 'border-indigo-600 bg-indigo-50/70 dark:bg-indigo-900/20 text-indigo-900 dark:text-indigo-100 shadow-sm'
+                          : 'border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200'
+                      }`}
+                    >
+                      <div>
+                        <div className="text-xs font-bold flex items-center gap-2">
+                          <span>{grp.name}</span>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                            {grp.course} курс
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-0.5">
+                          {faculty?.name || faculty?.shortName || grp.facultyId.toUpperCase()}
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                          ✓
+                        </span>
+                      )}
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="text-center py-8 space-y-2">
+                  <p className="text-xs text-slate-400">
+                    Группы по выбранным фильтрам не найдены.
+                  </p>
+                  <button
+                    onClick={() => setIsAddingCustomGroup(true)}
+                    className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                  >
+                    Добавить свою группу вручную
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Footer with Custom Group Adder */}
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 shrink-0 space-y-3">
+              {!isAddingCustomGroup ? (
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingCustomGroup(true)}
+                    className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Добавить номер другой группы СамГТУ</span>
+                  </button>
+                  {boundGroupId && (
+                    <button
+                      type="button"
+                      onClick={() => setIsGroupSelectionModalOpen(false)}
+                      className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors"
+                    >
+                      Закрыть
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <form onSubmit={handleCreateCustomGroup} className="space-y-3 bg-white dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">Добавление новой группы</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingCustomGroup(false)}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div className="sm:col-span-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Факультет</label>
+                      <select
+                        value={newGroupFaculty}
+                        onChange={(e) => setNewGroupFaculty(e.target.value)}
+                        className="w-full text-xs font-medium px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none"
+                      >
+                        {FACULTIES.filter(f => f.id !== 'faid').map(fac => (
+                          <option key={fac.id} value={fac.id}>
+                            {fac.shortName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="sm:col-span-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Курс</label>
+                      <select
+                        value={newGroupCourse}
+                        onChange={(e) => setNewGroupCourse(parseInt(e.target.value, 10))}
+                        className="w-full text-xs font-medium px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none"
+                      >
+                        {[1, 2, 3, 4, 5].map(c => (
+                          <option key={c} value={c}>{c} курс</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="sm:col-span-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Номер группы</label>
+                      <input
+                        type="text"
+                        value={newGroupName}
+                        onChange={(e) => setNewGroupName(e.target.value)}
+                        placeholder="2-ИАИТ-108"
+                        className="w-full text-xs px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingCustomGroup(false)}
+                      className="px-3 py-1.5 text-xs text-slate-500 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl"
+                    >
+                      Отмена
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-sm"
+                    >
+                      Сохранить и выбрать
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
         </div>
       )}

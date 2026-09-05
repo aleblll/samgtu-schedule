@@ -1,26 +1,75 @@
 import { WeekData, Faculty, GroupConfig, Registry, DaySchedule } from './types';
 
 export const FACULTIES: Faculty[] = [
-  { id: 'vbs', name: 'Высшая биотехнологическая школа', shortName: 'ВБШ' },
-  { id: 'iiego', name: 'Институт инженерно-экономического и гуманитарного образования', shortName: 'ИИЭиГО' },
-  { id: 'htf', name: 'Химико-технологический факультет', shortName: 'ХТФ' },
-  { id: 'itf', name: 'Инженерно-технологический факультет', shortName: 'ИТФ' },
   { id: 'ingt', name: 'Институт нефтегазовых технологий', shortName: 'ИНГТ' },
+  { id: 'asa', name: 'Академия строительства и архитектуры', shortName: 'АСА' },
+  { id: 'iait', name: 'Институт автоматики и информационных технологий', shortName: 'ИАИТ' },
+  { id: 'itf', name: 'Инженерно-технологический факультет', shortName: 'ИТФ' },
   { id: 'etf', name: 'Электротехнический факультет', shortName: 'ЭТФ' },
+  { id: 'htf', name: 'Химико-технологический факультет', shortName: 'ХТФ' },
   { id: 'tef', name: 'Теплоэнергетический факультет', shortName: 'ТЭФ' },
   { id: 'fmmt', name: 'Факультет машиностроения, металлургии и транспорта', shortName: 'ФММТ' },
-  { id: 'iait', name: 'Институт автоматики и информационных технологий', shortName: 'ИАИТ' },
-  { id: 'fispos', name: 'Факультет инженерных систем и природоохранного строительства', shortName: 'ФИСПОС' },
-  { id: 'fpgs', name: 'Факультет промышленного и гражданского строительства', shortName: 'ФПГС' },
-  { id: 'stf', name: 'Строительно-технологический факультет', shortName: 'СТФ' },
-  { id: 'faid', name: 'Факультет архитектуры и дизайна', shortName: 'ФАиД' }
+  { id: 'fpp', name: 'Факультет пищевых производств', shortName: 'ФПП' },
+  { id: 'iiego', name: 'Институт инженерно-экономического и гуманитарного образования', shortName: 'ИИЭГО' },
+  { id: 'faid', name: 'Факультет архитектуры и дизайна (АСА)', shortName: 'ФАИД' }
 ];
 
 export const AVAILABLE_GROUPS: GroupConfig[] = [
+  // 3 курс (Основные группы)
   { id: 'ingt-310', name: '3-ИНГТ-110', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
   { id: 'ingt-301', name: '3-ИНГТ-101', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
   { id: 'ingt-303', name: '3-ИНГТ-103', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
-  { id: 'faid-310', name: '3-ФАИД-110', facultyId: 'faid', degree: 'Бакалавриат', course: 3 }
+  { id: 'faid-310', name: '3-ФАИД-110', facultyId: 'faid', degree: 'Бакалавриат', course: 3 },
+
+  // ИНГТ
+  { id: 'ingt-101', name: '1-ИНГТ-101', facultyId: 'ingt', degree: 'Бакалавриат', course: 1 },
+  { id: 'ingt-102', name: '1-ИНГТ-102', facultyId: 'ingt', degree: 'Бакалавриат', course: 1 },
+  { id: 'ingt-201', name: '2-ИНГТ-101', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
+  { id: 'ingt-205', name: '2-ИНГТ-105', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
+  { id: 'ingt-401', name: '4-ИНГТ-101', facultyId: 'ingt', degree: 'Бакалавриат', course: 4 },
+
+  // АСА
+  { id: 'asa-101', name: '1-АСА-101', facultyId: 'asa', degree: 'Бакалавриат', course: 1 },
+  { id: 'asa-201', name: '2-АСА-101', facultyId: 'asa', degree: 'Бакалавриат', course: 2 },
+  { id: 'asa-301', name: '3-АСА-101', facultyId: 'asa', degree: 'Бакалавриат', course: 3 },
+  { id: 'asa-401', name: '4-АСА-101', facultyId: 'asa', degree: 'Бакалавриат', course: 4 },
+
+  // ИАИТ
+  { id: 'iait-101', name: '1-ИАИТ-101', facultyId: 'iait', degree: 'Бакалавриат', course: 1 },
+  { id: 'iait-201', name: '2-ИАИТ-101', facultyId: 'iait', degree: 'Бакалавриат', course: 2 },
+  { id: 'iait-301', name: '3-ИАИТ-101', facultyId: 'iait', degree: 'Бакалавриат', course: 3 },
+  { id: 'iait-401', name: '4-ИАИТ-101', facultyId: 'iait', degree: 'Бакалавриат', course: 4 },
+
+  // ИТФ
+  { id: 'itf-101', name: '1-ИТФ-101', facultyId: 'itf', degree: 'Бакалавриат', course: 1 },
+  { id: 'itf-201', name: '2-ИТФ-101', facultyId: 'itf', degree: 'Бакалавриат', course: 2 },
+  { id: 'itf-301', name: '3-ИТФ-101', facultyId: 'itf', degree: 'Бакалавриат', course: 3 },
+
+  // ЭТФ
+  { id: 'etf-101', name: '1-ЭТФ-101', facultyId: 'etf', degree: 'Бакалавриат', course: 1 },
+  { id: 'etf-201', name: '2-ЭТФ-101', facultyId: 'etf', degree: 'Бакалавриат', course: 2 },
+  { id: 'etf-301', name: '3-ЭТФ-101', facultyId: 'etf', degree: 'Бакалавриат', course: 3 },
+
+  // ХТФ
+  { id: 'htf-101', name: '1-ХТФ-101', facultyId: 'htf', degree: 'Бакалавриат', course: 1 },
+  { id: 'htf-201', name: '2-ХТФ-101', facultyId: 'htf', degree: 'Бакалавриат', course: 2 },
+  { id: 'htf-301', name: '3-ХТФ-101', facultyId: 'htf', degree: 'Бакалавриат', course: 3 },
+
+  // ТЭФ
+  { id: 'tef-101', name: '1-ТЭФ-101', facultyId: 'tef', degree: 'Бакалавриат', course: 1 },
+  { id: 'tef-301', name: '3-ТЭФ-101', facultyId: 'tef', degree: 'Бакалавриат', course: 3 },
+
+  // ФММТ
+  { id: 'fmmt-101', name: '1-ФММТ-101', facultyId: 'fmmt', degree: 'Бакалавриат', course: 1 },
+  { id: 'fmmt-301', name: '3-ФММТ-101', facultyId: 'fmmt', degree: 'Бакалавриат', course: 3 },
+
+  // ФПП
+  { id: 'fpp-101', name: '1-ФПП-101', facultyId: 'fpp', degree: 'Бакалавриат', course: 1 },
+  { id: 'fpp-301', name: '3-ФПП-101', facultyId: 'fpp', degree: 'Бакалавриат', course: 3 },
+
+  // ИИЭГО
+  { id: 'iiego-101', name: '1-ИИЭГО-101', facultyId: 'iiego', degree: 'Бакалавриат', course: 1 },
+  { id: 'iiego-301', name: '3-ИИЭГО-101', facultyId: 'iiego', degree: 'Бакалавриат', course: 3 }
 ];
 
 export const SCHEDULE_REGISTRY: Registry<WeekData> = {
