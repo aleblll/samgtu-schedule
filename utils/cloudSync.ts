@@ -20,6 +20,7 @@ const FALLBACK_BINS = {
 export interface GroupCloudData {
   homework: HomeworkItem[];
   deletedIds?: string[];
+  schedule?: any;
   scheduleOverrides: Record<string, Partial<Lesson>>;
   subjectTeachers: Record<string, string>;
   attendance: AttendanceRecord[];

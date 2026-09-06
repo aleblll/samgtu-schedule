@@ -12,14 +12,15 @@ import { auth, db, loginWithGoogle, logout } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { Toaster, toast } from 'sonner';
-import { UserRole, Lesson, GroupConfig } from './types';
+import { UserRole, Lesson, GroupConfig, WeekData } from './types';
 import { TeacherAssignmentScope } from './components/EditLessonModal';
 import { fetchGroupCloudData, pushGroupCloudData, sanitizeTeachers, sanitizeOverrides } from './utils/cloudSync';
 import { SEED_SCHEDULE_OVERRIDES, SEED_SUBJECT_TEACHERS } from './defaultData';
+import { ScheduleImportModal } from './components/ScheduleImportModal';
 import {
   LogIn, LogOut, Calendar, BookOpen, ClipboardCheck, Sun, Moon,
   GraduationCap, Users, RefreshCw, Shield, User as UserIcon, Key, UserCheck, ChevronDown,
-  Search, Plus, X
+  Search, Plus, X, UploadCloud
 } from 'lucide-react';
 
 declare global {
@@ -91,6 +92,7 @@ const App: React.FC = () => {
   const [newGroupName, setNewGroupName] = useState<string>('');
   const [newGroupFaculty, setNewGroupFaculty] = useState<string>('ingt');
   const [newGroupCourse, setNewGroupCourse] = useState<number>(1);
+  const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
 
   // Multi-group state: defaults to bound group, then saved selection, then 3-ИНГТ-110
   const [currentGroupId, setCurrentGroupId] = useState<string>(() => {
@@ -157,6 +159,37 @@ const App: React.FC = () => {
     handleSelectGroup(generatedId);
     setNewGroupName('');
     setIsAddingCustomGroup(false);
+  };
+
+  const handleApplyImportedSchedule = (groupId: string, weekData: WeekData, groupName?: string) => {
+    SCHEDULE_REGISTRY[groupId] = weekData;
+    try {
+      localStorage.setItem(`custom_schedule_${groupId}`, JSON.stringify(weekData));
+    } catch (e) {}
+
+    // Ensure group exists in available groups
+    if (!allAvailableGroups.some(g => g.id === groupId)) {
+      const cleanName = (groupName || groupId).trim();
+      const firstChar = cleanName.charAt(0);
+      const detectedCourse = /^[1-6]$/.test(firstChar) ? parseInt(firstChar, 10) : 1;
+      const facId = groupId.split('-')[0] || 'ingt';
+      const newGroup: GroupConfig = {
+        id: groupId,
+        name: cleanName,
+        facultyId: facId,
+        course: detectedCourse,
+        degree: detectedCourse === 5 ? 'Специалитет' : 'Бакалавриат'
+      };
+      const updated = [...customGroups.filter(g => g.id !== groupId), newGroup];
+      setCustomGroups(updated);
+      try {
+        localStorage.setItem('custom_groups', JSON.stringify(updated));
+      } catch (e) {}
+    }
+
+    handleSelectGroup(groupId);
+    setIsGroupSelectionModalOpen(false);
+    toast.success(`Расписание для группы ${groupName || groupId} успешно импортировано!`);
   };
 
   const filteredGroups = useMemo(() => {
@@ -298,6 +331,16 @@ const App: React.FC = () => {
     }
   }, [darkMode]);
 
+  // Load custom imported schedule from localStorage if present
+  useEffect(() => {
+    try {
+      const savedSchedule = localStorage.getItem(`custom_schedule_${currentGroupId}`);
+      if (savedSchedule) {
+        SCHEDULE_REGISTRY[currentGroupId] = JSON.parse(savedSchedule);
+      }
+    } catch (e) {}
+  }, [currentGroupId]);
+
   // Real-time Cloud Sync for Subject Teachers and Schedule Overrides (via universal REST cloud)
   useEffect(() => {
     let isMounted = true;
@@ -305,6 +348,9 @@ const App: React.FC = () => {
     const loadCloud = async (force: boolean = false) => {
       const cloud = await fetchGroupCloudData(force, currentGroupId);
       if (cloud && isMounted) {
+        if ((cloud as any).schedule !== undefined) {
+          SCHEDULE_REGISTRY[currentGroupId] = (cloud as any).schedule;
+        }
         if (cloud.scheduleOverrides !== undefined) {
           const cleanOv = sanitizeOverrides(cloud.scheduleOverrides);
           setScheduleOverrides(cleanOv);
@@ -634,8 +680,30 @@ const App: React.FC = () => {
   const handleResetLesson = async (lessonId: string) => {
     if (!canEdit) return;
 
+    // Find original lesson
+    let originalLesson: Lesson | undefined;
+    const weeks = SCHEDULE_REGISTRY[currentGroupId] || {};
+    for (const days of Object.values(weeks)) {
+      for (const day of days) {
+        const found = day.lessons.find(l => l.id === lessonId);
+        if (found) {
+          originalLesson = found;
+          break;
+        }
+      }
+      if (originalLesson) break;
+    }
+
     const updated = { ...scheduleOverrides };
     delete updated[lessonId];
+
+    // If subjectTeachers has an override, explicitly restore original lesson teacher
+    if (originalLesson) {
+      const typeKey = `${originalLesson.subject}::${originalLesson.type}`;
+      if (subjectTeachers[typeKey] || subjectTeachers[originalLesson.subject]) {
+        updated[lessonId] = { teacher: originalLesson.teacher };
+      }
+    }
 
     setScheduleOverrides(updated);
     try {
@@ -658,7 +726,11 @@ const App: React.FC = () => {
     toast.info('Пара сброшена до исходного расписания');
 
     try {
-      await deleteDoc(doc(db, 'schedule_overrides', lessonId));
+      if (updated[lessonId]) {
+        await setDoc(doc(db, 'schedule_overrides', lessonId), updated[lessonId]);
+      } else {
+        await deleteDoc(doc(db, 'schedule_overrides', lessonId));
+      }
     } catch (e) {}
   };
 
@@ -1089,16 +1161,27 @@ const App: React.FC = () => {
 
             {/* Search and Filters */}
             <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 shrink-0 space-y-3">
-              {/* Quick Search */}
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  value={groupSearchQuery}
-                  onChange={(e) => setGroupSearchQuery(e.target.value)}
-                  placeholder="Поиск по номеру (например, 110, ИАИТ, 101)..."
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
+              {/* Quick Search & LK Import Button */}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={groupSearchQuery}
+                    onChange={(e) => setGroupSearchQuery(e.target.value)}
+                    placeholder="Поиск по номеру (например, 110, ИАИТ, 101)..."
+                    className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <button
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all shrink-0 shadow-xs"
+                  title="Импортировать расписание из ЛК СамГТУ"
+                >
+                  <UploadCloud className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Импорт из ЛК</span>
+                  <span className="sm:hidden">ЛК</span>
+                </button>
               </div>
 
               {/* 1. Faculty filter chips */}
@@ -1147,11 +1230,12 @@ const App: React.FC = () => {
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">Курс</span>
                 <div className="flex gap-1.5">
                   {[
-                    { label: 'Все курсы', value: 0 },
+                    { label: 'Все', value: 0 },
                     { label: '1 курс', value: 1 },
                     { label: '2 курс', value: 2 },
                     { label: '3 курс', value: 3 },
-                    { label: '4 курс', value: 4 }
+                    { label: '4 курс', value: 4 },
+                    { label: '5 курс', value: 5 }
                   ].map(c => (
                     <button
                       key={c.value}
@@ -1312,6 +1396,14 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Schedule Import Modal */}
+      <ScheduleImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        currentGroupId={currentGroupId}
+        onApplySchedule={handleApplyImportedSchedule}
+      />
     </div>
   );
 };
