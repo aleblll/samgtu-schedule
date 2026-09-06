@@ -24,11 +24,15 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
   const currentSemesterWeek = useMemo(() => getSemesterWeek(samaraToday), [samaraToday]);
   const todayDayName = useMemo(() => getDayName(samaraToday), [samaraToday]);
 
-  // Determine initial day: if viewing current semester week, select today's day!
+  // Determine initial day: if viewing current semester week, select today's day; otherwise first day with lessons!
   const initialIndex = useMemo(() => {
     if (weekNumber === currentSemesterWeek && days.length > 0) {
       const idx = days.findIndex(d => d.dayName === todayDayName);
-      return idx >= 0 ? idx : 0;
+      if (idx >= 0) return idx;
+    }
+    if (days.length > 0) {
+      const firstWithLessons = days.findIndex(d => d.lessons.length > 0);
+      if (firstWithLessons >= 0) return firstWithLessons;
     }
     return 0;
   }, [weekNumber, currentSemesterWeek, todayDayName, days]);
@@ -110,7 +114,8 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
         const idx = days.findIndex(d => d.dayName === todayDayName);
         setActiveDayIndex(idx >= 0 ? idx : 0);
       } else {
-        setActiveDayIndex(0);
+        const firstWithLessons = days.findIndex(d => d.lessons.length > 0);
+        setActiveDayIndex(firstWithLessons >= 0 ? firstWithLessons : 0);
       }
     } else {
       // If weekNumber didn't change, just clamp if days array changed length
