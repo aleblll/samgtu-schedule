@@ -7,9 +7,10 @@ interface AdminPanelProps {
   currentRole: UserRole;
   onRoleChange: (role: UserRole, targetGroupId?: string) => void;
   userEmail: string | null;
+  currentGroupId?: string;
 }
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ currentRole, onRoleChange }) => {
+const AdminPanel: React.FC<AdminPanelProps> = ({ currentRole, onRoleChange, currentGroupId }) => {
   const [pinCode, setPinCode] = useState('');
 
   const handleVerifyPin = () => {
@@ -27,8 +28,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentRole, onRoleChange }) =>
       toast.success('Авторизован режим Старосты (3-ИНГТ-103)');
       setPinCode('');
     } else if (pin === '110') {
-      onRoleChange('starosta', 'ingt-310');
-      toast.success('Авторизован режим Старосты (3-ИНГТ-110)');
+      const target = (currentGroupId === 'faid-310' || currentGroupId === 'faid-110') ? 'faid-310' : 'ingt-310';
+      onRoleChange('starosta', target);
+      toast.success(`Авторизован режим Старосты (${target === 'faid-310' ? '3-ФАИД-110' : '3-ИНГТ-110'})`);
       setPinCode('');
     } else if (pin === 'faid110' || pin === '3110') {
       onRoleChange('starosta', 'faid-310');

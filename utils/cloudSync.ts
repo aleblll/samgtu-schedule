@@ -27,7 +27,7 @@ export interface GroupCloudData {
   lastUpdated?: number;
 }
 
-import { SEED_SCHEDULE_OVERRIDES, SEED_SUBJECT_TEACHERS, SEED_ATTENDANCE, SEED_HOMEWORK } from '../defaultData';
+import { SEED_SCHEDULE_OVERRIDES, SEED_SUBJECT_TEACHERS, SEED_ATTENDANCE, SEED_HOMEWORK, getSeedSubjectTeachers } from '../defaultData';
 
 // Module-level cache per group to prevent cross-group cache pollution (Senior Review 2.3)
 const lastFetchedDataMap: Record<string, GroupCloudData> = {};
@@ -37,25 +37,45 @@ const lastFetchTimeMap: Record<string, number> = {};
 export const sanitizeTeachers = (teachers: Record<string, string>, groupId = 'ingt-310'): Record<string, string> => {
   if (!teachers || typeof teachers !== 'object') return {};
   const res: Record<string, string> = { ...teachers };
+  const groupDefaults = getSeedSubjectTeachers(groupId);
+
   for (const [key, val] of Object.entries(res)) {
     if (val === 'Кафедра ИНГТ' || !val) {
-      if (groupId === 'ingt-310' && SEED_SUBJECT_TEACHERS[key]) {
-        res[key] = SEED_SUBJECT_TEACHERS[key];
+      if (groupDefaults[key]) {
+        res[key] = groupDefaults[key];
       } else if (key.includes('бурения')) {
         res[key] = 'Драницына Елена Геннадьевна';
       } else if (key.includes('сосудов')) {
         res[key] = 'Крючков Дмитрий Александрович';
-      } else if (key.includes('Практико-ориентированный')) {
+      } else if (key.includes('Практико-ориентированный') && groupId === 'ingt-310') {
         res[key] = 'Колибасов Владимир Александрович';
       } else if (groupId === 'ingt-310') {
         res[key] = SEED_SUBJECT_TEACHERS[key] || '';
       }
     }
   }
-  // Ensure practicals of patent study are always Kolibasov V.A., not Parfenov K.V.
-  const patentPracticalsKey = 'Опытно-конструкторские работы и патентоведение в области нефтепромыслового оборудования::Практические занятия';
-  if (!res[patentPracticalsKey] || res[patentPracticalsKey].includes('Парфенов') || res[patentPracticalsKey].includes('Кафедра')) {
-    res[patentPracticalsKey] = 'Колибасов Владимир Александрович';
+  // Ensure practicals of patent study for INGT-310 are always Kolibasov V.A., not Parfenov K.V.
+  if (groupId === 'ingt-310') {
+    const patentPracticalsKey = 'Опытно-конструкторские работы и патентоведение в области нефтепромыслового оборудования::Практические занятия';
+    if (!res[patentPracticalsKey] || res[patentPracticalsKey].includes('Парфенов') || res[patentPracticalsKey].includes('Кафедра')) {
+      res[patentPracticalsKey] = 'Колибасов Владимир Александрович';
+    }
+  }
+
+  // Ensure FAID-310 teachers are clean and not contaminated with INGT Sorokina
+  if (groupId === 'faid-310' || groupId === 'faid-110') {
+    if (res['Безопасность жизнедеятельности'] === 'Сорокина Людмила Владимировна') {
+      res['Безопасность жизнедеятельности'] = 'Закирова Марина Николаевна';
+    }
+    if (res['Безопасность жизнедеятельности::Лекции'] === 'Сорокина Людмила Владимировна') {
+      res['Безопасность жизнедеятельности::Лекции'] = 'Закирова Марина Николаевна';
+    }
+    if (res['Безопасность жизнедеятельности::Практические занятия'] === 'Сидоров Артем Александрович') {
+      res['Безопасность жизнедеятельности::Практические занятия'] = 'Закирова Марина Николаевна';
+    }
+    if (res['Безопасность жизнедеятельности::Лабораторные работы'] === 'Кривова Маргарита Андреевна') {
+      res['Безопасность жизнедеятельности::Лабораторные работы'] = 'Закирова Марина Николаевна';
+    }
   }
   return res;
 };
@@ -89,7 +109,7 @@ export const getLocalBackup = (groupId = 'ingt-310'): GroupCloudData => {
 
     const defaultHw = (hw === null && groupId === 'ingt-310') ? SEED_HOMEWORK : [];
     const defaultOv = (ov === null && groupId === 'ingt-310') ? SEED_SCHEDULE_OVERRIDES : {};
-    const defaultSt = (st === null && groupId === 'ingt-310') ? SEED_SUBJECT_TEACHERS : {};
+    const defaultSt = (st === null) ? getSeedSubjectTeachers(groupId) : {};
     const defaultAtt = (att === null && groupId === 'ingt-310') ? SEED_ATTENDANCE : [];
 
     const deletedHw: string[] = JSON.parse(localStorage.getItem(`deleted_hw_${groupId}`) || '[]');
@@ -125,7 +145,7 @@ export const getLocalBackup = (groupId = 'ingt-310'): GroupCloudData => {
     return {
       homework: groupId === 'ingt-310' ? SEED_HOMEWORK.filter(it => it && it.id && !safeDeletedSet.has(it.id)) : [],
       scheduleOverrides: groupId === 'ingt-310' ? sanitizeOverrides(SEED_SCHEDULE_OVERRIDES) : {},
-      subjectTeachers: groupId === 'ingt-310' ? sanitizeTeachers(SEED_SUBJECT_TEACHERS, groupId) : {},
+      subjectTeachers: sanitizeTeachers(getSeedSubjectTeachers(groupId), groupId),
       attendance: groupId === 'ingt-310' ? SEED_ATTENDANCE : [],
       lastUpdated: 0
     };

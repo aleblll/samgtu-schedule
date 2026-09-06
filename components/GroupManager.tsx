@@ -15,12 +15,25 @@ const GroupManager: React.FC<GroupManagerProps> = ({ currentGroupId, userRole })
     return AVAILABLE_GROUPS.find(g => g.id === currentGroupId);
   }, [currentGroupId]);
 
+  const getHealedStudents = (groupId: string, parsed: Student[]): Student[] => {
+    if (groupId === 'ingt-310' && (parsed.length !== 16 || parsed.some(s => s.name?.includes('Пронин')))) {
+      localStorage.setItem(`students_ingt-310`, JSON.stringify(STUDENTS_REGISTRY['ingt-310']));
+      return STUDENTS_REGISTRY['ingt-310'];
+    }
+    if ((groupId === 'faid-310' || groupId === 'faid-110') && parsed.length !== 22) {
+      localStorage.setItem(`students_${groupId}`, JSON.stringify(STUDENTS_REGISTRY['faid-310']));
+      return STUDENTS_REGISTRY['faid-310'];
+    }
+    return parsed;
+  };
+
   const [students, setStudents] = useState<Student[]>(() => {
     if (!currentGroupId) return [];
     const local = localStorage.getItem(`students_${currentGroupId}`);
     if (local) {
       try {
-        return JSON.parse(local);
+        const parsed = JSON.parse(local);
+        return getHealedStudents(currentGroupId, parsed);
       } catch (e) {}
     }
     return STUDENTS_REGISTRY[currentGroupId] || [];
@@ -34,7 +47,8 @@ const GroupManager: React.FC<GroupManagerProps> = ({ currentGroupId, userRole })
     const local = localStorage.getItem(`students_${currentGroupId}`);
     if (local) {
       try {
-        setStudents(JSON.parse(local));
+        const parsed = JSON.parse(local);
+        setStudents(getHealedStudents(currentGroupId, parsed));
         return;
       } catch (e) {}
     }

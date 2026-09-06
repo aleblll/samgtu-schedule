@@ -45,6 +45,11 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
             localStorage.setItem(`students_ingt-310`, JSON.stringify(STUDENTS_REGISTRY['ingt-310']));
             return STUDENTS_REGISTRY['ingt-310'];
           }
+        } else if (currentGroupId === 'faid-310' || currentGroupId === 'faid-110') {
+          if (parsed.length !== 22) {
+            localStorage.setItem(`students_${currentGroupId}`, JSON.stringify(STUDENTS_REGISTRY['faid-310']));
+            return STUDENTS_REGISTRY['faid-310'];
+          }
         }
         return parsed;
       }

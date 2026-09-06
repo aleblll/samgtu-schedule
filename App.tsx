@@ -15,7 +15,7 @@ import { Toaster, toast } from 'sonner';
 import { UserRole, Lesson, GroupConfig, WeekData } from './types';
 import { TeacherAssignmentScope } from './components/EditLessonModal';
 import { fetchGroupCloudData, pushGroupCloudData, sanitizeTeachers, sanitizeOverrides } from './utils/cloudSync';
-import { SEED_SCHEDULE_OVERRIDES, SEED_SUBJECT_TEACHERS } from './defaultData';
+import { SEED_SCHEDULE_OVERRIDES, SEED_SUBJECT_TEACHERS, getSeedSubjectTeachers } from './defaultData';
 import { ScheduleImportModal } from './components/ScheduleImportModal';
 import {
   LogIn, LogOut, Calendar, BookOpen, ClipboardCheck, Sun, Moon,
@@ -240,9 +240,10 @@ const App: React.FC = () => {
     try {
       const saved = localStorage.getItem(`subject_teachers_${currentGroupId}`);
       const parsed = saved ? JSON.parse(saved) : {};
-      return sanitizeTeachers({ ...SEED_SUBJECT_TEACHERS, ...parsed });
+      const defaultTeachers = getSeedSubjectTeachers(currentGroupId);
+      return sanitizeTeachers({ ...defaultTeachers, ...parsed }, currentGroupId);
     } catch (e) {
-      return sanitizeTeachers({ ...SEED_SUBJECT_TEACHERS });
+      return sanitizeTeachers({ ...getSeedSubjectTeachers(currentGroupId) }, currentGroupId);
     }
   });
 
@@ -274,9 +275,10 @@ const App: React.FC = () => {
     }
     try {
       const savedSt = localStorage.getItem(`subject_teachers_${currentGroupId}`);
-      setSubjectTeachers(savedSt ? sanitizeTeachers({ ...SEED_SUBJECT_TEACHERS, ...JSON.parse(savedSt) }) : sanitizeTeachers({ ...SEED_SUBJECT_TEACHERS }));
+      const defaultTeachers = getSeedSubjectTeachers(currentGroupId);
+      setSubjectTeachers(savedSt ? sanitizeTeachers({ ...defaultTeachers, ...JSON.parse(savedSt) }, currentGroupId) : sanitizeTeachers({ ...defaultTeachers }, currentGroupId));
     } catch {
-      setSubjectTeachers(sanitizeTeachers({ ...SEED_SUBJECT_TEACHERS }));
+      setSubjectTeachers(sanitizeTeachers({ ...getSeedSubjectTeachers(currentGroupId) }, currentGroupId));
     }
   }, [currentGroupId]);
 
@@ -359,7 +361,7 @@ const App: React.FC = () => {
           } catch (e) {}
         }
         if (cloud.subjectTeachers !== undefined) {
-          const cleanSt = sanitizeTeachers(cloud.subjectTeachers);
+          const cleanSt = sanitizeTeachers(cloud.subjectTeachers, currentGroupId);
           setSubjectTeachers(cleanSt);
           try {
             localStorage.setItem(`subject_teachers_${currentGroupId}`, JSON.stringify(cleanSt));
@@ -452,9 +454,12 @@ const App: React.FC = () => {
       setQuickPin('');
     } else if (pin === '110') {
       setUserRole('starosta');
-      if (currentGroupId === 'faid-310') {
+      if (currentGroupId === 'faid-310' || currentGroupId === 'faid-110') {
         setStarostaGroupId('faid-310');
         localStorage.setItem('starosta_group_id', 'faid-310');
+        setCurrentGroupId('faid-310');
+        localStorage.setItem('my_group_id', 'faid-310');
+        setBoundGroupId('faid-310');
         toast.success('Активирован режим СТАРОСТЫ (3-ФАИД-110)');
       } else {
         setStarostaGroupId('ingt-310');
@@ -1010,6 +1015,7 @@ const App: React.FC = () => {
         {activeTab === 'admin' && (
           <AdminPanel
             currentRole={effectiveRole}
+            currentGroupId={currentGroupId}
             onRoleChange={(role, targetGroup) => {
               setUserRole(role);
               if (role === 'starosta' && targetGroup) {
