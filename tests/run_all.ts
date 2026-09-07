@@ -8,6 +8,7 @@ import './test_samgtu_parser';
 import './test_faid_schedule';
 import './test_faid_attendance';
 import './verify_student_ux';
+import './test_ingt209_schedule';
 import { runHomeworkLifecycleStressTest } from './test_homework_lifecycle_stress';
 await runHomeworkLifecycleStressTest();
 console.log("\n=================================================");

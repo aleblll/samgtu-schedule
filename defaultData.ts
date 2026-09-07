@@ -63,9 +63,12 @@ export const SEED_SUBJECT_TEACHERS_BY_GROUP: Record<string, Record<string, strin
     'Проектирование / Практико-ориентированный проект::Практические занятия': 'Смоленская Елена Олеговна',
     'Элективные курсы по физической культуре и спорту': 'Кафедра физического воспитания',
     'Элективные курсы по физической культуре и спорту::Практические занятия': 'Кафедра физического воспитания'
-  }
+  },
+  'ingt-209': {}
 };
 SEED_SUBJECT_TEACHERS_BY_GROUP['faid-110'] = SEED_SUBJECT_TEACHERS_BY_GROUP['faid-310'];
+SEED_SUBJECT_TEACHERS_BY_GROUP['2-ingt-109'] = SEED_SUBJECT_TEACHERS_BY_GROUP['ingt-209'];
+SEED_SUBJECT_TEACHERS_BY_GROUP['ingt-109'] = SEED_SUBJECT_TEACHERS_BY_GROUP['ingt-209'];
 
 export const getSeedSubjectTeachers = (groupId?: string | null): Record<string, string> => {
   if (!groupId) return SEED_SUBJECT_TEACHERS;

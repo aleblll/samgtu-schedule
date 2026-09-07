@@ -470,6 +470,15 @@ const App: React.FC = () => {
         toast.success('Активирован режим СТАРОСТЫ (3-ИНГТ-110)');
       }
       setQuickPin('');
+    } else if (pin === '109' || pin === '2109' || pin === 'ingt109') {
+      setUserRole('starosta');
+      setStarostaGroupId('ingt-209');
+      localStorage.setItem('starosta_group_id', 'ingt-209');
+      setCurrentGroupId('ingt-209');
+      localStorage.setItem('my_group_id', 'ingt-209');
+      setBoundGroupId('ingt-209');
+      toast.success('Активирован режим СТАРОСТЫ (2-ИНГТ-109)');
+      setQuickPin('');
     } else if (pin === 'faid110' || pin === '3110') {
       setUserRole('starosta');
       setStarostaGroupId('faid-310');

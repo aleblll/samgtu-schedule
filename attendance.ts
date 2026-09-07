@@ -91,7 +91,10 @@ export const STUDENTS_REGISTRY: Registry<Student[]> = {
     { id: 20, name: "Хведчик Вера" },
     { id: 21, name: "Юрьева Ангелина" },
     { id: 22, name: "Яблонская Полина" }
-  ]
+  ],
+  'ingt-209': [],
+  '2-ingt-109': [],
+  'ingt-109': []
 };
 
 export interface AttendanceRecord {
