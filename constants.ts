@@ -297,18 +297,14 @@ SCHEDULE_REGISTRY['ingt-303'] = {
   4: createEmptyWeek()
 };
 
+// Чистый 4-недельный цикл группы 3-ФАИД-110 (58 пар):
+// 1 неделя: Пн 0, Вт 4, Ср 5, Чт 5, Пт 0, Сб 0 (14 пар)
+// 2 неделя: Пн 5, Вт 0, Ср 5, Чт 5, Пт 0, Сб 0 (15 пар)
+// 3 неделя: как 1 (14 пар)
+// 4 неделя: как 2 (15 пар)
 SCHEDULE_REGISTRY['faid-310'] = {
   1: [
-    {
-      dayName: 'Понедельник',
-      lessons: [
-        { id: 'faid310-w1-mo-1', timeStart: '08:00', timeEnd: '09:35', subject: "Проектирование", type: 'Практические занятия', location: "Корпус № 13, 0603", teacher: "Смоленская Елена Олеговна" },
-        { id: 'faid310-w1-mo-2', timeStart: '09:45', timeEnd: '11:20', subject: "Проектирование", type: 'Практические занятия', location: "Корпус № 13, 0603", teacher: "Смоленская Елена Олеговна" },
-        { id: 'faid310-w1-mo-3', timeStart: '11:50', timeEnd: '13:25', subject: "Безопасность жизнедеятельности", type: 'Практические занятия', location: "Корпус № 11, 462", teacher: "Закирова Марина Николаевна" },
-        { id: 'faid310-w1-mo-4', timeStart: '13:35', timeEnd: '15:10', subject: "Конструирование в дизайне среды", type: 'Лекции', location: "Корпус № 12, 412", teacher: "Заславский Евгений Михайлович" },
-        { id: 'faid310-w1-mo-5', timeStart: '15:40', timeEnd: '17:15', subject: "Конструирование в дизайне среды", type: 'Практические занятия', location: "Корпус № 13, 0606", teacher: "Заславский Евгений Михайлович" }
-      ]
-    },
+    { dayName: 'Понедельник', lessons: [] },
     {
       dayName: 'Вторник',
       lessons: [
@@ -338,14 +334,8 @@ SCHEDULE_REGISTRY['faid-310'] = {
         { id: 'faid310-w1-th-5', timeStart: '15:40', timeEnd: '17:15', subject: "Философия", type: 'Практические занятия', location: "Корпус № 12, 525", teacher: "Стоцкая Татьяна Геннадьевна" }
       ]
     },
-    {
-      dayName: 'Пятница',
-      lessons: []
-    },
-    {
-      dayName: 'Суббота',
-      lessons: []
-    }
+    { dayName: 'Пятница', lessons: [] },
+    { dayName: 'Суббота', lessons: [] }
   ],
   2: [
     {
@@ -358,15 +348,7 @@ SCHEDULE_REGISTRY['faid-310'] = {
         { id: 'faid310-w2-mo-5', timeStart: '15:40', timeEnd: '17:15', subject: "Конструирование в дизайне среды", type: 'Практические занятия', location: "Корпус № 13, 0606", teacher: "Заславский Евгений Михайлович" }
       ]
     },
-    {
-      dayName: 'Вторник',
-      lessons: [
-        { id: 'faid310-w2-tu-1', timeStart: '09:45', timeEnd: '11:20', subject: "Безопасность жизнедеятельности", type: 'Лекции', location: "Корпус № 13, 0408", teacher: "Закирова Марина Николаевна" },
-        { id: 'faid310-w2-tu-2', timeStart: '11:50', timeEnd: '13:25', subject: "История дизайна науки и техники", type: 'Лекции', location: "Корпус № 13, 0608", teacher: "Каракова Татьяна Владимировна" },
-        { id: 'faid310-w2-tu-3', timeStart: '13:35', timeEnd: '15:10', subject: "Вертикальная планировка и благоустройство территорий", type: 'Лекции', location: "Корпус № 13, 0408", teacher: "Орлова Наталья Александровна" },
-        { id: 'faid310-w2-tu-4', timeStart: '15:40', timeEnd: '17:15', subject: "Вертикальная планировка и благоустройство территорий", type: 'Практические занятия', location: "Корпус № 13, 0603", teacher: "Орлова Наталья Александровна" }
-      ]
-    },
+    { dayName: 'Вторник', lessons: [] },
     {
       dayName: 'Среда',
       lessons: [
@@ -387,26 +369,11 @@ SCHEDULE_REGISTRY['faid-310'] = {
         { id: 'faid310-w2-th-5', timeStart: '17:25', timeEnd: '19:00', subject: "Проектирование", type: 'Практические занятия', location: "Корпус № 13, 0603", teacher: "Смоленская Елена Олеговна" }
       ]
     },
-    {
-      dayName: 'Пятница',
-      lessons: []
-    },
-    {
-      dayName: 'Суббота',
-      lessons: []
-    }
+    { dayName: 'Пятница', lessons: [] },
+    { dayName: 'Суббота', lessons: [] }
   ],
   3: [
-    {
-      dayName: 'Понедельник',
-      lessons: [
-        { id: 'faid310-w3-mo-1', timeStart: '08:00', timeEnd: '09:35', subject: "Проектирование", type: 'Практические занятия', location: "Корпус № 13, 0603", teacher: "Смоленская Елена Олеговна" },
-        { id: 'faid310-w3-mo-2', timeStart: '09:45', timeEnd: '11:20', subject: "Проектирование", type: 'Практические занятия', location: "Корпус № 13, 0603", teacher: "Смоленская Елена Олеговна" },
-        { id: 'faid310-w3-mo-3', timeStart: '11:50', timeEnd: '13:25', subject: "Безопасность жизнедеятельности", type: 'Практические занятия', location: "Корпус № 11, 462", teacher: "Закирова Марина Николаевна" },
-        { id: 'faid310-w3-mo-4', timeStart: '13:35', timeEnd: '15:10', subject: "Конструирование в дизайне среды", type: 'Лекции', location: "Корпус № 12, 412", teacher: "Заславский Евгений Михайлович" },
-        { id: 'faid310-w3-mo-5', timeStart: '15:40', timeEnd: '17:15', subject: "Конструирование в дизайне среды", type: 'Практические занятия', location: "Корпус № 13, 0606", teacher: "Заславский Евгений Михайлович" }
-      ]
-    },
+    { dayName: 'Понедельник', lessons: [] },
     {
       dayName: 'Вторник',
       lessons: [
@@ -436,14 +403,8 @@ SCHEDULE_REGISTRY['faid-310'] = {
         { id: 'faid310-w3-th-5', timeStart: '15:40', timeEnd: '17:15', subject: "Философия", type: 'Практические занятия', location: "Корпус № 12, 525", teacher: "Стоцкая Татьяна Геннадьевна" }
       ]
     },
-    {
-      dayName: 'Пятница',
-      lessons: []
-    },
-    {
-      dayName: 'Суббота',
-      lessons: []
-    }
+    { dayName: 'Пятница', lessons: [] },
+    { dayName: 'Суббота', lessons: [] }
   ],
   4: [
     {
@@ -456,15 +417,7 @@ SCHEDULE_REGISTRY['faid-310'] = {
         { id: 'faid310-w4-mo-5', timeStart: '15:40', timeEnd: '17:15', subject: "Конструирование в дизайне среды", type: 'Практические занятия', location: "Корпус № 13, 0606", teacher: "Заславский Евгений Михайлович" }
       ]
     },
-    {
-      dayName: 'Вторник',
-      lessons: [
-        { id: 'faid310-w4-tu-1', timeStart: '09:45', timeEnd: '11:20', subject: "Безопасность жизнедеятельности", type: 'Лекции', location: "Корпус № 13, 0408", teacher: "Закирова Марина Николаевна" },
-        { id: 'faid310-w4-tu-2', timeStart: '11:50', timeEnd: '13:25', subject: "История дизайна науки и техники", type: 'Лекции', location: "Корпус № 13, 0608", teacher: "Каракова Татьяна Владимировна" },
-        { id: 'faid310-w4-tu-3', timeStart: '13:35', timeEnd: '15:10', subject: "Вертикальная планировка и благоустройство территорий", type: 'Лекции', location: "Корпус № 13, 0408", teacher: "Орлова Наталья Александровна" },
-        { id: 'faid310-w4-tu-4', timeStart: '15:40', timeEnd: '17:15', subject: "Вертикальная планировка и благоустройство территорий", type: 'Практические занятия', location: "Корпус № 13, 0603", teacher: "Орлова Наталья Александровна" }
-      ]
-    },
+    { dayName: 'Вторник', lessons: [] },
     {
       dayName: 'Среда',
       lessons: [
@@ -485,17 +438,10 @@ SCHEDULE_REGISTRY['faid-310'] = {
         { id: 'faid310-w4-th-5', timeStart: '17:25', timeEnd: '19:00', subject: "Проектирование", type: 'Практические занятия', location: "Корпус № 13, 0603", teacher: "Смоленская Елена Олеговна" }
       ]
     },
-    {
-      dayName: 'Пятница',
-      lessons: []
-    },
-    {
-      dayName: 'Суббота',
-      lessons: []
-    }
+    { dayName: 'Пятница', lessons: [] },
+    { dayName: 'Суббота', lessons: [] }
   ]
 };
-
 
 SCHEDULE_REGISTRY['ingt-209'] = {
   1: [
@@ -853,3 +799,14 @@ SCHEDULE_REGISTRY['2-хтф-115'] = SCHEDULE_REGISTRY['htf-215'];
 GROUP_STAROSTA_PINS['2-htf-115'] = '115';
 GROUP_STAROSTA_PINS['htf-115'] = '115';
 GROUP_STAROSTA_PINS['2-хтф-115'] = '115';
+// Инициализация всех групп в AVAILABLE_GROUPS для устранения undefined в ДЗ
+AVAILABLE_GROUPS.forEach(grp => {
+  if (!SCHEDULE_REGISTRY[grp.id]) {
+    SCHEDULE_REGISTRY[grp.id] = {
+      1: createEmptyWeek(),
+      2: createEmptyWeek(),
+      3: createEmptyWeek(),
+      4: createEmptyWeek()
+    };
+  }
+});

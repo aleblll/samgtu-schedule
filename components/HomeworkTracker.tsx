@@ -947,14 +947,20 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
                 </button>
               )}
               {previewAttachment.url && (
-                <a
-                  href={previewAttachment.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 min-w-[140px] flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm"
+                <button
+                  type="button"
+                  onClick={() => {
+                    const tg = (window as any).Telegram?.WebApp;
+                    if (tg && typeof tg.openLink === 'function') {
+                      tg.openLink(previewAttachment.url);
+                    } else {
+                      window.open(previewAttachment.url, '_blank');
+                    }
+                  }}
+                  className="flex-1 min-w-[140px] flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
                 >
                   <Download className="w-4 h-4" /> Скачать файл
-                </a>
+                </button>
               )}
               {previewAttachment.data && (
                 <button

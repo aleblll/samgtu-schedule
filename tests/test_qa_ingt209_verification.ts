@@ -352,12 +352,16 @@ for (let w = 1; w <= 4; w++) {
   const satCount = weekLessons.find(d => d.dayName === 'Суббота')?.lessons.length || 0;
   const weekTotal = monCount + tueCount + wedCount + thuCount + friCount + satCount;
 
-  check(`3-ФАИД-110 Неделя ${w}: Пн 5 пар`, monCount === 5, `пар: ${monCount}`);
-  check(`3-ФАИД-110 Неделя ${w}: Вт 4 пары`, tueCount === 4, `пар: ${tueCount}`);
+  const expectedMon = (w === 1 || w === 3) ? 0 : 5;
+  const expectedTue = (w === 1 || w === 3) ? 4 : 0;
+  const expectedTotal = (w === 1 || w === 3) ? 14 : 15;
+
+  check(`3-ФАИД-110 Неделя ${w}: Пн ${expectedMon} пар`, monCount === expectedMon, `пар: ${monCount}`);
+  check(`3-ФАИД-110 Неделя ${w}: Вт ${expectedTue} пар(ы)`, tueCount === expectedTue, `пар: ${tueCount}`);
   check(`3-ФАИД-110 Неделя ${w}: Ср 5 пар`, wedCount === 5, `пар: ${wedCount}`);
   check(`3-ФАИД-110 Неделя ${w}: Чт 5 пар`, thuCount === 5, `пар: ${thuCount}`);
   check(`3-ФАИД-110 Неделя ${w}: Пт 0 пар и Сб 0 пар`, friCount === 0 && satCount === 0, `Пт:${friCount}, Сб:${satCount}`);
-  check(`3-ФАИД-110 Неделя ${w}: итоговая загрузка 19 пар`, weekTotal === 19, `пар: ${weekTotal}`);
+  check(`3-ФАИД-110 Неделя ${w}: итоговая загрузка ${expectedTotal} пар`, weekTotal === expectedTotal, `пар: ${weekTotal}`);
 }
 
 // ============================================================================

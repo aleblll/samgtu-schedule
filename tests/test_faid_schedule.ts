@@ -83,11 +83,9 @@ const faidSchedule = SCHEDULE_REGISTRY['faid-310'];
 assert(!!faidSchedule, "SCHEDULE_REGISTRY['faid-310'] exists");
 assert(!!faidSchedule[1] && !!faidSchedule[2] && !!faidSchedule[3] && !!faidSchedule[4], "All 4 weeks exist");
 
-// Week 1 Monday: 5 lessons
+// Week 1: Mon 0, Tue 4, Wed 5, Thu 5 (14 lessons)
 const w1Mon = faidSchedule[1].find(d => d.dayName === 'Понедельник');
-assert(w1Mon?.lessons.length === 5, `Week 1 Monday has 5 lessons (got ${w1Mon?.lessons.length})`);
-assert(w1Mon?.lessons[0].subject === 'Проектирование', "W1 Mo L1: Design 1");
-assert(w1Mon?.lessons[2].subject === 'Безопасность жизнедеятельности', "W1 Mo L3: BZhD practice");
+assert(w1Mon?.lessons.length === 0, `Week 1 Monday has 0 lessons (got ${w1Mon?.lessons.length})`);
 
 // Week 1 Tuesday: 4 lessons
 const w1Tue = faidSchedule[1].find(d => d.dayName === 'Вторник');
@@ -124,13 +122,9 @@ assert(w2Mon?.lessons[2].subject === 'Безопасность жизнедея�
 assert(w2Mon?.lessons[3].subject === 'Конструирование в дизайне среды' && w2Mon?.lessons[3].teacher === 'Заславский Евгений Михайлович', "W2 Mo L4: Constructing lecture Zaslavsky");
 assert(w2Mon?.lessons[4].subject === 'Конструирование в дизайне среды' && w2Mon?.lessons[4].teacher === 'Заславский Евгений Михайлович', "W2 Mo L5: Constructing practice Zaslavsky");
 
-// Week 2 Tuesday: 4 lessons (formerly empty - bug reported by user)
+// Week 2 Tuesday: 0 lessons
 const w2Tue = faidSchedule[2].find(d => d.dayName === 'Вторник');
-assert(w2Tue?.lessons.length === 4, `Week 2 Tuesday has 4 lessons (got ${w2Tue?.lessons.length})`);
-assert(w2Tue?.lessons[0].subject === 'Безопасность жизнедеятельности', "W2 Tu L1: BZhD lecture");
-assert(w2Tue?.lessons[1].subject === 'История дизайна науки и техники', "W2 Tu L2: History of design");
-assert(w2Tue?.lessons[2].subject === 'Вертикальная планировка и благоустройство территорий', "W2 Tu L3: Vertical planning");
-assert(w2Tue?.lessons[3].subject === 'Вертикальная планировка и благоустройство территорий', "W2 Tu L4: Vertical planning practice");
+assert(w2Tue?.lessons.length === 0, `Week 2 Tuesday has 0 lessons (got ${w2Tue?.lessons.length})`);
 
 // Week 2 Wednesday: 5 lessons
 const w2Wed = faidSchedule[2].find(d => d.dayName === 'Среда');
@@ -145,11 +139,9 @@ assert(w2Thu?.lessons[2].subject === 'Вертикальная планиров�
 assert(w2Thu?.lessons[3].subject === 'Проектирование' && w2Thu?.lessons[3].timeStart === '15:40', "W2 Th L4: Design 1");
 assert(w2Thu?.lessons[4].subject === 'Проектирование' && w2Thu?.lessons[4].timeStart === '17:25', "W2 Th L5: Design 2");
 
-// Week 3 Monday: 5 lessons (formerly empty - bug reported by user)
+// Week 3 Monday: 0 lessons
 const w3Mon = faidSchedule[3].find(d => d.dayName === 'Понедельник');
-assert(w3Mon?.lessons.length === 5, `Week 3 Monday has 5 lessons (got ${w3Mon?.lessons.length})`);
-assert(w3Mon?.lessons[0].subject === 'Проектирование', "W3 Mo L1: Design 1");
-assert(w3Mon?.lessons[2].subject === 'Безопасность жизнедеятельности', "W3 Mo L3: BZhD practice");
+assert(w3Mon?.lessons.length === 0, `Week 3 Monday has 0 lessons (got ${w3Mon?.lessons.length})`);
 
 // Week 3 Tuesday: 4 lessons
 const w3Tue = faidSchedule[3].find(d => d.dayName === 'Вторник');
@@ -159,20 +151,16 @@ assert(w3Tue?.lessons.length === 4, `Week 3 Tuesday has 4 lessons (got ${w3Tue?.
 const w4Mon = faidSchedule[4].find(d => d.dayName === 'Понедельник');
 assert(w4Mon?.lessons.length === 5, `Week 4 Monday has 5 lessons (got ${w4Mon?.lessons.length})`);
 
-// Week 4 Tuesday: 4 lessons (formerly empty - bug reported by user)
+// Week 4 Tuesday: 0 lessons
 const w4Tue = faidSchedule[4].find(d => d.dayName === 'Вторник');
-assert(w4Tue?.lessons.length === 4, `Week 4 Tuesday has 4 lessons (got ${w4Tue?.lessons.length})`);
-assert(w4Tue?.lessons[0].subject === 'Безопасность жизнедеятельности', "W4 Tu L1: BZhD lecture");
-assert(w4Tue?.lessons[1].subject === 'История дизайна науки и техники', "W4 Tu L2: History of design");
+assert(w4Tue?.lessons.length === 0, `Week 4 Tuesday has 0 lessons (got ${w4Tue?.lessons.length})`);
 
-// Check that no Mon-Thu days are empty across all 4 weeks
+// Check total lessons across all 4 weeks = 58
+let totalFaidLessons = 0;
 for (let w = 1; w <= 4; w++) {
-  const days = ['Понедельник', 'Вторник', 'Среда', 'Четверг'];
-  days.forEach(day => {
-    const d = faidSchedule[w].find(item => item.dayName === day);
-    assert(!!d && d.lessons.length > 0, `Week ${w} ${day} is NOT empty (lessons: ${d?.lessons.length})`);
-  });
+  faidSchedule[w].forEach(day => totalFaidLessons += day.lessons.length);
 }
+assert(totalFaidLessons === 58, `3-ФАИД-110 total lessons across 4 weeks is 58 (got ${totalFaidLessons})`);
 
 // 4. SANITIZATION AND ISOLATION
 console.log("\n--- 4. Teacher Sanitization & Group Isolation ---");

@@ -1004,9 +1004,10 @@ const App: React.FC = () => {
       </header>
 
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 py-6 w-full max-w-full">
+      <main className="max-w-7xl mx-auto px-4 py-6 w-full max-w-full pb-28 sm:pb-24">
         {activeTab === 'schedule' && (
           <SwipeableDays 
+            key={`${currentGroupId}_${selectedWeek}`}
             days={currentSchedule} 
             weekNumber={selectedWeek}
             userRole={effectiveRole}
