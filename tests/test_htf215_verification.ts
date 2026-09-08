@@ -47,30 +47,15 @@ const w2Count = sched[2].reduce((acc, d) => acc + d.lessons.length, 0);
 const w3Count = sched[3].reduce((acc, d) => acc + d.lessons.length, 0);
 const w4Count = sched[4].reduce((acc, d) => acc + d.lessons.length, 0);
 
-check('Week 1 has exactly 21 lessons', w1Count === 21, `${w1Count} lessons`);
-check('Week 2 has exactly 22 lessons', w2Count === 22, `${w2Count} lessons`);
-check('Week 3 has exactly 21 lessons (Числитель match)', w3Count === 21, `${w3Count} lessons`);
-check('Week 4 has exactly 22 lessons (Знаменатель match)', w4Count === 22, `${w4Count} lessons`);
+check('Week 1 has exactly 22 lessons (14-19 Sept parity)', w1Count === 22, `${w1Count} lessons`);
+check('Week 2 has exactly 21 lessons (07-12 Sept current)', w2Count === 21, `${w2Count} lessons`);
+check('Week 3 has exactly 22 lessons (14-19 Sept exact)', w3Count === 22, `${w3Count} lessons`);
+check('Week 4 has exactly 21 lessons (07-12 Sept parity)', w4Count === 21, `${w4Count} lessons`);
 
-// Check day-by-day lesson counts in Week 1
-console.log('\n--- 5. Week 1 Day-by-Day Breakdown ---');
+// Check day-by-day lesson counts in Week 1 (14-19 Sept parity)
+console.log('\n--- 5. Week 1 Day-by-Day Breakdown (14-19 Sept parity) ---');
 const w1Days = sched[1];
 const expectedW1 = [
-  { day: 'Понедельник', count: 4 },
-  { day: 'Вторник', count: 2 },
-  { day: 'Среда', count: 4 },
-  { day: 'Четверг', count: 5 },
-  { day: 'Пятница', count: 2 },
-  { day: 'Суббота', count: 4 }
-];
-expectedW1.forEach(({ day, count }, i) => {
-  check(`Week 1 ${day} has ${count} lessons`, w1Days[i]?.lessons.length === count, `got ${w1Days[i]?.lessons.length}`);
-});
-
-// Check day-by-day lesson counts in Week 2
-console.log('\n--- 6. Week 2 Day-by-Day Breakdown ---');
-const w2Days = sched[2];
-const expectedW2 = [
   { day: 'Понедельник', count: 4 },
   { day: 'Вторник', count: 4 },
   { day: 'Среда', count: 3 },
@@ -78,9 +63,36 @@ const expectedW2 = [
   { day: 'Пятница', count: 4 },
   { day: 'Суббота', count: 3 }
 ];
+expectedW1.forEach(({ day, count }, i) => {
+  check(`Week 1 ${day} has ${count} lessons`, w1Days[i]?.lessons.length === count, `got ${w1Days[i]?.lessons.length}`);
+});
+
+// Check day-by-day lesson counts in Week 2 (07-12 Sept)
+console.log('\n--- 6. Week 2 Day-by-Day Breakdown (07-12 Sept current) ---');
+const w2Days = sched[2];
+const expectedW2 = [
+  { day: 'Понедельник', count: 4 },
+  { day: 'Вторник', count: 2 },
+  { day: 'Среда', count: 4 },
+  { day: 'Четверг', count: 5 },
+  { day: 'Пятница', count: 2 },
+  { day: 'Суббота', count: 4 }
+];
 expectedW2.forEach(({ day, count }, i) => {
   check(`Week 2 ${day} has ${count} lessons`, w2Days[i]?.lessons.length === count, `got ${w2Days[i]?.lessons.length}`);
 });
+
+// Check specific date verification
+console.log('\n--- 6b. Exact Date Verification: 08 Sept (Today) vs 15 Sept (Next Week) ---');
+const todayLessons = w2Days[1].lessons; // Week 2 Tuesday (08 Sept)
+check('08 Sept (Сегодня/Вт W2) has 2 lessons of Проектная практика', 
+  todayLessons.length === 2 && todayLessons[0].subject.includes('проектная практика') && todayLessons[0].timeStart === '13:35'
+);
+
+const nextTueLessons = sched[3][1].lessons; // Week 3 Tuesday (15 Sept)
+check('15 Sept (След. Вт W3) has 4 lessons: Физкультура, Аналитическая хим, Физхимия',
+  nextTueLessons.length === 4 && nextTueLessons[1].subject.includes('Аналитическая') && nextTueLessons[1].timeStart === '11:50'
+);
 
 // 7. Student Roster (31 students)
 console.log('\n--- 7. Student Roster in STUDENTS_REGISTRY ---');

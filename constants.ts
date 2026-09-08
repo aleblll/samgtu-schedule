@@ -698,121 +698,125 @@ SCHEDULE_REGISTRY['ingt-209'] = {
 
 
 SCHEDULE_REGISTRY['htf-215'] = {
+  // Week 1: 31 авг - 05 сент / 28 сент - 03 окт (идентична Неделе 3: 14 - 19 сентября)
   1: [
     {
       dayName: 'Понедельник',
       lessons: [
-        { id: 'htf215-w1-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Введение в информационные технологии", type: 'Практические занятия', location: "Корпус № 2, 35", teacher: "Семенова Ирина Александровна" },
-        { id: 'htf215-w1-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Введение в информационные технологии", type: 'Практические занятия', location: "Корпус № 2, 35", teacher: "Семенова Ирина Александровна" },
-        { id: 'htf215-w1-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Строение вещества", type: 'Лекции', location: "Корпус № 2, 30", teacher: "Расщепкина Наталья Афанасьевна" },
-        { id: 'htf215-w1-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Строение вещества", type: 'Практические занятия', location: "Корпус № 2, 30", teacher: "Расщепкина Наталья Афанасьевна" }
+        { id: 'htf215-w1-mo-1', timeStart: '09:45', timeEnd: '11:20', subject: "Физика", type: 'Лекции', location: "Корпус № 1, 423", teacher: "Косарева Евгения Александровна" },
+        { id: 'htf215-w1-mo-2', timeStart: '11:50', timeEnd: '13:25', subject: "Физика", type: 'Практические занятия', location: "Корпус № 1, 423", teacher: "Косарева Евгения Александровна" },
+        { id: 'htf215-w1-mo-3', timeStart: '13:35', timeEnd: '15:10', subject: "Математика", type: 'Лекции', location: "Корпус № 2, 39", teacher: "Арланова Екатерина Юрьевна" },
+        { id: 'htf215-w1-mo-4', timeStart: '15:40', timeEnd: '17:15', subject: "Математика", type: 'Лекции', location: "Корпус № 2, 39", teacher: "Арланова Екатерина Юрьевна" }
       ]
     },
     {
       dayName: 'Вторник',
       lessons: [
-        { id: 'htf215-w1-tu-1', timeStart: '13:35', timeEnd: '15:10', subject: "Учебная практика: проектная практика", type: 'Практические занятия', location: "Корпус № 2, 41", teacher: "Семенова Ирина Александровна" },
-        { id: 'htf215-w1-tu-2', timeStart: '15:40', timeEnd: '17:15', subject: "Учебная практика: проектная практика", type: 'Практические занятия', location: "Корпус № 2, 41", teacher: "Семенова Ирина Александровна" }
+        { id: 'htf215-w1-tu-1', timeStart: '09:45', timeEnd: '11:20', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "Спортивный комплекс", teacher: "Кафедра физического воспитания" },
+        { id: 'htf215-w1-tu-2', timeStart: '11:50', timeEnd: '13:25', subject: "Аналитическая химия", type: 'Лекции', location: "Корпус № 2, 63", teacher: "Рублинецкая Юлия Вячеславовна" },
+        { id: 'htf215-w1-tu-3', timeStart: '13:35', timeEnd: '15:10', subject: "Физическая химия", type: 'Лекции', location: "Корпус № 2, 42", teacher: "Расщепкина Наталья Афанасьевна" },
+        { id: 'htf215-w1-tu-4', timeStart: '15:40', timeEnd: '17:15', subject: "Физическая химия", type: 'Практические занятия', location: "Корпус № 2, 42", teacher: "Расщепкина Наталья Афанасьевна" }
       ]
     },
     {
       dayName: 'Среда',
       lessons: [
-        { id: 'htf215-w1-we-1', timeStart: '08:00', timeEnd: '09:35', subject: "Математика", type: 'Практические занятия', location: "Корпус № 10, 201", teacher: "Арланова Екатерина Юрьевна" },
-        { id: 'htf215-w1-we-2', timeStart: '09:45', timeEnd: '11:20', subject: "Математика", type: 'Лекции', location: "Корпус № 10, 107", teacher: "Арланова Екатерина Юрьевна" },
-        { id: 'htf215-w1-we-3', timeStart: '11:50', timeEnd: '13:25', subject: "Физическая химия", type: 'Лекции', location: "Корпус № 2, 42", teacher: "Расщепкина Наталья Афанасьевна" },
-        { id: 'htf215-w1-we-4', timeStart: '13:35', timeEnd: '15:10', subject: "Физическая химия", type: 'Практические занятия', location: "Корпус № 2, 42", teacher: "Расщепкина Наталья Афанасьевна" }
+        { id: 'htf215-w1-we-1', timeStart: '08:00', timeEnd: '09:35', subject: "Физическая химия", type: 'Лабораторные работы', location: "Корпус № 2, 57", teacher: "Расщепкина Наталья Афанасьевна" },
+        { id: 'htf215-w1-we-2', timeStart: '09:45', timeEnd: '11:20', subject: "Физическая химия", type: 'Лабораторные работы', location: "Корпус № 2, 57", teacher: "Расщепкина Наталья Афанасьевна" },
+        { id: 'htf215-w1-we-3', timeStart: '11:50', timeEnd: '13:25', subject: "Физика", type: 'Практические занятия', location: "Корпус № 1, 316", teacher: "Косарева Евгения Александровна" }
       ]
     },
     {
       dayName: 'Четверг',
       lessons: [
-        { id: 'htf215-w1-th-1', timeStart: '09:45', timeEnd: '11:20', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "Спортивный комплекс", teacher: "Кафедра физического воспитания" },
-        { id: 'htf215-w1-th-2', timeStart: '11:50', timeEnd: '13:25', subject: "Иностранный язык", type: 'Практические занятия', location: "Корпус № 1б, 4", teacher: "Ревина Е.В. / Гарифова О.А." },
-        { id: 'htf215-w1-th-3', timeStart: '13:35', timeEnd: '15:10', subject: "Иностранный язык", type: 'Практические занятия', location: "Корпус № 1б, 4", teacher: "Ревина Е.В. / Гарифова О.А." },
-        { id: 'htf215-w1-th-4', timeStart: '15:40', timeEnd: '17:15', subject: "Физика", type: 'Практические занятия', location: "Корпус № 2, 41", teacher: "Косарева Евгения Александровна" },
-        { id: 'htf215-w1-th-5', timeStart: '17:25', timeEnd: '19:00', subject: "Строение вещества", type: 'Практические занятия', location: "Корпус № 2, 63", teacher: "Расщепкина Наталья Афанасьевна" }
+        { id: 'htf215-w1-th-1', timeStart: '11:50', timeEnd: '13:25', subject: "Строение вещества", type: 'Лекции', location: "Корпус № 2, 30", teacher: "Расщепкина Наталья Афанасьевна" },
+        { id: 'htf215-w1-th-2', timeStart: '13:35', timeEnd: '15:10', subject: "Аналитическая химия", type: 'Практические занятия', location: "Корпус № 2, 42", teacher: "Рублинецкая Юлия Вячеславовна" },
+        { id: 'htf215-w1-th-3', timeStart: '15:40', timeEnd: '17:15', subject: "Строение вещества", type: 'Практические занятия', location: "Корпус № 2, 63", teacher: "Расщепкина Наталья Афанасьевна" },
+        { id: 'htf215-w1-th-4', timeStart: '17:25', timeEnd: '19:00', subject: "Строение вещества", type: 'Практические занятия', location: "Корпус № 2, 63", teacher: "Расщепкина Наталья Афанасьевна" }
       ]
     },
     {
       dayName: 'Пятница',
       lessons: [
-        { id: 'htf215-w1-fr-1', timeStart: '08:00', timeEnd: '09:35', subject: "Иностранный язык", type: 'Практические занятия', location: "Корпус № 6, 96", teacher: "Ревина Е.В. / Гарифова О.А." },
-        { id: 'htf215-w1-fr-2', timeStart: '09:45', timeEnd: '11:20', subject: "Иностранный язык", type: 'Практические занятия', location: "Корпус № 6, 96", teacher: "Ревина Е.В. / Гарифова О.А." }
+        { id: 'htf215-w1-fr-1', timeStart: '08:00', timeEnd: '09:35', subject: "Аналитическая химия", type: 'Лабораторные работы', location: "Корпус № 2, 55", teacher: "Рублинецкая Юлия Вячеславовна" },
+        { id: 'htf215-w1-fr-2', timeStart: '09:45', timeEnd: '11:20', subject: "Аналитическая химия", type: 'Лабораторные работы', location: "Корпус № 2, 55", teacher: "Рублинецкая Юлия Вячеславовна" },
+        { id: 'htf215-w1-fr-3', timeStart: '11:50', timeEnd: '13:25', subject: "Физика", type: 'Практические занятия', location: "Корпус № 1, 428", teacher: "Косарева Евгения Александровна" },
+        { id: 'htf215-w1-fr-4', timeStart: '13:35', timeEnd: '15:10', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "Спортивный комплекс", teacher: "Кафедра физического воспитания" }
       ]
     },
     {
       dayName: 'Суббота',
       lessons: [
-        { id: 'htf215-w1-sa-1', timeStart: '08:00', timeEnd: '09:35', subject: "Аналитическая химия", type: 'Лабораторные работы', location: "Корпус № 2, 56", teacher: "Рублинецкая Юлия Вячеславовна" },
-        { id: 'htf215-w1-sa-2', timeStart: '09:45', timeEnd: '11:20', subject: "Аналитическая химия", type: 'Лабораторные работы', location: "Корпус № 2, 56", teacher: "Рублинецкая Юлия Вячеславовна" },
-        { id: 'htf215-w1-sa-3', timeStart: '11:50', timeEnd: '13:25', subject: "Аналитическая химия", type: 'Практические занятия', location: "Корпус № 2, 56", teacher: "Рублинецкая Юлия Вячеславовна" },
-        { id: 'htf215-w1-sa-4', timeStart: '13:35', timeEnd: '15:10', subject: "Аналитическая химия", type: 'Лекции', location: "Корпус № 2, 56", teacher: "Рублинецкая Юлия Вячеславовна" }
+        { id: 'htf215-w1-sa-1', timeStart: '08:00', timeEnd: '09:35', subject: "Физика", type: 'Лекции', location: "Корпус № 1, 408", teacher: "Косарева Евгения Александровна" },
+        { id: 'htf215-w1-sa-2', timeStart: '09:45', timeEnd: '11:20', subject: "Математика", type: 'Практические занятия', location: "Корпус № 1, 326", teacher: "Арланова Екатерина Юрьевна" },
+        { id: 'htf215-w1-sa-3', timeStart: '11:50', timeEnd: '13:25', subject: "Математика", type: 'Лекции', location: "Корпус № 1, 326", teacher: "Арланова Екатерина Юрьевна" }
       ]
     }
   ],
+  // Week 2: 07 - 12 сентября (ТЕКУЩАЯ НЕДЕЛЯ!)
   2: [
     {
       dayName: 'Понедельник',
       lessons: [
-        { id: 'htf215-w2-mo-1', timeStart: '09:45', timeEnd: '11:20', subject: "Физика", type: 'Лекции', location: "Корпус № 1, 423", teacher: "Косарева Евгения Александровна" },
-        { id: 'htf215-w2-mo-2', timeStart: '11:50', timeEnd: '13:25', subject: "Физика", type: 'Практические занятия', location: "Корпус № 1, 423", teacher: "Косарева Евгения Александровна" },
-        { id: 'htf215-w2-mo-3', timeStart: '13:35', timeEnd: '15:10', subject: "Математика", type: 'Лекции', location: "Корпус № 2, 39", teacher: "Арланова Екатерина Юрьевна" },
-        { id: 'htf215-w2-mo-4', timeStart: '15:40', timeEnd: '17:15', subject: "Математика", type: 'Лекции', location: "Корпус № 2, 39", teacher: "Арланова Екатерина Юрьевна" }
+        { id: 'htf215-w2-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Введение в информационные технологии", type: 'Практические занятия', location: "Корпус № 2, 35", teacher: "Семенова Ирина Александровна" },
+        { id: 'htf215-w2-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Введение в информационные технологии", type: 'Практические занятия', location: "Корпус № 2, 35", teacher: "Семенова Ирина Александровна" },
+        { id: 'htf215-w2-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Строение вещества", type: 'Лекции', location: "Корпус № 2, 30", teacher: "Расщепкина Наталья Афанасьевна" },
+        { id: 'htf215-w2-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Строение вещества", type: 'Практические занятия', location: "Корпус № 2, 30", teacher: "Расщепкина Наталья Афанасьевна" }
       ]
     },
     {
       dayName: 'Вторник',
       lessons: [
-        { id: 'htf215-w2-tu-1', timeStart: '09:45', timeEnd: '11:20', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "Спортивный комплекс", teacher: "Кафедра физического воспитания" },
-        { id: 'htf215-w2-tu-2', timeStart: '11:50', timeEnd: '13:25', subject: "Аналитическая химия", type: 'Лекции', location: "Корпус № 2, 63", teacher: "Рублинецкая Юлия Вячеславовна" },
-        { id: 'htf215-w2-tu-3', timeStart: '13:35', timeEnd: '15:10', subject: "Физическая химия", type: 'Лекции', location: "Корпус № 2, 42", teacher: "Расщепкина Наталья Афанасьевна" },
-        { id: 'htf215-w2-tu-4', timeStart: '15:40', timeEnd: '17:15', subject: "Физическая химия", type: 'Практические занятия', location: "Корпус № 2, 42", teacher: "Расщепкина Наталья Афанасьевна" }
+        { id: 'htf215-w2-tu-1', timeStart: '13:35', timeEnd: '15:10', subject: "Учебная практика: проектная практика", type: 'Практические занятия', location: "Корпус № 2, 41", teacher: "Семенова Ирина Александровна" },
+        { id: 'htf215-w2-tu-2', timeStart: '15:40', timeEnd: '17:15', subject: "Учебная практика: проектная практика", type: 'Практические занятия', location: "Корпус № 2, 41", teacher: "Семенова Ирина Александровна" }
       ]
     },
     {
       dayName: 'Среда',
       lessons: [
-        { id: 'htf215-w2-we-1', timeStart: '08:00', timeEnd: '09:35', subject: "Физическая химия", type: 'Лабораторные работы', location: "Корпус № 2, 57", teacher: "Расщепкина Наталья Афанасьевна" },
-        { id: 'htf215-w2-we-2', timeStart: '09:45', timeEnd: '11:20', subject: "Физическая химия", type: 'Лабораторные работы', location: "Корпус № 2, 57", teacher: "Расщепкина Наталья Афанасьевна" },
-        { id: 'htf215-w2-we-3', timeStart: '11:50', timeEnd: '13:25', subject: "Физика", type: 'Практические занятия', location: "Корпус № 1, 316", teacher: "Косарева Евгения Александровна" }
+        { id: 'htf215-w2-we-1', timeStart: '08:00', timeEnd: '09:35', subject: "Математика", type: 'Практические занятия', location: "Корпус № 10, 201", teacher: "Арланова Екатерина Юрьевна" },
+        { id: 'htf215-w2-we-2', timeStart: '09:45', timeEnd: '11:20', subject: "Математика", type: 'Лекции', location: "Корпус № 10, 107", teacher: "Арланова Екатерина Юрьевна" },
+        { id: 'htf215-w2-we-3', timeStart: '11:50', timeEnd: '13:25', subject: "Физическая химия", type: 'Лекции', location: "Корпус № 2, 42", teacher: "Расщепкина Наталья Афанасьевна" },
+        { id: 'htf215-w2-we-4', timeStart: '13:35', timeEnd: '15:10', subject: "Физическая химия", type: 'Практические занятия', location: "Корпус № 2, 42", teacher: "Расщепкина Наталья Афанасьевна" }
       ]
     },
     {
       dayName: 'Четверг',
       lessons: [
-        { id: 'htf215-w2-th-1', timeStart: '11:50', timeEnd: '13:25', subject: "Строение вещества", type: 'Лекции', location: "Корпус № 2, 30", teacher: "Расщепкина Наталья Афанасьевна" },
-        { id: 'htf215-w2-th-2', timeStart: '13:35', timeEnd: '15:10', subject: "Аналитическая химия", type: 'Практические занятия', location: "Корпус № 2, 42", teacher: "Рублинецкая Юлия Вячеславовна" },
-        { id: 'htf215-w2-th-3', timeStart: '15:40', timeEnd: '17:15', subject: "Строение вещества", type: 'Практические занятия', location: "Корпус № 2, 63", teacher: "Расщепкина Наталья Афанасьевна" },
-        { id: 'htf215-w2-th-4', timeStart: '17:25', timeEnd: '19:00', subject: "Строение вещества", type: 'Практические занятия', location: "Корпус № 2, 63", teacher: "Расщепкина Наталья Афанасьевна" }
+        { id: 'htf215-w2-th-1', timeStart: '09:45', timeEnd: '11:20', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "Спортивный комплекс", teacher: "Кафедра физического воспитания" },
+        { id: 'htf215-w2-th-2', timeStart: '11:50', timeEnd: '13:25', subject: "Иностранный язык", type: 'Практические занятия', location: "Корпус № 1б, 4", teacher: "Ревина Е.В. / Гарифова О.А." },
+        { id: 'htf215-w2-th-3', timeStart: '13:35', timeEnd: '15:10', subject: "Иностранный язык", type: 'Практические занятия', location: "Корпус № 1б, 4", teacher: "Ревина Е.В. / Гарифова О.А." },
+        { id: 'htf215-w2-th-4', timeStart: '15:40', timeEnd: '17:15', subject: "Физика", type: 'Практические занятия', location: "Корпус № 2, 41", teacher: "Косарева Евгения Александровна" },
+        { id: 'htf215-w2-th-5', timeStart: '17:25', timeEnd: '19:00', subject: "Строение вещества", type: 'Практические занятия', location: "Корпус № 2, 63", teacher: "Расщепкина Наталья Афанасьевна" }
       ]
     },
     {
       dayName: 'Пятница',
       lessons: [
-        { id: 'htf215-w2-fr-1', timeStart: '08:00', timeEnd: '09:35', subject: "Аналитическая химия", type: 'Лабораторные работы', location: "Корпус № 2, 55", teacher: "Рублинецкая Юлия Вячеславовна" },
-        { id: 'htf215-w2-fr-2', timeStart: '09:45', timeEnd: '11:20', subject: "Аналитическая химия", type: 'Лабораторные работы', location: "Корпус № 2, 55", teacher: "Рублинецкая Юлия Вячеславовна" },
-        { id: 'htf215-w2-fr-3', timeStart: '11:50', timeEnd: '13:25', subject: "Физика", type: 'Практические занятия', location: "Корпус № 1, 428", teacher: "Косарева Евгения Александровна" },
-        { id: 'htf215-w2-fr-4', timeStart: '13:35', timeEnd: '15:10', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "Спортивный комплекс", teacher: "Кафедра физического воспитания" }
+        { id: 'htf215-w2-fr-1', timeStart: '08:00', timeEnd: '09:35', subject: "Иностранный язык", type: 'Практические занятия', location: "Корпус № 6, 96", teacher: "Ревина Е.В. / Гарифова О.А." },
+        { id: 'htf215-w2-fr-2', timeStart: '09:45', timeEnd: '11:20', subject: "Иностранный язык", type: 'Практические занятия', location: "Корпус № 6, 96", teacher: "Ревина Е.В. / Гарифова О.А." }
       ]
     },
     {
       dayName: 'Суббота',
       lessons: [
-        { id: 'htf215-w2-sa-1', timeStart: '08:00', timeEnd: '09:35', subject: "Физика", type: 'Лекции', location: "Корпус № 1, 408", teacher: "Косарева Евгения Александровна" },
-        { id: 'htf215-w2-sa-2', timeStart: '09:45', timeEnd: '11:20', subject: "Математика", type: 'Практические занятия', location: "Корпус № 1, 326", teacher: "Арланова Екатерина Юрьевна" },
-        { id: 'htf215-w2-sa-3', timeStart: '11:50', timeEnd: '13:25', subject: "Математика", type: 'Лекции', location: "Корпус № 1, 326", teacher: "Арланова Екатерина Юрьевна" }
+        { id: 'htf215-w2-sa-1', timeStart: '08:00', timeEnd: '09:35', subject: "Аналитическая химия", type: 'Лабораторные работы', location: "Корпус № 2, 56", teacher: "Рублинецкая Юлия Вячеславовна" },
+        { id: 'htf215-w2-sa-2', timeStart: '09:45', timeEnd: '11:20', subject: "Аналитическая химия", type: 'Лабораторные работы', location: "Корпус № 2, 56", teacher: "Рублинецкая Юлия Вячеславовна" },
+        { id: 'htf215-w2-sa-3', timeStart: '11:50', timeEnd: '13:25', subject: "Аналитическая химия", type: 'Практические занятия', location: "Корпус № 2, 56", teacher: "Рублинецкая Юлия Вячеславовна" },
+        { id: 'htf215-w2-sa-4', timeStart: '13:35', timeEnd: '15:10', subject: "Аналитическая химия", type: 'Лекции', location: "Корпус № 2, 56", teacher: "Рублинецкая Юлия Вячеславовна" }
       ]
     }
   ]
 };
 
 // Weeks 3 and 4 mapping
+// Week 3 = 14 - 19 сентября (синхронна с Неделей 1)
 SCHEDULE_REGISTRY['htf-215'][3] = SCHEDULE_REGISTRY['htf-215'][1].map(day => ({
   ...day,
   lessons: day.lessons.map(l => ({ ...l, id: l.id.replace('-w1-', '-w3-') }))
 }));
 
+// Week 4 = 21 - 26 сентября (синхронна с Неделей 2)
 SCHEDULE_REGISTRY['htf-215'][4] = SCHEDULE_REGISTRY['htf-215'][2].map(day => ({
   ...day,
   lessons: day.lessons.map(l => ({ ...l, id: l.id.replace('-w2-', '-w4-') }))
