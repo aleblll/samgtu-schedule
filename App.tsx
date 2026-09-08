@@ -94,6 +94,7 @@ const App: React.FC = () => {
   const [newGroupFaculty, setNewGroupFaculty] = useState<string>('ingt');
   const [newGroupCourse, setNewGroupCourse] = useState<number>(1);
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
+  const [isBugReportModalOpen, setIsBugReportModalOpen] = useState<boolean>(false);
 
   // Multi-group state: defaults to bound group, then saved selection, then 3-ИНГТ-110
   const [currentGroupId, setCurrentGroupId] = useState<string>(() => {
