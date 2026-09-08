@@ -32,6 +32,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentRole, onRoleChange, curr
       onRoleChange('starosta', target);
       toast.success(`Авторизован режим Старосты (${target === 'faid-310' ? '3-ФАИД-110' : '3-ИНГТ-110'})`);
       setPinCode('');
+    } else if (pin === '115' || pin === '2115' || pin === 'htf115' || pin === 'хтф115') {
+      onRoleChange('starosta', 'htf-215');
+      toast.success('Авторизован режим Старосты (2-ХТФ-115)');
+      setPinCode('');
     } else if (pin === '109' || pin === '2109' || pin === 'ingt109') {
       onRoleChange('starosta', 'ingt-209');
       toast.success('Авторизован режим Старосты (2-ИНГТ-109)');
