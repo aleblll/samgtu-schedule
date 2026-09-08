@@ -17,8 +17,9 @@ import { TeacherAssignmentScope } from './components/EditLessonModal';
 import { fetchGroupCloudData, pushGroupCloudData, sanitizeTeachers, sanitizeOverrides } from './utils/cloudSync';
 import { SEED_SCHEDULE_OVERRIDES, SEED_SUBJECT_TEACHERS, getSeedSubjectTeachers } from './defaultData';
 import { ScheduleImportModal } from './components/ScheduleImportModal';
+import BugReportModal from './components/BugReportModal';
 import {
-  LogIn, LogOut, Calendar, BookOpen, ClipboardCheck, Sun, Moon,
+  LogIn, LogOut, Calendar, BookOpen, Bug, ClipboardCheck, Sun, Moon,
   GraduationCap, Users, RefreshCw, Shield, User as UserIcon, Key, UserCheck, ChevronDown,
   Search, Plus, X, UploadCloud
 } from 'lucide-react';
@@ -906,6 +907,14 @@ const App: React.FC = () => {
 
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setIsBugReportModalOpen(true)}
+                className="p-2 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                title="Сообщить об ошибке / Баг-репорт"
+              >
+                <Bug className="w-4 h-4" />
+              </button>
+
+              <button
                 onClick={handleRefresh}
                 className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 title="Обновить данные"
@@ -1096,7 +1105,40 @@ const App: React.FC = () => {
               </button>
             </div>
 
-            {/* Quick PIN Login Form */}
+                        {/* Bug Report & Support Card */}
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <Bug className="w-4 h-4 text-red-500" />
+                  <span>Поддержка и баг-репорт</span>
+                </div>
+                <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-md">
+                  СамГТУ
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Заметили неточность в расписании или ошибку в работе приложения? Отправьте отчет со скриншотом.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  onClick={() => setIsBugReportModalOpen(true)}
+                  className="flex-1 py-2.5 px-4 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 font-bold text-xs rounded-xl border border-red-200 dark:border-red-900/40 transition-all flex items-center justify-center gap-1.5 min-h-[44px]"
+                >
+                  <Bug className="w-3.5 h-3.5" />
+                  Сообщить об ошибке
+                </button>
+                <a
+                  href="https://t.me/A_le_BL"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2.5 px-4 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 font-bold text-xs rounded-xl border border-slate-200 dark:border-slate-700 transition-all flex items-center justify-center gap-1.5 min-h-[44px] shadow-sm"
+                >
+                  Связь: @A_le_BL
+                </a>
+              </div>
+            </div>
+
+{/* Quick PIN Login Form */}
             <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 space-y-3">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">
                 <Key className="w-4 h-4 text-indigo-500" />
@@ -1427,6 +1469,15 @@ const App: React.FC = () => {
         onClose={() => setIsImportModalOpen(false)}
         currentGroupId={currentGroupId}
         onApplySchedule={handleApplyImportedSchedule}
+      />
+    
+      {/* Bug Report Modal */}
+      <BugReportModal
+        isOpen={isBugReportModalOpen}
+        onClose={() => setIsBugReportModalOpen(false)}
+        currentGroupId={currentGroupId}
+        currentGroupName={currentGroupConfig.name}
+        currentCourse={currentGroupConfig.course}
       />
     </div>
   );
