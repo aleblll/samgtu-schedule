@@ -141,8 +141,8 @@ check('3-ИНГТ-110 Friday Patentoведение (практика) has teache
 const faid310Roster = STUDENTS_REGISTRY['faid-310'];
 check('3-ФАИД-110 has 22 students', faid310Roster?.length === 22);
 const faid310Sched = SCHEDULE_REGISTRY['faid-310'];
-check('3-ФАИД-110 Week 3 Monday has 5 lessons', faid310Sched?.[3]?.[0]?.lessons.length === 5);
-check('3-ФАИД-110 Week 4 Tuesday has 4 lessons', faid310Sched?.[4]?.[1]?.lessons.length === 4);
+check('3-ФАИД-110 Week 3 Monday has 4 lessons', faid310Sched?.[3]?.[0]?.lessons.length === 4);
+check('3-ФАИД-110 Week 4 Tuesday has 0 lessons', faid310Sched?.[4]?.[1]?.lessons.length === 0);
 
 // 2-ИНГТ-109
 const ingt209Sched = SCHEDULE_REGISTRY['ingt-209'];

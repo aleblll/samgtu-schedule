@@ -145,7 +145,7 @@ console.log("\n--- Zero Regression Verification ---");
 assert(STUDENTS_REGISTRY['ingt-310']?.length === 16, "3-ИНГТ-110 has 16 students");
 assert(STUDENTS_REGISTRY['faid-310']?.length === 22, "3-ФАИД-110 has 22 students");
 assert(SCHEDULE_REGISTRY['ingt-310'][1].find(d => d.dayName === 'Четверг')?.lessons.length === 0, "3-ИНГТ-110 Thursday has 0 lessons");
-assert(SCHEDULE_REGISTRY['faid-310'][3].find(d => d.dayName === 'Понедельник')?.lessons.length === 5, "3-ФАИД-110 W3 Monday has 5 lessons");
+assert(SCHEDULE_REGISTRY['faid-310'][3].find(d => d.dayName === 'Понедельник')?.lessons.length === 4, "3-ФАИД-110 W3 Monday has 4 lessons");
 
 console.log("\n=================================================");
 console.log(`TOTAL: ${totalTests} | PASSED: ${passedTests} | FAILED: ${failedTests}`);

@@ -180,58 +180,52 @@ console.log("-------------------------------------------------------------------
 const faidSchedule = SCHEDULE_REGISTRY['faid-310'];
 assert(!!faidSchedule, "SCHEDULE_REGISTRY['faid-310'] exists");
 
-// 3.1 Week 1 Monday (5 lessons)
+// 3.1 Week 1 Monday (4 lessons)
 const w1MoDay = faidSchedule[1]?.find(d => d.dayName === 'Понедельник');
 assert(w1MoDay !== undefined, "Week 1 Monday day object exists");
-assert(w1MoDay?.lessons.length === 5, `Week 1 Monday has 5 lessons (got: ${w1MoDay?.lessons.length})`);
+assert(w1MoDay?.lessons.length === 4, `Week 1 Monday has 4 lessons (got: ${w1MoDay?.lessons.length})`);
 const w1MoIds = w1MoDay?.lessons.map(l => l.id) || [];
 assert(JSON.stringify(w1MoIds) === JSON.stringify([
-  'faid310-w1-mo-1', 'faid310-w1-mo-2', 'faid310-w1-mo-3', 'faid310-w1-mo-4', 'faid310-w1-mo-5'
-]), "Week 1 Monday lesson IDs: faid310-w1-mo-1..5");
+  'faid310-w1-mo-1', 'faid310-w1-mo-2', 'faid310-w1-mo-3', 'faid310-w1-mo-4'
+]), "Week 1 Monday lesson IDs: faid310-w1-mo-1..4");
 
-// 3.2 Week 3 Monday (5 lessons)
+// 3.2 Week 3 Monday (4 lessons)
 const w3MoDay = faidSchedule[3]?.find(d => d.dayName === 'Понедельник');
 assert(w3MoDay !== undefined, "Week 3 Monday day object exists");
-assert(w3MoDay?.lessons.length === 5, `Week 3 Monday has 5 lessons (got: ${w3MoDay?.lessons.length})`);
+assert(w3MoDay?.lessons.length === 4, `Week 3 Monday has 4 lessons (got: ${w3MoDay?.lessons.length})`);
 const w3MoIds = w3MoDay?.lessons.map(l => l.id) || [];
 assert(JSON.stringify(w3MoIds) === JSON.stringify([
-  'faid310-w3-mo-1', 'faid310-w3-mo-2', 'faid310-w3-mo-3', 'faid310-w3-mo-4', 'faid310-w3-mo-5'
-]), "Week 3 Monday lesson IDs: faid310-w3-mo-1..5");
+  'faid310-w3-mo-1', 'faid310-w3-mo-2', 'faid310-w3-mo-3', 'faid310-w3-mo-4'
+]), "Week 3 Monday lesson IDs: faid310-w3-mo-1..4");
 
-// 3.3 Week 2 Tuesday (4 lessons)
+// 3.3 Week 2 Tuesday (0 lessons)
 const w2TuDay = faidSchedule[2]?.find(d => d.dayName === 'Вторник');
 assert(w2TuDay !== undefined, "Week 2 Tuesday day object exists");
-assert(w2TuDay?.lessons.length === 4, `Week 2 Tuesday has 4 lessons (got: ${w2TuDay?.lessons.length})`);
-const w2TuIds = w2TuDay?.lessons.map(l => l.id) || [];
-assert(JSON.stringify(w2TuIds) === JSON.stringify([
-  'faid310-w2-tu-1', 'faid310-w2-tu-2', 'faid310-w2-tu-3', 'faid310-w2-tu-4'
-]), "Week 2 Tuesday lesson IDs: faid310-w2-tu-1..4");
+assert(w2TuDay?.lessons.length === 0, `Week 2 Tuesday has 0 lessons (got: ${w2TuDay?.lessons.length})`);
 
-// 3.4 Week 4 Tuesday (4 lessons)
+// 3.4 Week 4 Tuesday (0 lessons)
 const w4TuDay = faidSchedule[4]?.find(d => d.dayName === 'Вторник');
 assert(w4TuDay !== undefined, "Week 4 Tuesday day object exists");
-assert(w4TuDay?.lessons.length === 4, `Week 4 Tuesday has 4 lessons (got: ${w4TuDay?.lessons.length})`);
-const w4TuIds = w4TuDay?.lessons.map(l => l.id) || [];
-assert(JSON.stringify(w4TuIds) === JSON.stringify([
-  'faid310-w4-tu-1', 'faid310-w4-tu-2', 'faid310-w4-tu-3', 'faid310-w4-tu-4'
-]), "Week 4 Tuesday lesson IDs: faid310-w4-tu-1..4");
+assert(w4TuDay?.lessons.length === 0, `Week 4 Tuesday has 0 lessons (got: ${w4TuDay?.lessons.length})`);
 
 // 3.5 Total target lessons count
 const totalTargetLessons = (w1MoDay?.lessons.length || 0) + (w3MoDay?.lessons.length || 0) + (w2TuDay?.lessons.length || 0) + (w4TuDay?.lessons.length || 0);
-assert(totalTargetLessons === 18, `Total target lessons across the 4 days is 18 (got: ${totalTargetLessons})`);
+assert(totalTargetLessons === 8, `Total target lessons across the 4 days is 8 (got: ${totalTargetLessons})`);
 
 // 3.6 Calendar dates verification
 // Cycle starts 2026-08-31
 const dateW1Mo = getDayISODate('Понедельник', 1);
-const dateW2Tu = getDayISODate('Вторник', 2);
+const dateW2Mo = getDayISODate('Понедельник', 2);
 const dateW3Mo = getDayISODate('Понедельник', 3);
-const dateW4Tu = getDayISODate('Вторник', 4);
+const dateW4Mo = getDayISODate('Понедельник', 4);
+const w2MoDay = faidSchedule[2]?.find(d => d.dayName === 'Понедельник');
+const w4MoDay = faidSchedule[4]?.find(d => d.dayName === 'Понедельник');
 
-console.log(`  Target Dates: W1 Mo = ${dateW1Mo}, W2 Tu = ${dateW2Tu}, W3 Mo = ${dateW3Mo}, W4 Tu = ${dateW4Tu}`);
+console.log(`  Target Dates: W1 Mo = ${dateW1Mo}, W2 Mo = ${dateW2Mo}, W3 Mo = ${dateW3Mo}, W4 Mo = ${dateW4Mo}`);
 assert(dateW1Mo === '2026-08-31', "W1 Monday date is 2026-08-31");
-assert(dateW2Tu === '2026-09-08', "W2 Tuesday date is 2026-09-08");
+assert(dateW2Mo === '2026-09-07', "W2 Monday date is 2026-09-07");
 assert(dateW3Mo === '2026-09-14', "W3 Monday date is 2026-09-14");
-assert(dateW4Tu === '2026-09-22', "W4 Tuesday date is 2026-09-22");
+assert(dateW4Mo === '2026-09-21', "W4 Monday date is 2026-09-21");
 
 
 // ============================================================================
@@ -486,36 +480,36 @@ for (const lesson of w3MoDay!.lessons) {
   assert(rec.excusedStudentIds?.includes(4), `W3 Mo lesson ${lesson.id} contains Student 4 in excusedStudentIds`);
 }
 
-// 4.4 TEST FULL DAY STATUS: WEEK 2 TUESDAY (4 lessons) -> 'absent' & 'excused'
-console.log("\n--- 4.4 Full Day Status: Week 2 Tuesday (4 lessons) ---");
-// Student 5 (Винк) full day absent on W2 Tuesday
-engine.handleSetFullDayStatus(dateW2Tu, w2TuDay!.lessons, 5, 'absent', true);
-for (const lesson of w2TuDay!.lessons) {
-  const rec = engine.getAttendance(dateW2Tu, lesson.id);
-  assert(rec.absentStudentIds.includes(5), `W2 Tu lesson ${lesson.id} contains Student 5 in absentStudentIds`);
+// 4.4 TEST FULL DAY STATUS: WEEK 2 MONDAY (5 lessons) -> 'absent' & 'excused'
+console.log("\n--- 4.4 Full Day Status: Week 2 Monday (5 lessons) ---");
+// Student 5 (Винк) full day absent on W2 Monday
+engine.handleSetFullDayStatus(dateW2Mo, w2MoDay!.lessons, 5, 'absent', true);
+for (const lesson of w2MoDay!.lessons) {
+  const rec = engine.getAttendance(dateW2Mo, lesson.id);
+  assert(rec.absentStudentIds.includes(5), `W2 Mo lesson ${lesson.id} contains Student 5 in absentStudentIds`);
 }
 
-// Student 6 (Внучкова) full day excused on W2 Tuesday
-engine.handleSetFullDayStatus(dateW2Tu, w2TuDay!.lessons, 6, 'excused', true);
-for (const lesson of w2TuDay!.lessons) {
-  const rec = engine.getAttendance(dateW2Tu, lesson.id);
-  assert(rec.excusedStudentIds?.includes(6), `W2 Tu lesson ${lesson.id} contains Student 6 in excusedStudentIds`);
+// Student 6 (Внучкова) full day excused on W2 Monday
+engine.handleSetFullDayStatus(dateW2Mo, w2MoDay!.lessons, 6, 'excused', true);
+for (const lesson of w2MoDay!.lessons) {
+  const rec = engine.getAttendance(dateW2Mo, lesson.id);
+  assert(rec.excusedStudentIds?.includes(6), `W2 Mo lesson ${lesson.id} contains Student 6 in excusedStudentIds`);
 }
 
-// 4.5 TEST FULL DAY STATUS: WEEK 4 TUESDAY (4 lessons) -> 'absent' & 'excused'
-console.log("\n--- 4.5 Full Day Status: Week 4 Tuesday (4 lessons) ---");
-// Student 7 (Губарева) full day absent on W4 Tuesday
-engine.handleSetFullDayStatus(dateW4Tu, w4TuDay!.lessons, 7, 'absent', true);
-for (const lesson of w4TuDay!.lessons) {
-  const rec = engine.getAttendance(dateW4Tu, lesson.id);
-  assert(rec.absentStudentIds.includes(7), `W4 Tu lesson ${lesson.id} contains Student 7 in absentStudentIds`);
+// 4.5 TEST FULL DAY STATUS: WEEK 4 MONDAY (5 lessons) -> 'absent' & 'excused'
+console.log("\n--- 4.5 Full Day Status: Week 4 Monday (5 lessons) ---");
+// Student 7 (Губарева) full day absent on W4 Monday
+engine.handleSetFullDayStatus(dateW4Mo, w4MoDay!.lessons, 7, 'absent', true);
+for (const lesson of w4MoDay!.lessons) {
+  const rec = engine.getAttendance(dateW4Mo, lesson.id);
+  assert(rec.absentStudentIds.includes(7), `W4 Mo lesson ${lesson.id} contains Student 7 in absentStudentIds`);
 }
 
-// Student 8 (Зацепина) full day excused on W4 Tuesday
-engine.handleSetFullDayStatus(dateW4Tu, w4TuDay!.lessons, 8, 'excused', true);
-for (const lesson of w4TuDay!.lessons) {
-  const rec = engine.getAttendance(dateW4Tu, lesson.id);
-  assert(rec.excusedStudentIds?.includes(8), `W4 Tu lesson ${lesson.id} contains Student 8 in excusedStudentIds`);
+// Student 8 (Зацепина) full day excused on W4 Monday
+engine.handleSetFullDayStatus(dateW4Mo, w4MoDay!.lessons, 8, 'excused', true);
+for (const lesson of w4MoDay!.lessons) {
+  const rec = engine.getAttendance(dateW4Mo, lesson.id);
+  assert(rec.excusedStudentIds?.includes(8), `W4 Mo lesson ${lesson.id} contains Student 8 in excusedStudentIds`);
 }
 
 // ============================================================================
@@ -539,7 +533,7 @@ engine.handleSetFullDayStatus(dateW1Mo, w1MoDay!.lessons, 9, 'absent', true);
 const recCancelledCheck = engine.getAttendance(dateW1Mo, cancelledLessonId);
 assert(!recCancelledCheck.absentStudentIds.includes(9), `Cancelled lesson ${cancelledLessonId} was SKIPPED by handleSetFullDayStatus (Student 9 not added)`);
 
-// Check that the other 4 active lessons DO have Student 9
+// Check that the other 3 active lessons DO have Student 9
 const activeW1MoLessons = w1MoDay!.lessons.filter(l => l.id !== cancelledLessonId);
 for (const lesson of activeW1MoLessons) {
   const rec = engine.getAttendance(dateW1Mo, lesson.id);
@@ -547,45 +541,45 @@ for (const lesson of activeW1MoLessons) {
 }
 
 // 5.2 Verify Hours Calculation for Student 9:
-// 4 active lessons absent * 2 hours = 8 hours (NOT 10 hours)
+// 3 active lessons absent * 2 hours = 6 hours (NOT 8 or 10 hours)
 console.log("\n--- 5.2 Hours Calculation for Cancelled Lessons ---");
 let currentReport = engine.calculateReport(students);
 const s9Report = currentReport.find(s => s.id === 9)!;
-assert(s9Report.totalAllTimeAbs === 8, `Student 9 has 8 hours absent (4 active pairs * 2h). Got: ${s9Report.totalAllTimeAbs}h`);
+assert(s9Report.totalAllTimeAbs === 6, `Student 9 has 6 hours absent (3 active pairs * 2h). Got: ${s9Report.totalAllTimeAbs}h`);
 assert(s9Report.totalAllTimeExc === 0, `Student 9 has 0 hours excused. Got: ${s9Report.totalAllTimeExc}h`);
 
 // Student 1 had full day absent on W1 Monday before lesson 3 was cancelled.
-// Since lesson 3 is now cancelled, reportData filters it out:
+// Since lesson 3 is now cancelled, reportData filters it out: 3 active * 2h = 6h
 const s1Report = currentReport.find(s => s.id === 1)!;
-assert(s1Report.totalAllTimeAbs === 8, `Student 1 has 8 hours absent (cancelled pair ignored in report). Got: ${s1Report.totalAllTimeAbs}h`);
+assert(s1Report.totalAllTimeAbs === 6, `Student 1 has 6 hours absent (cancelled pair ignored in report). Got: ${s1Report.totalAllTimeAbs}h`);
 
-// Student 2 had full day excused on W1 Monday: 4 active pairs * 2h = 8h excused
+// Student 2 had full day excused on W1 Monday: 3 active pairs * 2h = 6h excused
 const s2Report = currentReport.find(s => s.id === 2)!;
-assert(s2Report.totalAllTimeExc === 8, `Student 2 has 8 hours excused (cancelled pair ignored in report). Got: ${s2Report.totalAllTimeExc}h`);
+assert(s2Report.totalAllTimeExc === 6, `Student 2 has 6 hours excused (cancelled pair ignored in report). Got: ${s2Report.totalAllTimeExc}h`);
 
-// Student 3: W3 Monday (5 lessons, none cancelled) -> 5 * 2 = 10h absent
+// Student 3: W3 Monday (4 lessons, none cancelled) -> 4 * 2 = 8h absent
 const s3Report = currentReport.find(s => s.id === 3)!;
-assert(s3Report.totalAllTimeAbs === 10, `Student 3 has 10 hours absent (5 pairs * 2h). Got: ${s3Report.totalAllTimeAbs}h`);
+assert(s3Report.totalAllTimeAbs === 8, `Student 3 has 8 hours absent (4 pairs * 2h). Got: ${s3Report.totalAllTimeAbs}h`);
 
-// Student 4: W3 Monday (5 lessons, none cancelled) -> 5 * 2 = 10h excused
+// Student 4: W3 Monday (4 lessons, none cancelled) -> 4 * 2 = 8h excused
 const s4Report = currentReport.find(s => s.id === 4)!;
-assert(s4Report.totalAllTimeExc === 10, `Student 4 has 10 hours excused (5 pairs * 2h). Got: ${s4Report.totalAllTimeExc}h`);
+assert(s4Report.totalAllTimeExc === 8, `Student 4 has 8 hours excused (4 pairs * 2h). Got: ${s4Report.totalAllTimeExc}h`);
 
-// Student 5: W2 Tuesday (4 lessons, none cancelled) -> 4 * 2 = 8h absent
+// Student 5: W2 Monday (5 lessons, none cancelled) -> 5 * 2 = 10h absent
 const s5Report = currentReport.find(s => s.id === 5)!;
-assert(s5Report.totalAllTimeAbs === 8, `Student 5 has 8 hours absent (4 pairs * 2h). Got: ${s5Report.totalAllTimeAbs}h`);
+assert(s5Report.totalAllTimeAbs === 10, `Student 5 has 10 hours absent (5 pairs * 2h). Got: ${s5Report.totalAllTimeAbs}h`);
 
-// Student 6: W2 Tuesday (4 lessons, none cancelled) -> 4 * 2 = 8h excused
+// Student 6: W2 Monday (5 lessons, none cancelled) -> 5 * 2 = 10h excused
 const s6Report = currentReport.find(s => s.id === 6)!;
-assert(s6Report.totalAllTimeExc === 8, `Student 6 has 8 hours excused (4 pairs * 2h). Got: ${s6Report.totalAllTimeExc}h`);
+assert(s6Report.totalAllTimeExc === 10, `Student 6 has 10 hours excused (5 pairs * 2h). Got: ${s6Report.totalAllTimeExc}h`);
 
-// Student 7: W4 Tuesday (4 lessons, none cancelled) -> 4 * 2 = 8h absent
+// Student 7: W4 Monday (5 lessons, none cancelled) -> 5 * 2 = 10h absent
 const s7Report = currentReport.find(s => s.id === 7)!;
-assert(s7Report.totalAllTimeAbs === 8, `Student 7 has 8 hours absent (4 pairs * 2h). Got: ${s7Report.totalAllTimeAbs}h`);
+assert(s7Report.totalAllTimeAbs === 10, `Student 7 has 10 hours absent (5 pairs * 2h). Got: ${s7Report.totalAllTimeAbs}h`);
 
-// Student 8: W4 Tuesday (4 lessons, none cancelled) -> 4 * 2 = 8h excused
+// Student 8: W4 Monday (5 lessons, none cancelled) -> 5 * 2 = 10h excused
 const s8Report = currentReport.find(s => s.id === 8)!;
-assert(s8Report.totalAllTimeExc === 8, `Student 8 has 8 hours excused (4 pairs * 2h). Got: ${s8Report.totalAllTimeExc}h`);
+assert(s8Report.totalAllTimeExc === 10, `Student 8 has 10 hours excused (5 pairs * 2h). Got: ${s8Report.totalAllTimeExc}h`);
 
 // 5.3 Verify NO DOUBLE COUNTING if a student is accidentally in both arrays
 console.log("\n--- 5.3 Anomaly Protection: No Double Counting ---");
@@ -612,25 +606,25 @@ assert(s10Report.totalAllTimeAbs + s10Report.totalAllTimeExc === 2, "Student 10 
 // 5.4 Verify Blocks Distribution
 console.log("\n--- 5.4 Block Distribution (Block 1 vs Block 2) ---");
 // W1 Mo (2026-08-31) -> Block 1 (31.08 - 20.09)
-// W2 Tu (2026-09-08) -> Block 1
+// W2 Mo (2026-09-07) -> Block 1
 // W3 Mo (2026-09-14) -> Block 1
-// W4 Tu (2026-09-22) -> Block 2 (21.09 - 20.10)
+// W4 Mo (2026-09-21) -> Block 2 (21.09 - 20.10)
 
-// Student 1 (W1 Mo): Block 1 = 8h, Block 2 = 0h
-assert(s1Report.absences[0] === 8, `Student 1 Block 1 absences: 8h (got: ${s1Report.absences[0]}h)`);
+// Student 1 (W1 Mo): Block 1 = 6h, Block 2 = 0h
+assert(s1Report.absences[0] === 6, `Student 1 Block 1 absences: 6h (got: ${s1Report.absences[0]}h)`);
 assert(s1Report.absences[1] === 0, `Student 1 Block 2 absences: 0h (got: ${s1Report.absences[1]}h)`);
 
-// Student 5 (W2 Tu): Block 1 = 8h, Block 2 = 0h
-assert(s5Report.absences[0] === 8, `Student 5 Block 1 absences: 8h (got: ${s5Report.absences[0]}h)`);
+// Student 5 (W2 Mo): Block 1 = 10h, Block 2 = 0h
+assert(s5Report.absences[0] === 10, `Student 5 Block 1 absences: 10h (got: ${s5Report.absences[0]}h)`);
 assert(s5Report.absences[1] === 0, `Student 5 Block 2 absences: 0h (got: ${s5Report.absences[1]}h)`);
 
-// Student 7 (W4 Tu): Block 1 = 0h, Block 2 = 8h
+// Student 7 (W4 Mo): Block 1 = 0h, Block 2 = 10h
 assert(s7Report.absences[0] === 0, `Student 7 Block 1 absences: 0h (got: ${s7Report.absences[0]}h)`);
-assert(s7Report.absences[1] === 8, `Student 7 Block 2 absences: 8h (got: ${s7Report.absences[1]}h)`);
+assert(s7Report.absences[1] === 10, `Student 7 Block 2 absences: 10h (got: ${s7Report.absences[1]}h)`);
 
-// Student 8 (W4 Tu): Block 1 = 0h, Block 2 = 8h excused
+// Student 8 (W4 Mo): Block 1 = 0h, Block 2 = 10h excused
 assert(s8Report.excused[0] === 0, `Student 8 Block 1 excused: 0h (got: ${s8Report.excused[0]}h)`);
-assert(s8Report.excused[1] === 8, `Student 8 Block 2 excused: 8h (got: ${s8Report.excused[1]}h)`);
+assert(s8Report.excused[1] === 10, `Student 8 Block 2 excused: 10h (got: ${s8Report.excused[1]}h)`);
 
 // Sum of blocks matches total all time
 for (const s of currentReport) {
@@ -645,11 +639,11 @@ console.log("\n--- 5.5 Mass Group Full Day Test ---");
 const massEngine = new AttendanceEngine('faid-310');
 const allStudentIds = students.map(s => s.id);
 
-// Mark all 22 students full day absent on W2 Tuesday (4 lessons)
-massEngine.handleSetWholeGroupFullDayStatus(dateW2Tu, w2TuDay!.lessons, allStudentIds, 'absent', true);
+// Mark all 22 students full day absent on W3 Monday (4 lessons)
+massEngine.handleSetWholeGroupFullDayStatus(dateW3Mo, w3MoDay!.lessons, allStudentIds, 'absent', true);
 
-for (const lesson of w2TuDay!.lessons) {
-  const rec = massEngine.getAttendance(dateW2Tu, lesson.id);
+for (const lesson of w3MoDay!.lessons) {
+  const rec = massEngine.getAttendance(dateW3Mo, lesson.id);
   assert(rec.absentStudentIds.length === 22, `Mass absent: Lesson ${lesson.id} has all 22 students marked absent`);
 }
 
@@ -657,10 +651,10 @@ const massReport = massEngine.calculateReport(students);
 const allHave8Hours = massReport.every(s => s.totalAllTimeAbs === 8 && s.totalAllTimeExc === 0);
 assert(allHave8Hours, "All 22 students have exactly 8 hours absent (4 lessons * 2h)");
 
-// Switch all 22 students to excused on W2 Tuesday
-massEngine.handleSetWholeGroupFullDayStatus(dateW2Tu, w2TuDay!.lessons, allStudentIds, 'excused', true);
-for (const lesson of w2TuDay!.lessons) {
-  const rec = massEngine.getAttendance(dateW2Tu, lesson.id);
+// Switch all 22 students to excused on W3 Monday
+massEngine.handleSetWholeGroupFullDayStatus(dateW3Mo, w3MoDay!.lessons, allStudentIds, 'excused', true);
+for (const lesson of w3MoDay!.lessons) {
+  const rec = massEngine.getAttendance(dateW3Mo, lesson.id);
   assert(rec.excusedStudentIds?.length === 22, `Mass excused: Lesson ${lesson.id} has all 22 students marked excused`);
   assert(rec.absentStudentIds.length === 0, `Mass excused: Lesson ${lesson.id} has 0 absent students`);
 }
