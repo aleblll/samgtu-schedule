@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-page: #0f1115;
+    --bg-card: #181a20;
+    --bg-card-hover: #1f222a;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-strong: #262933;
+    --text-main: #ededed;
+    --text-muted: #8e929e;
+    --text-dim: #5c606d;
+    --accent-uni: #3b82f6;
+    --accent-tutoring: #10b981;
+    --accent-sport: #f59e0b;
+    --accent-note: #64748b;
+  }
+
+  .light {
+    --bg-page: #f7f8fa;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f3f4f6;
+    --border-subtle: #e5e7eb;
+    --border-strong: #d1d5db;
+    --text-main: #111827;
+    --text-muted: #6b7280;
+    --text-dim: #9ca3af;
+    --accent-uni: #2563eb;
+    --accent-tutoring: #059669;
+    --accent-sport: #d97706;
+    --accent-note: #475569;
+  }
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Telegram safe areas */
+.safe-top {
+  padding-top: max(12px, env(safe-area-inset-top, 12px));
+}
+
+.safe-bottom {
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+}
+
+/* Hide scrollbar for tabs / day strip */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Subtle glow / shadow for anti-slop */
+.card-border {
+  border: 1px solid var(--border-subtle);
+}
+
+.card-bg {
+  background-color: var(--bg-card);
+}
