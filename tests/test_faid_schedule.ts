@@ -83,13 +83,9 @@ const faidSchedule = SCHEDULE_REGISTRY['faid-310'];
 assert(!!faidSchedule, "SCHEDULE_REGISTRY['faid-310'] exists");
 assert(!!faidSchedule[1] && !!faidSchedule[2] && !!faidSchedule[3] && !!faidSchedule[4], "All 4 weeks exist");
 
-// Week 1: Mon 4, Tue 4, Wed 5, Thu 5 (18 lessons)
+// Week 1: Mon 0 (31 August summer), Tue 4, Wed 5, Thu 5 (14 lessons)
 const w1Mon = faidSchedule[1].find(d => d.dayName === 'Понедельник');
-assert(w1Mon?.lessons.length === 4, `Week 1 Monday has 4 lessons (got ${w1Mon?.lessons.length})`);
-assert(w1Mon?.lessons[0].subject === 'Элективные курсы по физической культуре и спорту' && w1Mon?.lessons[0].timeStart === '11:50', "W1 Mo L1: PE practice");
-assert(w1Mon?.lessons[1].subject === 'Философия' && w1Mon?.lessons[1].timeStart === '13:35' && w1Mon?.lessons[1].teacher === 'Стоцкая Татьяна Геннадьевна', "W1 Mo L2: Philosophy Moodle Stotskaya");
-assert(w1Mon?.lessons[2].subject === 'Проектирование' && w1Mon?.lessons[2].timeStart === '15:40' && w1Mon?.lessons[2].teacher === 'Смоленская Елена Олеговна', "W1 Mo L3: Design practice 1");
-assert(w1Mon?.lessons[3].subject === 'Проектирование' && w1Mon?.lessons[3].timeStart === '17:25' && w1Mon?.lessons[3].teacher === 'Смоленская Елена Олеговна', "W1 Mo L4: Design practice 2");
+assert(w1Mon?.lessons.length === 0, `Week 1 Monday (31 August) has 0 lessons (got ${w1Mon?.lessons.length})`);
 
 // Week 1 Tuesday: 4 lessons
 const w1Tue = faidSchedule[1].find(d => d.dayName === 'Вторник');
@@ -165,12 +161,18 @@ const w4Tue = faidSchedule[4].find(d => d.dayName === 'Вторник');
 assert(w4Tue?.lessons.length === 1, `Week 4 Tuesday has 1 lesson (got ${w4Tue?.lessons.length})`);
 assert(w4Tue?.lessons[0].subject === 'Практико-ориентированный проект' && w4Tue?.lessons[0].teacher === 'Смоленская Елена Олеговна', "W4 Tu L1: Project Smolenskaya");
 
-// Check total lessons across all 4 weeks = 68 (18 + 16 + 18 + 16)
+// Check total lessons across all 4 weeks = 64 (14 + 16 + 18 + 16)
 let totalFaidLessons = 0;
 for (let w = 1; w <= 4; w++) {
   faidSchedule[w].forEach(day => totalFaidLessons += day.lessons.length);
 }
-assert(totalFaidLessons === 68, `3-ФАИД-110 total lessons across 4 weeks is 68 (got ${totalFaidLessons})`);
+assert(totalFaidLessons === 64, `3-ФАИД-110 total lessons across 4 weeks is 64 (got ${totalFaidLessons})`);
+
+// Check that Kolibasov is strictly NOT in 101 and 103
+const ingt301 = SCHEDULE_REGISTRY['ingt-301'];
+const ingt303 = SCHEDULE_REGISTRY['ingt-303'];
+assert(!JSON.stringify(ingt301).includes('Колибасов'), "Kolibasov is absent from 3-ИНГТ-101 schedule");
+assert(!JSON.stringify(ingt303).includes('Колибасов'), "Kolibasov is absent from 3-ИНГТ-103 schedule");
 
 // 4. SANITIZATION AND ISOLATION
 console.log("\n--- 4. Teacher Sanitization & Group Isolation ---");

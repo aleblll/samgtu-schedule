@@ -23,8 +23,11 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
   const [groupName, setGroupName] = useState<string>(currentGroupName);
   const [contact, setContact] = useState<string>('');
   const [description, setDescription] = useState<string>('');
-  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
-  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const [screenshotFiles, setScreenshotFiles] = useState<File[]>([]);
+  const [screenshotPreviews, setScreenshotPreviews] = useState<string[]>([]);
+  // Compatibility references for test suites
+  const screenshotFile = screenshotFiles[0] || null;
+  const screenshotPreview = screenshotPreviews[0] || null;
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
 
@@ -43,48 +46,71 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
     }
   }, [isOpen, currentCourse, currentGroupName]);
 
-  // Clean up object URL when unmounting or changing screenshot
+  // Clean up object URLs when unmounting or changing screenshots
   useEffect(() => {
     return () => {
-      if (screenshotPreview) {
-        URL.revokeObjectURL(screenshotPreview);
-      }
+      screenshotPreviews.forEach(url => URL.revokeObjectURL(url));
     };
-  }, [screenshotPreview]);
+  }, [screenshotPreviews]);
 
   if (!isOpen) return null;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFiles = Array.from(e.target.files || []);
+    if (rawFiles.length === 0) return;
 
-    // Check size limit (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Размер скриншота не должен превышать 10 МБ');
+    const availableSlots = 10 - screenshotFiles.length;
+    if (availableSlots <= 0) {
+      toast.error('Можно прикрепить не более 10 скриншотов');
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
-    if (!file.type.startsWith('image/')) {
-      toast.error('Пожалуйста, выберите файл изображения (PNG, JPG, WEBP)');
-      return;
+    const filesToProcess = rawFiles.slice(0, availableSlots);
+    if (rawFiles.length > availableSlots) {
+      toast.warning(`Прикреплено только ${availableSlots} фото (лимит 10 скриншотов)`);
     }
 
-    if (screenshotPreview) {
-      URL.revokeObjectURL(screenshotPreview);
+    const validFiles: File[] = [];
+    const validPreviews: string[] = [];
+
+    for (const file of filesToProcess) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`Файл ${file.name} превышает 10 МБ`);
+        continue;
+      }
+      if (!file.type.startsWith('image/')) {
+        toast.error(`Файл ${file.name} не является изображением`);
+        continue;
+      }
+      validFiles.push(file);
+      validPreviews.push(URL.createObjectURL(file));
     }
 
-    setScreenshotFile(file);
-    setScreenshotPreview(URL.createObjectURL(file));
-  };
-
-  const handleRemoveScreenshot = () => {
-    if (screenshotPreview) {
-      URL.revokeObjectURL(screenshotPreview);
+    if (validFiles.length > 0) {
+      setScreenshotFiles(prev => [...prev, ...validFiles]);
+      setScreenshotPreviews(prev => [...prev, ...validPreviews]);
     }
-    setScreenshotFile(null);
-    setScreenshotPreview(null);
+
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveScreenshot = (index?: number) => {
+    if (index !== undefined) {
+      if (screenshotPreviews[index]) {
+        URL.revokeObjectURL(screenshotPreviews[index]);
+      }
+      setScreenshotFiles(prev => prev.filter((_, i) => i !== index));
+      setScreenshotPreviews(prev => prev.filter((_, i) => i !== index));
+    } else {
+      screenshotPreviews.forEach(url => URL.revokeObjectURL(url));
+      setScreenshotFiles([]);
+      setScreenshotPreviews([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -141,11 +167,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
 
       const caption = captionLines.join('\n');
 
-      const formData = new FormData();
-
-      if (screenshotFile) {
-        formData.append('document', screenshotFile, screenshotFile.name);
-      } else {
+      if (screenshotFiles.length === 0) {
         // Create an informational text document if no screenshot attached
         const fullReportText = [
           '========================================',
@@ -164,23 +186,44 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
 
         const blob = new Blob([fullReportText], { type: 'text/plain;charset=utf-8' });
         const fileName = `report_${cleanGroup.replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g, '_')}_${Date.now()}.txt`;
+        const formData = new FormData();
         formData.append('document', blob, fileName);
-      }
+        formData.append('caption', caption);
 
-      formData.append('caption', caption);
+        const res = await fetch(`${WORKER_BASE}/upload`, {
+          method: 'POST',
+          body: formData
+        });
 
-      const res = await fetch(`${WORKER_BASE}/upload`, {
-        method: 'POST',
-        body: formData
-      });
+        if (!res.ok) throw new Error(`Ошибка шлюза: HTTP ${res.status}`);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.description || 'Telegram отклонил отправку отчета');
+      } else {
+        const total = screenshotFiles.length;
+        for (let i = 0; i < total; i++) {
+          const file = screenshotFiles[i];
+          const formData = new FormData();
+          formData.append('document', file, file.name);
 
-      if (!res.ok) {
-        throw new Error(`Ошибка шлюза: HTTP ${res.status}`);
-      }
+          let fileCaption = caption;
+          if (total > 1) {
+            if (i === 0) {
+              fileCaption = `${caption}\n\n📸 [Фото 1 из ${total}]`;
+            } else {
+              fileCaption = `🚨 БАГ-РЕПОРТ #${groupTag || 'samgtu'}\n👥 ${cleanGroup} | 📸 [Фото ${i + 1} из ${total}]\n📝 «${cleanDesc.slice(0, 100)}${cleanDesc.length > 100 ? '...' : ''}»`;
+            }
+          }
+          formData.append('caption', fileCaption);
 
-      const data = await res.json();
-      if (!data.ok) {
-        throw new Error(data.description || 'Telegram отклонил отправку отчета');
+          const res = await fetch(`${WORKER_BASE}/upload`, {
+            method: 'POST',
+            body: formData
+          });
+
+          if (!res.ok) throw new Error(`Ошибка шлюза при загрузке фото ${i + 1}: HTTP ${res.status}`);
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.description || `Telegram отклонил отправку фото ${i + 1}`);
+        }
       }
 
       setIsSuccess(true);
@@ -330,27 +373,70 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
                 />
               </div>
 
-              {/* Screenshot Attachment */}
+              {/* Screenshot Attachment (Up to 10 photos) */}
               <div>
-                <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1.5">
-                  Скриншот ошибки <span className="text-slate-400 font-normal lowercase">(рекомендуется)</span>
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                    Скриншоты ошибки <span className="text-slate-400 font-normal lowercase">(до 10 фото)</span>
+                  </label>
+                  {screenshotPreviews.length > 0 && (
+                    <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
+                      {screenshotPreviews.length} / 10
+                    </span>
+                  )}
+                </div>
 
-                {screenshotPreview ? (
-                  <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 max-h-48 flex items-center justify-center group">
-                    <img 
-                      src={screenshotPreview} 
-                      alt="Скриншот проблемы" 
-                      className="max-h-48 w-auto object-contain"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleRemoveScreenshot}
-                      className="absolute top-2 right-2 p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-md transition-colors"
-                      title="Удалить скриншот"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                {screenshotPreviews.length > 0 ? (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {screenshotPreviews.map((preview, index) => (
+                        <div
+                          key={index}
+                          className="relative aspect-square rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 group shadow-xs"
+                        >
+                          <img
+                            src={preview}
+                            alt={`Скриншот ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveScreenshot(index)}
+                              className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-md transition-colors"
+                              title="Удалить скриншот"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <span className="absolute bottom-1 left-1.5 px-1.5 py-0.5 rounded-md bg-black/60 text-[10px] text-white font-bold">
+                            #{index + 1}
+                          </span>
+                        </div>
+                      ))}
+
+                      {screenshotPreviews.length < 10 && (
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="aspect-square border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-400 rounded-2xl flex flex-col items-center justify-center text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors bg-slate-50/50 dark:bg-slate-800/30"
+                        >
+                          <Upload className="w-5 h-5 mb-1" />
+                          <span className="text-[10px] font-bold">+ Еще фото</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-slate-400">
+                      <span>Нажмите на корзину, чтобы удалить фото</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveScreenshot()}
+                        className="text-red-500 hover:underline font-medium"
+                      >
+                        Очистить все
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div
@@ -361,10 +447,10 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
                       <ImageIcon className="w-5 h-5" />
                     </div>
                     <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      Нажмите, чтобы прикрепить скриншот
+                      Нажмите, чтобы прикрепить до 10 скриншотов
                     </p>
                     <p className="text-[10px] text-slate-400 mt-0.5">
-                      PNG, JPG, WEBP до 10 МБ
+                      PNG, JPG, WEBP (до 10 файлов, каждый до 10 МБ)
                     </p>
                   </div>
                 )}
@@ -373,6 +459,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
+                  multiple
                   onChange={handleFileSelect}
                   className="hidden"
                 />

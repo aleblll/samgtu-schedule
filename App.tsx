@@ -764,7 +764,25 @@ const App: React.FC = () => {
     const rawSchedule = SCHEDULE_REGISTRY[currentGroupId]?.[selectedWeek] || [];
     return rawSchedule.map(day => {
       const isoDate = getDayISODate(day.dayName, selectedWeek);
-      const standardLessons = day.lessons.map(lesson => {
+
+      // 31 августа - лето, до начала семестра. Категорически 0 пар!
+      if (isoDate === '2026-08-31') {
+        return {
+          dayName: day.dayName,
+          lessons: []
+        };
+      }
+
+      // Для последующих циклов 1-й недели (28 сентября и далее) понедельник берется из числителя (Неделя 3)
+      let sourceLessons = day.lessons;
+      if (day.dayName === 'Понедельник' && sourceLessons.length === 0 && isoDate !== '2026-08-31') {
+        const w3Mon = SCHEDULE_REGISTRY[currentGroupId]?.[3]?.find(d => d.dayName === 'Понедельник');
+        if (w3Mon && w3Mon.lessons.length > 0) {
+          sourceLessons = w3Mon.lessons;
+        }
+      }
+
+      const standardLessons = sourceLessons.map(lesson => {
         const override = scheduleOverrides[lesson.id] || {};
         const teacherByType = subjectTeachers[`${lesson.subject}::${lesson.type}`];
         const flatTeacher = subjectTeachers[lesson.subject];

@@ -16,9 +16,9 @@ console.log("=================================================================")
 console.log("\n--- TEST 1: SCHEDULE REGISTRY & GHOST LESSON AUDIT ---");
 const faidW1 = SCHEDULE_REGISTRY['faid-310']?.[1] || [];
 const faidW1Mon = faidW1.find(d => d.dayName === 'Понедельник');
-console.log(`faid-310 Week 1 Monday lessons count: ${faidW1Mon?.lessons.length} (Expected: 4)`);
-if (faidW1Mon && faidW1Mon.lessons.length !== 4) {
-  console.log("  >>> CRITICAL BUG: Week 1 Monday in faid-310 should have 4 lessons! <<<");
+console.log(`faid-310 Week 1 Monday lessons count: ${faidW1Mon?.lessons.length} (Expected: 0)`);
+if (faidW1Mon && faidW1Mon.lessons.length !== 0) {
+  console.log("  >>> CRITICAL BUG: Week 1 Monday (31 August) in faid-310 must have 0 lessons (summer vacation)! <<<");
 }
 
 const faidW2 = SCHEDULE_REGISTRY['faid-310']?.[2] || [];

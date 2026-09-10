@@ -134,6 +134,11 @@ export function findExistingTeacher(groupId: string, subject: string, type: stri
     return '';
   };
 
+  // Для групп 101 и 103 Колибасов НЕ ведет проект и патенты (только 110)
+  if ((groupId === 'ingt-301' || groupId === 'ingt-303') && (normSubj.includes('проект') || normSubj.includes('патентовед'))) {
+    return '';
+  }
+
   // 1. Прямой поиск в текущем расписании группы (совпадение предмета и типа)
   const groupSched = SCHEDULE_REGISTRY[groupId];
   if (groupSched) {
@@ -145,7 +150,10 @@ export function findExistingTeacher(groupId: string, subject: string, type: stri
           const lType = lesson.type.toLowerCase();
           if (lSubj === normSubj && lType === normType) {
             const found = checkTeacher(lesson.teacher);
-            if (found) return found;
+            if (found) {
+              if ((groupId === 'ingt-301' || groupId === 'ingt-303') && found.includes('Колибасов')) continue;
+              return found;
+            }
           }
         }
       }
@@ -159,7 +167,10 @@ export function findExistingTeacher(groupId: string, subject: string, type: stri
           const lSubj = cleanText(lesson.subject).toLowerCase();
           if (lSubj === normSubj) {
             const found = checkTeacher(lesson.teacher);
-            if (found) return found;
+            if (found) {
+              if ((groupId === 'ingt-301' || groupId === 'ingt-303') && found.includes('Колибасов')) continue;
+              return found;
+            }
           }
         }
       }
@@ -185,23 +196,25 @@ export function findExistingTeacher(groupId: string, subject: string, type: stri
     }
   }
 
-  // 4. Поиск в глобальном справочнике SEED_SUBJECT_TEACHERS
-  for (const [k, teacher] of Object.entries(SEED_SUBJECT_TEACHERS)) {
-    const [seedSubj, seedType] = k.split('::');
-    if (cleanText(seedSubj).toLowerCase() === normSubj && (!seedType || seedType.toLowerCase() === normType)) {
-      const found = checkTeacher(teacher);
-      if (found) return found;
+  // 4. Глобальный справочник SEED_SUBJECT_TEACHERS используется СТРОГО для ingt-310
+  if (groupId === 'ingt-310') {
+    for (const [k, teacher] of Object.entries(SEED_SUBJECT_TEACHERS)) {
+      const [seedSubj, seedType] = k.split('::');
+      if (cleanText(seedSubj).toLowerCase() === normSubj && (!seedType || seedType.toLowerCase() === normType)) {
+        const found = checkTeacher(teacher);
+        if (found) return found;
+      }
     }
-  }
-  for (const [k, teacher] of Object.entries(SEED_SUBJECT_TEACHERS)) {
-    const [seedSubj] = k.split('::');
-    if (cleanText(seedSubj).toLowerCase() === normSubj) {
-      const found = checkTeacher(teacher);
-      if (found) return found;
+    for (const [k, teacher] of Object.entries(SEED_SUBJECT_TEACHERS)) {
+      const [seedSubj] = k.split('::');
+      if (cleanText(seedSubj).toLowerCase() === normSubj) {
+        const found = checkTeacher(teacher);
+        if (found) return found;
+      }
     }
   }
 
-  // 5. Специальный фоллбэк для физкультуры
+  // 5. Специальный фоллбэк для физкультуры (общий для всех)
   if (normSubj.includes('физической культуре') || normSubj.includes('элективные курсы')) {
     return 'Кафедра физического воспитания';
   }
@@ -298,18 +311,8 @@ export async function verifyAndSync() {
         const curLessons = curDay?.lessons || [];
         existingLessonsCount += curLessons.length;
 
-        // ВАЖНО: 31 августа - это понедельник 1-й недели.
-        // В выгрузке API СамГТУ дата 31.08 пуста из-за календарного старта семестра с 1 сентября.
-        // Понедельник 1-й недели (числитель) полностью совпадает с понедельником 3-й недели (числитель)!
-        // Если в Неделе 1 в понедельник в API 0 пар, подтягиваем регулярный понедельник из Недели 3.
-        if (weekNum === 1 && dayIdx === 1) {
-          const w1HasCells = offDay?.at && Object.values(offDay.at as Record<string, any>).some(s => s.Cells && s.Cells.length > 0);
-          const w3Monday = rawWeeksData[3]?.wd?.['1'];
-          if (!w1HasCells && w3Monday) {
-            offDay = w3Monday;
-          }
-        }
-
+        // 31 августа - понедельник 1-й недели. Учеба начинается со вторника 1 сентября.
+        // В официальном реестре СамГТУ на 31 августа 0 пар. Оставляем как в СамГТУ (0 пар).
         const offLessons: Lesson[] = [];
 
         if (offDay && offDay.at) {

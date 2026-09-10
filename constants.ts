@@ -85,10 +85,6 @@ export const SCHEDULE_REGISTRY: Registry<WeekData> = {
       {
         dayName: 'Понедельник',
         lessons: [
-          { id: '310-w1-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "Спортивный комплекс", teacher: "Кафедра физического воспитания" },
-          { id: '310-w1-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Конструирование и расчет сосудов и аппаратов нефтегазовых промыслов, работающих под давлением", type: 'Лабораторные работы', location: "Корпус № 9, 423", teacher: "Крючков Дмитрий Александрович" },
-          { id: '310-w1-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Конструирование и расчет сосудов и аппаратов нефтегазовых промыслов, работающих под давлением", type: 'Лабораторные работы', location: "Корпус № 9, 423", teacher: "Крючков Дмитрий Александрович" },
-          { id: '310-w1-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Безопасность жизнедеятельности", type: 'Лекции', location: "Корпус № 1, 432", teacher: "Сорокина Людмила Владимировна" }
         ]
       },
       {
@@ -300,9 +296,6 @@ SCHEDULE_REGISTRY['ingt-301'] = {
     {
       dayName: 'Понедельник',
       lessons: [
-        { id: 'ingt301-w1-mo-1', timeStart: '08:00', timeEnd: '09:35', subject: "Гидравлика и нефтегазовая гидромеханика", type: 'Лабораторные работы', location: "Корпус № 9, 216", teacher: "" },
-        { id: 'ingt301-w1-mo-2', timeStart: '09:45', timeEnd: '11:20', subject: "Гидравлика и нефтегазовая гидромеханика", type: 'Лабораторные работы', location: "Корпус № 9, 216", teacher: "" },
-        { id: 'ingt301-w1-mo-3', timeStart: '11:50', timeEnd: '13:25', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "Спортивный комплекс", teacher: "Кафедра физического воспитания" }
       ]
     },
     {
@@ -357,7 +350,7 @@ SCHEDULE_REGISTRY['ingt-301'] = {
     {
       dayName: 'Вторник',
       lessons: [
-        { id: 'ingt301-w2-tu-1', timeStart: '09:45', timeEnd: '11:20', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 1, 225", teacher: "Колибасов Владимир Александрович" }
+        { id: 'ingt301-w2-tu-1', timeStart: '09:45', timeEnd: '11:20', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 1, 225", teacher: "" }
       ]
     },
     {
@@ -452,7 +445,7 @@ SCHEDULE_REGISTRY['ingt-301'] = {
     {
       dayName: 'Вторник',
       lessons: [
-        { id: 'ingt301-w4-tu-1', timeStart: '09:45', timeEnd: '11:20', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 1, 225", teacher: "Колибасов Владимир Александрович" }
+        { id: 'ingt301-w4-tu-1', timeStart: '09:45', timeEnd: '11:20', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 1, 225", teacher: "" }
       ]
     },
     {
@@ -492,10 +485,6 @@ SCHEDULE_REGISTRY['ingt-303'] = {
     {
       dayName: 'Понедельник',
       lessons: [
-        { id: 'ingt303-w1-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Гидравлика и нефтегазовая гидромеханика", type: 'Лабораторные работы', location: "Корпус № 6, 25", teacher: "" },
-        { id: 'ingt303-w1-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Гидравлика и нефтегазовая гидромеханика", type: 'Лабораторные работы', location: "Корпус № 6, 25", teacher: "" },
-        { id: 'ingt303-w1-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Термодинамика и теплопередача", type: 'Лабораторные работы', location: "Корпус № 6, 30", teacher: "" },
-        { id: 'ingt303-w1-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Термодинамика и теплопередача", type: 'Лабораторные работы', location: "Корпус № 6, 30", teacher: "" }
       ]
     },
     {
@@ -549,7 +538,7 @@ SCHEDULE_REGISTRY['ingt-303'] = {
     {
       dayName: 'Вторник',
       lessons: [
-        { id: 'ingt303-w2-tu-1', timeStart: '13:35', timeEnd: '15:10', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 9, 315", teacher: "Колибасов Владимир Александрович" }
+        { id: 'ingt303-w2-tu-1', timeStart: '13:35', timeEnd: '15:10', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 9, 315", teacher: "" }
       ]
     },
     {
@@ -644,7 +633,7 @@ SCHEDULE_REGISTRY['ingt-303'] = {
     {
       dayName: 'Вторник',
       lessons: [
-        { id: 'ingt303-w4-tu-1', timeStart: '13:35', timeEnd: '15:10', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 9, 315", teacher: "Колибасов Владимир Александрович" }
+        { id: 'ingt303-w4-tu-1', timeStart: '13:35', timeEnd: '15:10', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 9, 315", teacher: "" }
       ]
     },
     {
@@ -691,10 +680,6 @@ SCHEDULE_REGISTRY['faid-310'] = {
     {
       dayName: 'Понедельник',
       lessons: [
-        { id: 'faid310-w1-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "Спортивный комплекс", teacher: "Кафедра физического воспитания" },
-        { id: 'faid310-w1-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Философия", type: 'Лекции', location: "Moodle, ауд. не указана", teacher: "Стоцкая Татьяна Геннадьевна" },
-        { id: 'faid310-w1-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Проектирование", type: 'Практические занятия', location: "Корпус № 13, 0603", teacher: "Смоленская Елена Олеговна" },
-        { id: 'faid310-w1-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Проектирование", type: 'Практические занятия', location: "Корпус № 13, 0603", teacher: "Смоленская Елена Олеговна" }
       ]
     },
     {
@@ -890,9 +875,6 @@ SCHEDULE_REGISTRY['ingt-209'] = {
     {
       dayName: 'Понедельник',
       lessons: [
-        { id: 'ingt209-w1-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Физика", type: 'Практические занятия', location: "Корпус № 1, 320", teacher: "" },
-        { id: 'ingt209-w1-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Защита информации", type: 'Практические занятия', location: "Корпус № 8, 113", teacher: "" },
-        { id: 'ingt209-w1-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Математика", type: 'Практические занятия', location: "Корпус № 11, 471", teacher: "" }
       ]
     },
     {
@@ -1090,10 +1072,6 @@ SCHEDULE_REGISTRY['htf-215'] = {
     {
       dayName: 'Понедельник',
       lessons: [
-        { id: 'htf215-w1-mo-1', timeStart: '09:45', timeEnd: '11:20', subject: "Физика", type: 'Лекции', location: "Корпус № 1, 423", teacher: "Косарева Евгения Александровна" },
-        { id: 'htf215-w1-mo-2', timeStart: '11:50', timeEnd: '13:25', subject: "Физика", type: 'Практические занятия', location: "Корпус № 1, 423", teacher: "Косарева Евгения Александровна" },
-        { id: 'htf215-w1-mo-3', timeStart: '13:35', timeEnd: '15:10', subject: "Математика", type: 'Лекции', location: "Корпус № 2, 39", teacher: "Арланова Екатерина Юрьевна" },
-        { id: 'htf215-w1-mo-4', timeStart: '15:40', timeEnd: '17:15', subject: "Математика", type: 'Лекции', location: "Корпус № 2, 39", teacher: "Арланова Екатерина Юрьевна" }
       ]
     },
     {
@@ -1301,19 +1279,6 @@ SCHEDULE_REGISTRY['htf-215'] = {
     }
   ]
 };
-
-// Weeks 3 and 4 mapping
-// Week 3 = 14 - 19 сентября (синхронна с Неделей 1)
-SCHEDULE_REGISTRY['htf-215'][3] = SCHEDULE_REGISTRY['htf-215'][1].map(day => ({
-  ...day,
-  lessons: day.lessons.map(l => ({ ...l, id: l.id.replace('-w1-', '-w3-') }))
-}));
-
-// Week 4 = 21 - 26 сентября (синхронна с Неделей 2)
-SCHEDULE_REGISTRY['htf-215'][4] = SCHEDULE_REGISTRY['htf-215'][2].map(day => ({
-  ...day,
-  lessons: day.lessons.map(l => ({ ...l, id: l.id.replace('-w2-', '-w4-') }))
-}));
 
 // Group-specific Starosta PIN codes
 export const GROUP_STAROSTA_PINS: Record<string, string> = {
