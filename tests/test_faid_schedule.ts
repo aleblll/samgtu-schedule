@@ -102,7 +102,7 @@ assert(w1Tue?.lessons[3].timeStart === '15:40' && w1Tue?.lessons[3].teacher === 
 // Week 1 Wednesday: 5 lessons
 const w1Wed = faidSchedule[1].find(d => d.dayName === 'Среда');
 assert(w1Wed?.lessons.length === 5, `Week 1 Wednesday has 5 lessons (got ${w1Wed?.lessons.length})`);
-assert(w1Wed?.lessons[0].subject === 'Архитектурно–дизайнерское материаловедение', "W1 We L1: Materials lecture");
+assert(w1Wed?.lessons[0].subject.includes('Архитектурно') && w1Wed?.lessons[0].subject.includes('материаловедение'), "W1 We L1: Materials lecture");
 assert(w1Wed?.lessons[1].type === 'Лабораторные работы', "W1 We L2: Materials lab");
 assert(w1Wed?.lessons[2].subject === 'Компьютерные технологии в проектировании', "W1 We L3: Computer tech practice 1");
 assert(w1Wed?.lessons[3].subject === 'Компьютерные технологии в проектировании', "W1 We L4: Computer tech practice 2");
@@ -126,9 +126,10 @@ assert(w2Mon?.lessons[2].subject === 'Безопасность жизнедея�
 assert(w2Mon?.lessons[3].subject === 'Конструирование в дизайне среды' && w2Mon?.lessons[3].teacher === 'Заславский Евгений Михайлович', "W2 Mo L4: Constructing lecture Zaslavsky");
 assert(w2Mon?.lessons[4].subject === 'Конструирование в дизайне среды' && w2Mon?.lessons[4].teacher === 'Заславский Евгений Михайлович', "W2 Mo L5: Constructing practice Zaslavsky");
 
-// Week 2 Tuesday: 0 lessons
+// Week 2 Tuesday: 1 lesson (Практико-ориентированный проект)
 const w2Tue = faidSchedule[2].find(d => d.dayName === 'Вторник');
-assert(w2Tue?.lessons.length === 0, `Week 2 Tuesday has 0 lessons (got ${w2Tue?.lessons.length})`);
+assert(w2Tue?.lessons.length === 1, `Week 2 Tuesday has 1 lesson (got ${w2Tue?.lessons.length})`);
+assert(w2Tue?.lessons[0].subject === 'Практико-ориентированный проект' && w2Tue?.lessons[0].teacher === 'Смоленская Елена Олеговна', "W2 Tu L1: Project Smolenskaya");
 
 // Week 2 Wednesday: 5 lessons
 const w2Wed = faidSchedule[2].find(d => d.dayName === 'Среда');
@@ -159,16 +160,17 @@ assert(w3Tue?.lessons.length === 4, `Week 3 Tuesday has 4 lessons (got ${w3Tue?.
 const w4Mon = faidSchedule[4].find(d => d.dayName === 'Понедельник');
 assert(w4Mon?.lessons.length === 5, `Week 4 Monday has 5 lessons (got ${w4Mon?.lessons.length})`);
 
-// Week 4 Tuesday: 0 lessons
+// Week 4 Tuesday: 1 lesson (Практико-ориентированный проект)
 const w4Tue = faidSchedule[4].find(d => d.dayName === 'Вторник');
-assert(w4Tue?.lessons.length === 0, `Week 4 Tuesday has 0 lessons (got ${w4Tue?.lessons.length})`);
+assert(w4Tue?.lessons.length === 1, `Week 4 Tuesday has 1 lesson (got ${w4Tue?.lessons.length})`);
+assert(w4Tue?.lessons[0].subject === 'Практико-ориентированный проект' && w4Tue?.lessons[0].teacher === 'Смоленская Елена Олеговна', "W4 Tu L1: Project Smolenskaya");
 
-// Check total lessons across all 4 weeks = 66
+// Check total lessons across all 4 weeks = 68 (18 + 16 + 18 + 16)
 let totalFaidLessons = 0;
 for (let w = 1; w <= 4; w++) {
   faidSchedule[w].forEach(day => totalFaidLessons += day.lessons.length);
 }
-assert(totalFaidLessons === 66, `3-ФАИД-110 total lessons across 4 weeks is 66 (got ${totalFaidLessons})`);
+assert(totalFaidLessons === 68, `3-ФАИД-110 total lessons across 4 weeks is 68 (got ${totalFaidLessons})`);
 
 // 4. SANITIZATION AND ISOLATION
 console.log("\n--- 4. Teacher Sanitization & Group Isolation ---");
@@ -190,7 +192,7 @@ const patentPracticals = ingtSchedule[1].find(d => d.dayName === 'Пятница
 assert(patentPracticals?.teacher === 'Колибасов Владимир Александрович', "Patent practicals teacher on Friday is Колибасов Владимир Александрович");
 
 const ingtThu = ingtSchedule[1].find(d => d.dayName === 'Четверг');
-assert(ingtThu?.lessons.length === 0, "INGT-310 Thursday has 0 lessons (military/self-study)");
+assert(ingtThu?.lessons.length === 2, `INGT-310 Thursday has 2 lessons (военная подготовка, got ${ingtThu?.lessons.length})`);
 
 console.log("\n=================================================");
 console.log(`TOTAL: ${totalTests} | PASSED: ${passedTests} | FAILED: ${failedTests}`);

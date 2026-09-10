@@ -112,8 +112,8 @@ export const SCHEDULE_REGISTRY: Registry<WeekData> = {
       {
         dayName: 'Четверг',
         lessons: [
-          { id: '310-w1-th-1', timeStart: '11:50', timeEnd: '13:25', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3, 208", teacher: "" },
-          { id: '310-w1-th-2', timeStart: '13:35', timeEnd: '15:10', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3, 208", teacher: "" }
+          { id: '310-w1-th-1', timeStart: '11:50', timeEnd: '13:25', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3, 208", teacher: "Военный учебный центр" },
+          { id: '310-w1-th-2', timeStart: '13:35', timeEnd: '15:10', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3, 208", teacher: "Военный учебный центр" }
         ]
       },
       {
@@ -160,8 +160,8 @@ export const SCHEDULE_REGISTRY: Registry<WeekData> = {
       {
         dayName: 'Четверг',
         lessons: [
-          { id: '310-w2-th-1', timeStart: '08:00', timeEnd: '09:35', subject: "Основы военной подготовки", type: 'Лекции', location: "Корпус № 13, 0408", teacher: "" },
-          { id: '310-w2-th-2', timeStart: '09:45', timeEnd: '11:20', subject: "Основы военной подготовки", type: 'Лекции', location: "Корпус № 13, 0408", teacher: "" }
+          { id: '310-w2-th-1', timeStart: '08:00', timeEnd: '09:35', subject: "Основы военной подготовки", type: 'Лекции', location: "Корпус № 13, 0408", teacher: "Военный учебный центр" },
+          { id: '310-w2-th-2', timeStart: '09:45', timeEnd: '11:20', subject: "Основы военной подготовки", type: 'Лекции', location: "Корпус № 13, 0408", teacher: "Военный учебный центр" }
         ]
       },
       {
@@ -213,8 +213,8 @@ export const SCHEDULE_REGISTRY: Registry<WeekData> = {
       {
         dayName: 'Четверг',
         lessons: [
-          { id: '310-w3-th-1', timeStart: '11:50', timeEnd: '13:25', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3, 208", teacher: "" },
-          { id: '310-w3-th-2', timeStart: '13:35', timeEnd: '15:10', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3, 208", teacher: "" }
+          { id: '310-w3-th-1', timeStart: '11:50', timeEnd: '13:25', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3, 208", teacher: "Военный учебный центр" },
+          { id: '310-w3-th-2', timeStart: '13:35', timeEnd: '15:10', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3, 208", teacher: "Военный учебный центр" }
         ]
       },
       {
@@ -261,8 +261,8 @@ export const SCHEDULE_REGISTRY: Registry<WeekData> = {
       {
         dayName: 'Четверг',
         lessons: [
-          { id: '310-w4-th-1', timeStart: '08:00', timeEnd: '09:35', subject: "Основы военной подготовки", type: 'Лекции', location: "Корпус № 13, 0408", teacher: "" },
-          { id: '310-w4-th-2', timeStart: '09:45', timeEnd: '11:20', subject: "Основы военной подготовки", type: 'Лекции', location: "Корпус № 13, 0408", teacher: "" }
+          { id: '310-w4-th-1', timeStart: '08:00', timeEnd: '09:35', subject: "Основы военной подготовки", type: 'Лекции', location: "Корпус № 13, 0408", teacher: "Военный учебный центр" },
+          { id: '310-w4-th-2', timeStart: '09:45', timeEnd: '11:20', subject: "Основы военной подготовки", type: 'Лекции', location: "Корпус № 13, 0408", teacher: "Военный учебный центр" }
         ]
       },
       {
@@ -751,7 +751,7 @@ SCHEDULE_REGISTRY['faid-310'] = {
     {
       dayName: 'Вторник',
       lessons: [
-        { id: 'faid310-w2-tu-1', timeStart: '11:50', timeEnd: '13:25', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 13, 0603", teacher: "Колибасов Владимир Александрович" }
+        { id: 'faid310-w2-tu-1', timeStart: '11:50', timeEnd: '13:25', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 13, 0603", teacher: "Смоленская Елена Олеговна" }
       ]
     },
     {
@@ -849,7 +849,7 @@ SCHEDULE_REGISTRY['faid-310'] = {
     {
       dayName: 'Вторник',
       lessons: [
-        { id: 'faid310-w4-tu-1', timeStart: '11:50', timeEnd: '13:25', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 13, 0603", teacher: "Колибасов Владимир Александрович" }
+        { id: 'faid310-w4-tu-1', timeStart: '11:50', timeEnd: '13:25', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 13, 0603", teacher: "Смоленская Елена Олеговна" }
       ]
     },
     {

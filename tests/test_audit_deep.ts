@@ -23,9 +23,9 @@ if (faidW1Mon && faidW1Mon.lessons.length !== 4) {
 
 const faidW2 = SCHEDULE_REGISTRY['faid-310']?.[2] || [];
 const faidW2Tue = faidW2.find(d => d.dayName === 'Вторник');
-console.log(`faid-310 Week 2 Tuesday lessons count: ${faidW2Tue?.lessons.length} (Expected: 0)`);
-if (faidW2Tue && faidW2Tue.lessons.length > 0) {
-  console.log("  >>> CRITICAL BUG: Week 2 Tuesday in faid-310 has 4 ghost lessons copied from Week 1! <<<");
+console.log(`faid-310 Week 2 Tuesday lessons count: ${faidW2Tue?.lessons.length} (Expected: 1)`);
+if (faidW2Tue && faidW2Tue.lessons.length !== 1) {
+  console.log("  >>> CRITICAL BUG: Week 2 Tuesday in faid-310 should have 1 lesson (Практико-ориентированный проект)! <<<");
 }
 
 // TEST 2: ALL AVAILABLE_GROUPS INITIALIZATION
