@@ -31,3 +31,4 @@ android/capacitor-cordova-android-plugins/build
 android/capacitor-cordova-android-plugins/.gradle
 *.apk
 *.png
+antigravity-mobile/
