@@ -504,6 +504,64 @@ export const getSamaraISODate = (): string => {
   }
 };
 
+export const getSamaraFutureISODate = (daysToAdd: number = 7): string => {
+  const baseIso = getSamaraISODate();
+  const [y, m, d] = baseIso.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+  date.setUTCDate(date.getUTCDate() + daysToAdd);
+  const resY = date.getUTCFullYear();
+  const resM = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const resD = String(date.getUTCDate()).padStart(2, '0');
+  return `${resY}-${resM}-${resD}`;
+};
+
+/**
+ * Calculates student absence hours with collision protection and priority of excused absences.
+ * If a student is in both absent and excused arrays, counts strictly once as excused (2 hours).
+ */
+export function calculateStudentAbsenceHours(records: AttendanceRecord[], studentId: number) {
+  let totalAbs = 0;
+  let totalExc = 0;
+  const absencesByBlock = BLOCKS.map(() => 0);
+  const excusedByBlock = BLOCKS.map(() => 0);
+
+  records.forEach(record => {
+    if (record.isCancelled) return;
+    const isExcused = (record.excusedStudentIds || []).includes(studentId);
+    const isAbsent = !isExcused && record.absentStudentIds.includes(studentId);
+
+    if (isExcused) {
+      totalExc += 2;
+    } else if (isAbsent) {
+      totalAbs += 2;
+    }
+
+    if (isAbsent || isExcused) {
+      BLOCKS.forEach((block, index) => {
+        if (record.date >= block.start && record.date <= block.end) {
+          if (isExcused) excusedByBlock[index] += 2;
+          else if (isAbsent) absencesByBlock[index] += 2;
+        }
+      });
+    }
+  });
+
+  return {
+    totalAbs,
+    totalExc,
+    totalHours: totalAbs + totalExc,
+    absencesByBlock,
+    excusedByBlock
+  };
+}
+
+/**
+ * Safe attendance percentage calculation with division by zero guard.
+ */
+export function calculateAttendancePercentage(absentHours: number, totalHours: number): number {
+  return totalHours > 0 ? Math.round((absentHours / totalHours) * 100) : 0;
+}
+
 export const getSemesterWeek = (date: Date = getSamaraDate(), groupId?: string): number => {
   // 4-week cycle starts on Monday, August 31, 2026
   const start = new Date(2026, 7, 31);

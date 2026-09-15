@@ -175,17 +175,17 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
       records.forEach(record => {
         if (record.isCancelled) return;
 
-        const isAbsent = record.absentStudentIds.includes(student.id);
-        const isExcused = !isAbsent && (record.excusedStudentIds || []).includes(student.id);
+        const isExcused = (record.excusedStudentIds || []).includes(student.id);
+        const isAbsent = !isExcused && record.absentStudentIds.includes(student.id);
 
-        if (isAbsent) totalAllTimeAbs += 2;
-        else if (isExcused) totalAllTimeExc += 2;
+        if (isExcused) totalAllTimeExc += 2;
+        else if (isAbsent) totalAllTimeAbs += 2;
 
         if (isAbsent || isExcused) {
           BLOCKS.forEach((block, index) => {
             if (record.date >= block.start && record.date <= block.end) {
-              if (isAbsent) absences[index] += 2;
-              else if (isExcused) excused[index] += 2;
+              if (isExcused) excused[index] += 2;
+              else if (isAbsent) absences[index] += 2;
             }
           });
         }
@@ -354,8 +354,8 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
                     <div className="divide-y divide-slate-100 dark:divide-slate-800">
                       {students.map((student, idx) => {
                         const record = getAttendance(selectedDate, selectedLesson.id);
-                        const isAbsent = record.absentStudentIds.includes(student.id);
                         const isExcused = (record.excusedStudentIds || []).includes(student.id);
+                        const isAbsent = !isExcused && record.absentStudentIds.includes(student.id);
                         const isPresent = !isAbsent && !isExcused;
                         
                         return (

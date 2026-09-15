@@ -3,6 +3,7 @@ import { X, Bug, Upload, Image as ImageIcon, Trash2, Send, ExternalLink, Message
 import { toast } from 'sonner';
 import { WORKER_BASE } from '../utils/cloudSync';
 import { getGroupTag } from '../constants';
+import { logger, getSystemDiagnostics } from '../utils/logger';
 
 interface BugReportModalProps {
   isOpen: boolean;
@@ -258,10 +259,25 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
       });
 
       const clientInfo = detectClientPlatform();
+      const diagnostics = {
+        system: getSystemDiagnostics(),
+        recentLogs: logger.getLogs()
+      };
+
+      logger.action('UI', 'User submitted bug report', {
+        group: cleanGroup,
+        course,
+        screenshotCount: screenshotFiles.length
+      });
+
+      const diagPlatform = diagnostics.system.telegramPlatform || clientInfo;
+      const diagVersion = diagnostics.system.tgWebAppVersion || 'not_in_tg';
+      const diagErrors = diagnostics.system.errorLogsCount;
 
       // Prepare text caption for Telegram
       const captionLines = [
         '🚨 БАГ-РЕПОРТ #bugreport #' + (groupTag || 'samgtu'),
+        `📊 [OS: ${diagPlatform} | TG Ver: ${diagVersion} | Ошибок в логе: ${diagErrors}]`,
         '',
         `🎓 Курс: ${course}`,
         `👥 Группа: ${cleanGroup} (${currentGroupId})`,
@@ -291,7 +307,10 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
           '----------------------------------------',
           'ПОДРОБНОЕ ОПИСАНИЕ ПРОБЛЕМЫ:',
           cleanDesc,
-          '========================================'
+          '========================================',
+          '',
+          '--- СИСТЕМНЫЕ ЛОГИ И ДИАГНОСТИКА ---',
+          JSON.stringify(diagnostics, null, 2)
         ].join('\n');
 
         const blob = new Blob([fullReportText], { type: 'text/plain;charset=utf-8' });
@@ -299,6 +318,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
         const formData = new FormData();
         formData.append('document', blob, fileName);
         formData.append('caption', caption);
+        formData.append('diagnostics', JSON.stringify(diagnostics));
 
         const res = await fetch(`${WORKER_BASE}/upload`, {
           method: 'POST',
@@ -328,6 +348,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
         const formData = new FormData();
         formData.append('document', fileToSend, fileToSend.name || `bugreport_${Date.now()}.jpg`);
         formData.append('caption', finalCaption);
+        formData.append('diagnostics', JSON.stringify(diagnostics));
 
         const res = await fetch(`${WORKER_BASE}/upload`, {
           method: 'POST',
@@ -337,6 +358,21 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
         if (!res.ok) throw new Error(`Ошибка шлюза при загрузке: HTTP ${res.status}`);
         const data = await res.json();
         if (!data.ok) throw new Error(data.description || 'Telegram отклонил отправку отчета');
+
+        // Additionally send diagnostic dump companion JSON file
+        try {
+          const diagBlob = new Blob([JSON.stringify(diagnostics, null, 2)], { type: 'application/json' });
+          const diagFormData = new FormData();
+          const diagFileName = `diagnostics_${cleanGroup.replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g, '_')}_${Date.now()}.json`;
+          diagFormData.append('document', diagBlob, diagFileName);
+          diagFormData.append('caption', `📋 Диагностический дамп логов и снимок системы [Ошибок: ${diagErrors}] #${groupTag || 'samgtu'}`);
+          await fetch(`${WORKER_BASE}/upload`, {
+            method: 'POST',
+            body: diagFormData
+          });
+        } catch (diagErr) {
+          console.warn('Diagnostics companion upload failed non-critically:', diagErr);
+        }
       }
 
       setIsSuccess(true);

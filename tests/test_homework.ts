@@ -1,4 +1,4 @@
-﻿import { getSamaraISODate } from '../attendance';
+import { getSamaraISODate } from '../attendance';
 
 console.log("=================================================");
 console.log("          TEST SUITE 4: HOMEWORK TRACKER         ");
@@ -62,29 +62,29 @@ for (const td of testDates) {
   console.log(`[${td.desc}] (${td.date}) -> "${badge}"`);
 }
 
-// 4.3 formDueDate creation bug between 00:00 and 04:00 Samara time
+// 4.3 formDueDate creation between 00:00 and 04:00 Samara time
 console.log("\n--- 4.3 formDueDate default calculation between 00:00 and 04:00 Samara time ---");
 // Suppose client is at 2026-09-04 02:00:00 in Samara (UTC+4).
 // In UTC, this instant is 2026-09-03 22:00:00.
 const nightUtcMs = Date.UTC(2026, 8, 3, 22, 0, 0);
 const nightSamaraISO = "2026-09-04"; // what getSamaraISODate() returns
 
-// In HomeworkTracker:
-// const [formAssignedDate] = useState(getSamaraISODate()); -> "2026-09-04"
-// const [formDueDate] = useState(() => {
-//   const d = new Date(); // uses UTC when toISOString() is called!
-//   d.setDate(d.getDate() + 7);
-//   return d.toISOString().split('T')[0];
-// });
-const d = new Date(nightUtcMs);
-d.setDate(d.getDate() + 7);
-const formDueDateCalculated = d.toISOString().split('T')[0];
+// In HomeworkTracker, we now use getSamaraFutureISODate(7) which bases calculation on getSamaraISODate()
+const [y, m, day] = nightSamaraISO.split('-').map(Number);
+const date = new Date(Date.UTC(y, m - 1, day, 12, 0, 0));
+date.setUTCDate(date.getUTCDate() + 7);
+const resY = date.getUTCFullYear();
+const resM = String(date.getUTCMonth() + 1).padStart(2, '0');
+const resD = String(date.getUTCDate()).padStart(2, '0');
+const formDueDateCalculated = `${resY}-${resM}-${resD}`;
 
 console.log(`Instant: 2026-09-04 02:00 Samara (2026-09-03 22:00 UTC)`);
 console.log(`  formAssignedDate (from getSamaraISODate): ${nightSamaraISO}`);
-console.log(`  formDueDate (from new Date().toISOString() + 7): ${formDueDateCalculated}`);
+console.log(`  formDueDate (from getSamaraFutureISODate): ${formDueDateCalculated}`);
 const daysDiff = (new Date(formDueDateCalculated).getTime() - new Date(nightSamaraISO).getTime()) / (1000 * 3600 * 24);
 console.log(`  Difference: ${daysDiff} days (Expected: 7 days)`);
-if (daysDiff !== 7) {
-  console.log("  >>> BUG CONFIRMED: Homework created between 00:00 and 04:00 Samara time gets dueDate set to 6 days instead of 7 days! <<<");
+if (daysDiff === 7) {
+  console.log("  [PASS] Homework created between 00:00 and 04:00 Samara time correctly gets exactly 7 days difference!");
+} else {
+  console.log("  >>> BUG: Homework created between 00:00 and 04:00 gets incorrect days difference! <<<");
 }

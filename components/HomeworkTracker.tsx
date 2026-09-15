@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { HomeworkItem, HomeworkAttachment } from '../types';
 import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, getGroupTag } from '../constants';
-import { getSamaraDate, getSamaraISODate } from '../attendance';
+import { getSamaraDate, getSamaraISODate, getSamaraFutureISODate } from '../attendance';
 import { db } from '../firebase';
 import { collection, doc, setDoc, deleteDoc, onSnapshot, query, where } from 'firebase/firestore';
 import { toast } from 'sonner';
@@ -79,14 +79,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
   const [formTitle, setFormTitle] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formAssignedDate, setFormAssignedDate] = useState(getSamaraISODate());
-  const [formDueDate, setFormDueDate] = useState(() => {
-    const d = getSamaraDate();
-    d.setDate(d.getDate() + 7);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  });
+  const [formDueDate, setFormDueDate] = useState(() => getSamaraFutureISODate(7));
   const [formAttachments, setFormAttachments] = useState<HomeworkAttachment[]>([]);
   const [linkInput, setLinkInput] = useState('');
   const [linkNameInput, setLinkNameInput] = useState('');
@@ -177,12 +170,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
     setFormTitle('');
     setFormDescription('');
     setFormAssignedDate(getSamaraISODate());
-    const due = getSamaraDate();
-    due.setDate(due.getDate() + 7);
-    const y = due.getFullYear();
-    const m = String(due.getMonth() + 1).padStart(2, '0');
-    const d = String(due.getDate()).padStart(2, '0');
-    setFormDueDate(`${y}-${m}-${d}`);
+    setFormDueDate(getSamaraFutureISODate(7));
     setFormAttachments([]);
     setLinkInput('');
     setLinkNameInput('');

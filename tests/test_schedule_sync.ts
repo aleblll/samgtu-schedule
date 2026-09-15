@@ -24,7 +24,7 @@ function resolveTeacher(
 ): string {
   const teacherByType = subjectTeachers[`${lesson.subject}::${lesson.type}`];
   const flatTeacher = subjectTeachers[lesson.subject];
-  return override.teacher || teacherByType || flatTeacher || lesson.teacher;
+  return override.teacher !== undefined ? override.teacher : (teacherByType || flatTeacher || lesson.teacher);
 }
 
 // Case 1: Default
@@ -45,9 +45,11 @@ console.log("4. Single lesson override:", resolveTeacher(baseLesson, override, t
 // Case 5: User clears teacher in override (sets to empty string "")
 const clearedOverride: Partial<Lesson> = { teacher: '' };
 const clearedResult = resolveTeacher(baseLesson, clearedOverride, teachers);
-console.log("5. User clears teacher (override.teacher = ''):", clearedResult);
-if (clearedResult === 'Сидоров С.С.') {
-  console.log("  >>> BUG: Empty string '' is falsy, so user CANNOT delete/clear a teacher via override! It falls back to teacherByType! <<<");
+console.log("5. User clears teacher (override.teacher = ''):", `"${clearedResult}"`);
+if (clearedResult === '') {
+  console.log("  [PASS] Empty string teacher override successfully cleared teacher!");
+} else {
+  console.log("  >>> BUG: Empty string '' is falsy, so user CANNOT delete/clear a teacher via override! <<<");
 }
 
 // 3.2 handleResetLesson test

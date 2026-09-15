@@ -18,10 +18,12 @@ import { fetchGroupCloudData, pushGroupCloudData, sanitizeTeachers, sanitizeOver
 import { SEED_SCHEDULE_OVERRIDES, SEED_SUBJECT_TEACHERS, getSeedSubjectTeachers } from './defaultData';
 import { ScheduleImportModal } from './components/ScheduleImportModal';
 import BugReportModal from './components/BugReportModal';
+import DebugLogsModal from './components/DebugLogsModal';
+import { logger } from './utils/logger';
 import {
   LogIn, LogOut, Calendar, BookOpen, Bug, ClipboardCheck, Sun, Moon,
   GraduationCap, Users, RefreshCw, Shield, User as UserIcon, Key, UserCheck, ChevronDown,
-  Search, Plus, X, UploadCloud
+  Search, Plus, X, UploadCloud, Terminal
 } from 'lucide-react';
 
 declare global {
@@ -95,6 +97,29 @@ const App: React.FC = () => {
   const [newGroupCourse, setNewGroupCourse] = useState<number>(1);
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
   const [isBugReportModalOpen, setIsBugReportModalOpen] = useState<boolean>(false);
+  const [isDebugLogsModalOpen, setIsDebugLogsModalOpen] = useState<boolean>(false);
+
+  const headerTapCountRef = React.useRef<number>(0);
+  const lastHeaderTapTimeRef = React.useRef<number>(0);
+
+  const handleHeaderTitleTap = () => {
+    const now = Date.now();
+    if (now - lastHeaderTapTimeRef.current < 600) {
+      headerTapCountRef.current += 1;
+      if (headerTapCountRef.current >= 5) {
+        headerTapCountRef.current = 0;
+        setIsDebugLogsModalOpen(true);
+        logger.action('UI', 'Debug console opened via 5-tap gesture on header');
+        if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
+          window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        }
+        toast.info('Режим диагностики активирован');
+      }
+    } else {
+      headerTapCountRef.current = 1;
+    }
+    lastHeaderTapTimeRef.current = now;
+  };
 
   // Multi-group state: defaults to bound group, then saved selection, then 3-ИНГТ-110
   const [currentGroupId, setCurrentGroupId] = useState<string>(() => {
@@ -334,6 +359,7 @@ const App: React.FC = () => {
   // Sync group selection and reload group-specific overrides and teachers
   useEffect(() => {
     localStorage.setItem('selected_group_id', currentGroupId);
+    logger.info('SCHEDULE', `Current group switched to: ${currentGroupId}`);
     try {
       const savedOv = localStorage.getItem(`schedule_overrides_${currentGroupId}`);
       setScheduleOverrides(savedOv ? sanitizeOverrides(JSON.parse(savedOv)) : sanitizeOverrides({ ...SEED_SCHEDULE_OVERRIDES }));
@@ -356,7 +382,13 @@ const App: React.FC = () => {
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
         window.Telegram.WebApp.enableClosingConfirmation?.();
-      } catch (e) {}
+        logger.info('UI', 'Telegram WebApp initialized', {
+          platform: window.Telegram.WebApp.platform,
+          version: window.Telegram.WebApp.version
+        });
+      } catch (e) {
+        logger.warn('UI', 'Failed to initialize Telegram WebApp SDK', e);
+      }
 
       const handleThemeChange = () => {
         try {
@@ -860,8 +892,8 @@ const App: React.FC = () => {
 
         return {
           ...lesson,
-          teacher: resolvedTeacher,
           ...override,
+          teacher: resolvedTeacher,
           isCancelled: isCancelledInAttendance || !!override.isCancelled
         };
       });
@@ -910,10 +942,18 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-indigo-200 dark:shadow-none">
+              <div 
+                onClick={handleHeaderTitleTap}
+                className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-indigo-200 dark:shadow-none cursor-pointer select-none active:scale-95 transition-transform"
+                title="Расписание СамГТУ (5 быстрых тапов открывают диагностику)"
+              >
                 {currentGroupConfig.course}
               </div>
-              <div>
+              <div 
+                onClick={handleHeaderTitleTap}
+                className="cursor-pointer select-none"
+                title="5 быстрых тапов открывают консоль диагностики"
+              >
                 <h1 className="text-base font-bold text-slate-900 dark:text-white leading-tight">
                   Расписание {currentGroupConfig.name}
                 </h1>
@@ -1221,6 +1261,32 @@ const App: React.FC = () => {
                   Связь: @A_le_BL
                 </a>
               </div>
+            </div>
+
+            {/* Diagnostics & In-App Console Card */}
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <Terminal className="w-4 h-4 text-emerald-500" />
+                  <span>Логи и диагностика</span>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-md">
+                  Консоль
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Мобильная консоль разработчика для просмотра логов, ошибок и состояния приложения на смартфоне.
+              </p>
+              <button
+                onClick={() => {
+                  logger.action('UI', 'Debug console opened from Profile tab');
+                  setIsDebugLogsModalOpen(true);
+                }}
+                className="w-full py-2.5 px-4 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-xs rounded-xl transition-all shadow-sm min-h-[44px] flex items-center justify-center gap-2"
+              >
+                <Terminal className="w-3.5 h-3.5 text-emerald-500" />
+                Логи и диагностика
+              </button>
             </div>
 
 {/* Quick PIN Login Form */}
@@ -1563,6 +1629,12 @@ const App: React.FC = () => {
         currentGroupId={currentGroupId}
         currentGroupName={currentGroupConfig.name}
         currentCourse={currentGroupConfig.course}
+      />
+
+      {/* In-App Mobile Diagnostics Console Modal */}
+      <DebugLogsModal
+        isOpen={isDebugLogsModalOpen}
+        onClose={() => setIsDebugLogsModalOpen(false)}
       />
     </div>
   );

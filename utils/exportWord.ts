@@ -73,10 +73,10 @@ export const exportAttendanceToWord = async (
       records.forEach(record => {
         if (record.isCancelled) return;
         if (record.date >= block.start && record.date <= block.end) {
-          const isAbsent = record.absentStudentIds.includes(student.id);
-          const isExcused = !isAbsent && (record.excusedStudentIds || []).includes(student.id);
-          if (isAbsent) blockAbsences += 2;
-          else if (isExcused) blockExcused += 2;
+          const isExcused = (record.excusedStudentIds || []).includes(student.id);
+          const isAbsent = !isExcused && record.absentStudentIds.includes(student.id);
+          if (isExcused) blockExcused += 2;
+          else if (isAbsent) blockAbsences += 2;
         }
       });
       
