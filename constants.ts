@@ -17,6 +17,7 @@ export const FACULTIES: Faculty[] = [
 export const AVAILABLE_GROUPS: GroupConfig[] = [
   // Основные группы с расписанием
   { id: 'ingt-310', name: '3-ИНГТ-110', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
+  { id: 'ingt-311', name: '3-ИНГТ-111', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
   { id: 'faid-310', name: '3-ФАИД-110', facultyId: 'faid', degree: 'Бакалавриат', course: 3 },
   { id: 'ingt-209', name: '2-ИНГТ-109', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
   { id: 'htf-215', name: '2-ХТФ-115', facultyId: 'htf', degree: 'Бакалавриат', course: 2 },
@@ -85,6 +86,10 @@ export const SCHEDULE_REGISTRY: Registry<WeekData> = {
       {
         dayName: 'Понедельник',
         lessons: [
+          { id: '310-w1-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "Спортивный комплекс", teacher: "Кафедра физического воспитания" },
+          { id: '310-w1-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Конструирование и расчет сосудов и аппаратов нефтегазовых промыслов, работающих под давлением", type: 'Лабораторные работы', location: "Корпус № 9, 423", teacher: "Крючков Дмитрий Александрович" },
+          { id: '310-w1-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Конструирование и расчет сосудов и аппаратов нефтегазовых промыслов, работающих под давлением", type: 'Лабораторные работы', location: "Корпус № 9, 423", teacher: "Крючков Дмитрий Александрович" },
+          { id: '310-w1-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Безопасность жизнедеятельности", type: 'Лекции', location: "Корпус № 1, 432", teacher: "Сорокина Людмила Владимировна" }
         ]
       },
       {
@@ -282,7 +287,7 @@ export const SCHEDULE_REGISTRY: Registry<WeekData> = {
   }
 };
 
-const createEmptyWeek = (): DaySchedule[] => [
+export const createEmptyWeek = (): DaySchedule[] => [
   { dayName: 'Понедельник', lessons: [] },
   { dayName: 'Вторник', lessons: [] },
   { dayName: 'Среда', lessons: [] },
@@ -1280,9 +1285,214 @@ SCHEDULE_REGISTRY['htf-215'] = {
   ]
 };
 
+SCHEDULE_REGISTRY['ingt-311'] = {
+  1: [
+    {
+      dayName: 'Понедельник',
+      lessons: [
+        { id: 'ingt311-w1-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "аудитория", teacher: "Преподаватель кафедры физвоспитания" },
+        { id: 'ingt311-w1-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Лабораторные занятия', location: "Корпус № 9, 409", teacher: "" },
+        { id: 'ingt311-w1-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Лабораторные занятия', location: "Корпус № 9, 409", teacher: "" },
+        { id: 'ingt311-w1-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Безопасность жизнедеятельности", type: 'Лекции', location: "Корпус № 1, 432", teacher: "Королева Людмила Александровна" }
+      ]
+    },
+    {
+      dayName: 'Вторник',
+      lessons: [
+        { id: 'ingt311-w1-tu-1', timeStart: '09:45', timeEnd: '11:20', subject: "Технологии ресурсоповышающей обработки", type: 'Лекции', location: "Корпус № 1, 4", teacher: "Хабибуллин Ильдар Минуллович" },
+        { id: 'ingt311-w1-tu-2', timeStart: '11:50', timeEnd: '13:25', subject: "Технологии ресурсоповышающей обработки", type: 'Практические занятия', location: "Корпус № 1, 109", teacher: "Хабибуллин Ильдар Минуллович" },
+        { id: 'ingt311-w1-tu-3', timeStart: '13:35', timeEnd: '15:10', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Лекции', location: "Корпус № 9, 409", teacher: "" },
+        { id: 'ingt311-w1-tu-4', timeStart: '15:40', timeEnd: '17:15', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 9, 409", teacher: "" }
+      ]
+    },
+    {
+      dayName: 'Среда',
+      lessons: [
+        { id: 'ingt311-w1-we-1', timeStart: '13:35', timeEnd: '15:10', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "аудитория", teacher: "Преподаватель кафедры физвоспитания" },
+        { id: 'ingt311-w1-we-2', timeStart: '15:40', timeEnd: '17:15', subject: "Компьютерное моделирование процессов и оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 1, 2", teacher: "" },
+        { id: 'ingt311-w1-we-3', timeStart: '17:25', timeEnd: '19:00', subject: "Компьютерное моделирование процессов и оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 2", teacher: "" }
+      ]
+    },
+    {
+      dayName: 'Четверг',
+      lessons: [
+        { id: 'ingt311-w1-th-1', timeStart: '08:00', timeEnd: '09:35', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3б, 208", teacher: "" },
+        { id: 'ingt311-w1-th-2', timeStart: '09:45', timeEnd: '11:20', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3б, 208", teacher: "" }
+      ]
+    },
+    {
+      dayName: 'Пятница',
+      lessons: [
+        { id: 'ingt311-w1-fr-1', timeStart: '09:45', timeEnd: '11:20', subject: "Теория колебаний и виброзащита оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 9, 409", teacher: "" },
+        { id: 'ingt311-w1-fr-2', timeStart: '11:50', timeEnd: '13:25', subject: "Научные исследования и опытно–конструкторские работы в области оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 1, 109", teacher: "" },
+        { id: 'ingt311-w1-fr-3', timeStart: '13:35', timeEnd: '15:10', subject: "Теория колебаний и виброзащита оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 2", teacher: "" },
+        { id: 'ingt311-w1-fr-4', timeStart: '15:40', timeEnd: '17:15', subject: "Научные исследования и опытно–конструкторские работы в области оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 109б", teacher: "" }
+      ]
+    },
+    {
+      dayName: 'Суббота',
+      lessons: [
+        { id: 'ingt311-w1-sa-1', timeStart: '08:00', timeEnd: '09:35', subject: "Конструирование и расчет сосудов и аппаратов нефтегазопереработки, работающих под давлением", type: 'Лекции', location: "Корпус № 9, 423", teacher: "" },
+        { id: 'ingt311-w1-sa-2', timeStart: '09:45', timeEnd: '11:20', subject: "Конструирование и расчет сосудов и аппаратов нефтегазопереработки, работающих под давлением", type: 'Практические занятия', location: "Корпус № 9, 423", teacher: "" }
+      ]
+    }
+  ],
+  2: [
+    {
+      dayName: 'Понедельник',
+      lessons: [
+        { id: 'ingt311-w2-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Научные исследования и опытно–конструкторские работы в области оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 1, 109", teacher: "" },
+        { id: 'ingt311-w2-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Теория колебаний и виброзащита оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 9, 409", teacher: "" },
+        { id: 'ingt311-w2-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Теория колебаний и виброзащита оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 2", teacher: "" },
+        { id: 'ingt311-w2-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Научные исследования и опытно–конструкторские работы в области оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 109б", teacher: "" }
+      ]
+    },
+    {
+      dayName: 'Вторник',
+      lessons: [
+        { id: 'ingt311-w2-tu-1', timeStart: '11:50', timeEnd: '13:25', subject: "Практико–ориентированный проект", type: 'Практические занятия', location: "Корпус № 1, 4", teacher: "" }
+      ]
+    },
+    {
+      dayName: 'Среда',
+      lessons: [
+        { id: 'ingt311-w2-we-1', timeStart: '09:45', timeEnd: '11:20', subject: "Процессы и аппараты нефтегазопереработки и нефтехимии", type: 'Лекции', location: "Корпус № 1, 118", teacher: "" },
+        { id: 'ingt311-w2-we-2', timeStart: '11:50', timeEnd: '13:25', subject: "Процессы и аппараты нефтегазопереработки и нефтехимии", type: 'Практические занятия', location: "Корпус № 1, 118", teacher: "" },
+        { id: 'ingt311-w2-we-3', timeStart: '13:35', timeEnd: '15:10', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "аудитория", teacher: "Преподаватель кафедры физвоспитания" }
+      ]
+    },
+    {
+      dayName: 'Четверг',
+      lessons: [
+        { id: 'ingt311-w2-th-1', timeStart: '08:00', timeEnd: '09:35', subject: "Основы военной подготовки", type: 'Лекции', location: "Корпус № 13, 0408", teacher: "" },
+        { id: 'ingt311-w2-th-2', timeStart: '09:45', timeEnd: '11:20', subject: "Основы военной подготовки", type: 'Лекции', location: "Корпус № 13, 0408", teacher: "" }
+      ]
+    },
+    {
+      dayName: 'Пятница',
+      lessons: [
+        { id: 'ingt311-w2-fr-1', timeStart: '11:50', timeEnd: '13:25', subject: "Конструирование и расчет сосудов и аппаратов нефтегазопереработки, работающих под давлением", type: 'Лекции', location: "Корпус № 9, 423", teacher: "" },
+        { id: 'ingt311-w2-fr-2', timeStart: '13:35', timeEnd: '15:10', subject: "Конструирование и расчет сосудов и аппаратов нефтегазопереработки, работающих под давлением", type: 'Практические занятия', location: "Корпус № 9, 423", teacher: "" },
+        { id: 'ingt311-w2-fr-3', timeStart: '15:40', timeEnd: '17:15', subject: "Технологии ресурсоповышающей обработки", type: 'Практические занятия', location: "Корпус № 1, 109", teacher: "Хабибуллин Ильдар Минуллович" }
+      ]
+    },
+    {
+      dayName: 'Суббота',
+      lessons: [
+        { id: 'ingt311-w2-sa-1', timeStart: '08:00', timeEnd: '09:35', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Лекции', location: "Корпус № 9, 409", teacher: "" },
+        { id: 'ingt311-w2-sa-2', timeStart: '09:45', timeEnd: '11:20', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 9, 409", teacher: "" },
+        { id: 'ingt311-w2-sa-3', timeStart: '11:50', timeEnd: '13:25', subject: "Безопасность жизнедеятельности", type: 'Практические занятия', location: "Корпус № 7, 704", teacher: "Калачева Марина Вячеславовна" }
+      ]
+    }
+  ],
+  3: [
+    {
+      dayName: 'Понедельник',
+      lessons: [
+        { id: 'ingt311-w3-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "аудитория", teacher: "Преподаватель кафедры физвоспитания" },
+        { id: 'ingt311-w3-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Лабораторные занятия', location: "Корпус № 9, 409", teacher: "" },
+        { id: 'ingt311-w3-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Лабораторные занятия', location: "Корпус № 9, 409", teacher: "" },
+        { id: 'ingt311-w3-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Безопасность жизнедеятельности", type: 'Лекции', location: "Корпус № 1, 432", teacher: "Королева Людмила Александровна" }
+      ]
+    },
+    {
+      dayName: 'Вторник',
+      lessons: [
+        { id: 'ingt311-w3-tu-1', timeStart: '09:45', timeEnd: '11:20', subject: "Технологии ресурсоповышающей обработки", type: 'Лекции', location: "Корпус № 1, 4", teacher: "Хабибуллин Ильдар Минуллович" },
+        { id: 'ingt311-w3-tu-2', timeStart: '11:50', timeEnd: '13:25', subject: "Технологии ресурсоповышающей обработки", type: 'Практические занятия', location: "Корпус № 1, 109", teacher: "Хабибуллин Ильдар Минуллович" },
+        { id: 'ingt311-w3-tu-3', timeStart: '13:35', timeEnd: '15:10', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Лекции', location: "Корпус № 9, 409", teacher: "" },
+        { id: 'ingt311-w3-tu-4', timeStart: '15:40', timeEnd: '17:15', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 9, 409", teacher: "" }
+      ]
+    },
+    {
+      dayName: 'Среда',
+      lessons: [
+        { id: 'ingt311-w3-we-1', timeStart: '13:35', timeEnd: '15:10', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "аудитория", teacher: "Преподаватель кафедры физвоспитания" },
+        { id: 'ingt311-w3-we-2', timeStart: '15:40', timeEnd: '17:15', subject: "Компьютерное моделирование процессов и оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 1, 2", teacher: "" },
+        { id: 'ingt311-w3-we-3', timeStart: '17:25', timeEnd: '19:00', subject: "Компьютерное моделирование процессов и оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 2", teacher: "" }
+      ]
+    },
+    {
+      dayName: 'Четверг',
+      lessons: [
+        { id: 'ingt311-w3-th-1', timeStart: '08:00', timeEnd: '09:35', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3б, 208", teacher: "" },
+        { id: 'ingt311-w3-th-2', timeStart: '09:45', timeEnd: '11:20', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3б, 208", teacher: "" }
+      ]
+    },
+    {
+      dayName: 'Пятница',
+      lessons: [
+        { id: 'ingt311-w3-fr-1', timeStart: '09:45', timeEnd: '11:20', subject: "Теория колебаний и виброзащита оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 9, 409", teacher: "" },
+        { id: 'ingt311-w3-fr-2', timeStart: '11:50', timeEnd: '13:25', subject: "Научные исследования и опытно–конструкторские работы в области оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 1, 109", teacher: "" },
+        { id: 'ingt311-w3-fr-3', timeStart: '13:35', timeEnd: '15:10', subject: "Теория колебаний и виброзащита оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 2", teacher: "" },
+        { id: 'ingt311-w3-fr-4', timeStart: '15:40', timeEnd: '17:15', subject: "Научные исследования и опытно–конструкторские работы в области оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 109б", teacher: "" }
+      ]
+    },
+    {
+      dayName: 'Суббота',
+      lessons: [
+        { id: 'ingt311-w3-sa-1', timeStart: '08:00', timeEnd: '09:35', subject: "Конструирование и расчет сосудов и аппаратов нефтегазопереработки, работающих под давлением", type: 'Лекции', location: "Корпус № 9, 423", teacher: "" },
+        { id: 'ingt311-w3-sa-2', timeStart: '09:45', timeEnd: '11:20', subject: "Конструирование и расчет сосудов и аппаратов нефтегазопереработки, работающих под давлением", type: 'Практические занятия', location: "Корпус № 9, 423", teacher: "" },
+        { id: 'ingt311-w3-sa-3', timeStart: '11:50', timeEnd: '13:25', subject: "Безопасность жизнедеятельности", type: 'Лабораторные занятия', location: "Корпус № 6, 85", teacher: "Калачева Марина Вячеславовна" },
+        { id: 'ingt311-w3-sa-4', timeStart: '13:35', timeEnd: '15:10', subject: "Безопасность жизнедеятельности", type: 'Лабораторные занятия', location: "Корпус № 6, 85", teacher: "Калачева Марина Вячеславовна" }
+      ]
+    }
+  ],
+  4: [
+    {
+      dayName: 'Понедельник',
+      lessons: [
+        { id: 'ingt311-w4-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Научные исследования и опытно–конструкторские работы в области оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 1, 109", teacher: "" },
+        { id: 'ingt311-w4-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Теория колебаний и виброзащита оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 9, 409", teacher: "" },
+        { id: 'ingt311-w4-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Теория колебаний и виброзащита оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 2", teacher: "" },
+        { id: 'ingt311-w4-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Научные исследования и опытно–конструкторские работы в области оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 109б", teacher: "" }
+      ]
+    },
+    {
+      dayName: 'Вторник',
+      lessons: [
+        { id: 'ingt311-w4-tu-1', timeStart: '11:50', timeEnd: '13:25', subject: "Практико–ориентированный проект", type: 'Практические занятия', location: "Корпус № 1, 4", teacher: "" }
+      ]
+    },
+    {
+      dayName: 'Среда',
+      lessons: [
+        { id: 'ingt311-w4-we-1', timeStart: '09:45', timeEnd: '11:20', subject: "Процессы и аппараты нефтегазопереработки и нефтехимии", type: 'Лекции', location: "Корпус № 1, 118", teacher: "" },
+        { id: 'ingt311-w4-we-2', timeStart: '11:50', timeEnd: '13:25', subject: "Процессы и аппараты нефтегазопереработки и нефтехимии", type: 'Практические занятия', location: "Корпус № 1, 118", teacher: "" },
+        { id: 'ingt311-w4-we-3', timeStart: '13:35', timeEnd: '15:10', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "аудитория", teacher: "Преподаватель кафедры физвоспитания" }
+      ]
+    },
+    {
+      dayName: 'Четверг',
+      lessons: [
+        { id: 'ingt311-w4-th-1', timeStart: '08:00', timeEnd: '09:35', subject: "Основы военной подготовки", type: 'Лекции', location: "Корпус № 13, 0408", teacher: "" },
+        { id: 'ingt311-w4-th-2', timeStart: '09:45', timeEnd: '11:20', subject: "Основы военной подготовки", type: 'Лекции', location: "Корпус № 13, 0408", teacher: "" }
+      ]
+    },
+    {
+      dayName: 'Пятница',
+      lessons: [
+        { id: 'ingt311-w4-fr-1', timeStart: '11:50', timeEnd: '13:25', subject: "Конструирование и расчет сосудов и аппаратов нефтегазопереработки, работающих под давлением", type: 'Лекции', location: "Корпус № 9, 423", teacher: "" },
+        { id: 'ingt311-w4-fr-2', timeStart: '13:35', timeEnd: '15:10', subject: "Конструирование и расчет сосудов и аппаратов нефтегазопереработки, работающих под давлением", type: 'Практические занятия', location: "Корпус № 9, 423", teacher: "" },
+        { id: 'ingt311-w4-fr-3', timeStart: '15:40', timeEnd: '17:15', subject: "Технологии ресурсоповышающей обработки", type: 'Практические занятия', location: "Корпус № 1, 109", teacher: "Хабибуллин Ильдар Минуллович" }
+      ]
+    },
+    {
+      dayName: 'Суббота',
+      lessons: [
+        { id: 'ingt311-w4-sa-1', timeStart: '08:00', timeEnd: '09:35', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Лекции', location: "Корпус № 9, 409", teacher: "" },
+        { id: 'ingt311-w4-sa-2', timeStart: '09:45', timeEnd: '11:20', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 9, 409", teacher: "" },
+        { id: 'ingt311-w4-sa-3', timeStart: '11:50', timeEnd: '13:25', subject: "Безопасность жизнедеятельности", type: 'Практические занятия', location: "Корпус № 7, 704", teacher: "Калачева Марина Вячеславовна" }
+      ]
+    }
+  ]
+};
+
+
 // Group-specific Starosta PIN codes
 export const GROUP_STAROSTA_PINS: Record<string, string> = {
   'ingt-310': '110',
+  'ingt-311': '111',
   'ingt-301': '101',
   'ingt-303': '103',
   'faid-310': '110',
@@ -1298,13 +1508,45 @@ export const getGroupTag = (groupName: string): string => {
   return groupName.replace(/-/g, '');
 };
 
-// Backwards compatibility aliases
+// Backwards compatibility and format aliases
 SCHEDULE_REGISTRY['ingt-1'] = SCHEDULE_REGISTRY['ingt-301'];
 SCHEDULE_REGISTRY['faid-110'] = SCHEDULE_REGISTRY['faid-310'];
+SCHEDULE_REGISTRY['3-фаид-110'] = SCHEDULE_REGISTRY['faid-310'];
+SCHEDULE_REGISTRY['3-faid-110'] = SCHEDULE_REGISTRY['faid-310'];
+SCHEDULE_REGISTRY['24фад-110'] = SCHEDULE_REGISTRY['faid-310'];
+GROUP_STAROSTA_PINS['3-фаид-110'] = '110';
+GROUP_STAROSTA_PINS['3-faid-110'] = '110';
+
+SCHEDULE_REGISTRY['3-ингт-110'] = SCHEDULE_REGISTRY['ingt-310'];
+SCHEDULE_REGISTRY['3-ingt-110'] = SCHEDULE_REGISTRY['ingt-310'];
+SCHEDULE_REGISTRY['24ингт-110'] = SCHEDULE_REGISTRY['ingt-310'];
+GROUP_STAROSTA_PINS['3-ингт-110'] = '110';
+GROUP_STAROSTA_PINS['3-ingt-110'] = '110';
+
+SCHEDULE_REGISTRY['3-ингт-111'] = SCHEDULE_REGISTRY['ingt-311'];
+SCHEDULE_REGISTRY['3-ingt-111'] = SCHEDULE_REGISTRY['ingt-311'];
+SCHEDULE_REGISTRY['24ингт-111'] = SCHEDULE_REGISTRY['ingt-311'];
+GROUP_STAROSTA_PINS['ingt-311'] = '111';
+GROUP_STAROSTA_PINS['3-ингт-111'] = '111';
+GROUP_STAROSTA_PINS['3-ingt-111'] = '111';
+
+SCHEDULE_REGISTRY['3-ингт-101'] = SCHEDULE_REGISTRY['ingt-301'];
+SCHEDULE_REGISTRY['3-ingt-101'] = SCHEDULE_REGISTRY['ingt-301'];
+GROUP_STAROSTA_PINS['ingt-301'] = '101';
+GROUP_STAROSTA_PINS['3-ингт-101'] = '101';
+
+SCHEDULE_REGISTRY['3-ингт-103'] = SCHEDULE_REGISTRY['ingt-303'];
+SCHEDULE_REGISTRY['3-ingt-103'] = SCHEDULE_REGISTRY['ingt-303'];
+GROUP_STAROSTA_PINS['ingt-303'] = '103';
+GROUP_STAROSTA_PINS['3-ингт-103'] = '103';
+
 SCHEDULE_REGISTRY['2-ingt-109'] = SCHEDULE_REGISTRY['ingt-209'];
 SCHEDULE_REGISTRY['ingt-109'] = SCHEDULE_REGISTRY['ingt-209'];
+SCHEDULE_REGISTRY['2-ингт-109'] = SCHEDULE_REGISTRY['ingt-209'];
 GROUP_STAROSTA_PINS['2-ingt-109'] = '109';
 GROUP_STAROSTA_PINS['ingt-109'] = '109';
+GROUP_STAROSTA_PINS['2-ингт-109'] = '109';
+
 SCHEDULE_REGISTRY['2-htf-115'] = SCHEDULE_REGISTRY['htf-215'];
 SCHEDULE_REGISTRY['htf-115'] = SCHEDULE_REGISTRY['htf-215'];
 SCHEDULE_REGISTRY['2-хтф-115'] = SCHEDULE_REGISTRY['htf-215'];

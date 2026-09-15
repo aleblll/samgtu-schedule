@@ -13,6 +13,7 @@ const CONSTANTS_PATH = path.resolve(__dirname, '../constants.ts');
 // 1. Фиксированный реестр групп (исключает путаницу ID)
 export const SAMGTU_GROUP_MAP: Record<string, { name: string; samgtuName: string; samgtuGroupId: number }> = {
   'ingt-310': { name: '3-ИНГТ-110', samgtuName: 'Группа 24ИНГТ-110', samgtuGroupId: 31647 },
+  'ingt-311': { name: '3-ИНГТ-111', samgtuName: 'Группа 24ИНГТ-111', samgtuGroupId: 31663 },
   'faid-310': { name: '3-ФАИД-110', samgtuName: 'Группа 24ФАД-110', samgtuGroupId: 31745 },
   'ingt-301': { name: '3-ИНГТ-101', samgtuName: 'Группа 24ИНГТ-101', samgtuGroupId: 31661 },
   'ingt-303': { name: '3-ИНГТ-103', samgtuName: 'Группа 24ИНГТ-103', samgtuGroupId: 31659 },
@@ -36,6 +37,7 @@ export const DAY_CODES = ['mo', 'tu', 'we', 'th', 'fr', 'sa'];
 
 export const GROUP_ID_PREFIXES: Record<string, string> = {
   'ingt-310': '310',
+  'ingt-311': 'ingt311',
   'faid-310': 'faid310',
   'ingt-301': 'ingt301',
   'ingt-303': 'ingt303',

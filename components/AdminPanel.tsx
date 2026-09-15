@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { UserRole } from '../types';
-import { Shield, ShieldAlert, Key, UserCheck, CheckCircle2 } from 'lucide-react';
+import { Shield, ShieldAlert, ShieldCheck, Key, UserCheck, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdminPanelProps {
@@ -18,6 +18,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentRole, onRoleChange, curr
     if (pin === '2808') {
       onRoleChange('admin');
       toast.success('Авторизован режим Главного Администратора');
+      setPinCode('');
+    } else if (pin === '111' || pin === '3111' || pin === 'ingt111') {
+      onRoleChange('starosta', 'ingt-311');
+      toast.success('Авторизован режим Старосты (3-ИНГТ-111)');
       setPinCode('');
     } else if (pin === '101') {
       onRoleChange('starosta', 'ingt-301');
@@ -85,35 +89,104 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentRole, onRoleChange, curr
         </div>
       </div>
 
-      {/* PIN Verification Form (Without revealing PIN codes) */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
-        <div className="flex items-center gap-3">
-          <Key className="w-5 h-5 text-amber-500" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">Авторизация по PIN-коду</h3>
+      {/* Role State Banner / PIN Verification Form */}
+      {currentRole === 'admin' ? (
+        <div className="bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/20 rounded-3xl p-6 shadow-sm space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-md shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Режим Главного Администратора активен</h3>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Полный доступ ко всем функциям управления системой</p>
+              </div>
+            </div>
+            <button
+              onClick={() => { onRoleChange('student'); toast.info('Сессия администратора завершена'); }}
+              className="px-3.5 py-2 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all self-start sm:self-auto"
+            >
+              Выйти из админки
+            </button>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            Авторизация подтверждена. Вам доступны: глобальное редактирование расписания, назначение ответственных преподавателей, сброс кэша и принудительная синхронизация с облаком. Повторный ввод PIN-кода не требуется.
+          </p>
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
-          Для доступа к функциям Старосты или Главного Администратора введите ваш закрытый персональный PIN-код.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="password"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={6}
-            value={pinCode}
-            onChange={(e) => setPinCode(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleVerifyPin()}
-            placeholder="Введите секретный PIN-код"
-            className="flex-1 px-4 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none min-h-[44px]"
-          />
-          <button
-            onClick={handleVerifyPin}
-            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl transition-all shadow-sm min-h-[44px]"
-          >
-            Подтвердить
-          </button>
+      ) : currentRole === 'starosta' ? (
+        <div className="bg-gradient-to-br from-indigo-500/10 via-blue-500/5 to-transparent border border-indigo-500/20 rounded-3xl p-6 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shrink-0">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Режим Старосты активен</h3>
+                <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">Доступны отметки посещаемости и редактирование пар группы</p>
+              </div>
+            </div>
+            <button
+              onClick={() => { onRoleChange('student'); toast.info('Сессия старосты завершена'); }}
+              className="px-3.5 py-2 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all self-start sm:self-auto"
+            >
+              Выйти
+            </button>
+          </div>
+          <div className="pt-2 border-t border-indigo-100 dark:border-indigo-900/40">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+              Для перехода в режим Главного Администратора введите PIN-код администратора:
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                value={pinCode}
+                onChange={(e) => setPinCode(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleVerifyPin()}
+                placeholder="PIN-код Главного Администратора"
+                className="flex-1 px-4 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none min-h-[44px]"
+              />
+              <button
+                onClick={handleVerifyPin}
+                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl transition-all shadow-sm min-h-[44px]"
+              >
+                Повысить до Админа
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
+          <div className="flex items-center gap-3">
+            <Key className="w-5 h-5 text-amber-500" />
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Авторизация по PIN-коду</h3>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Для доступа к функциям Старосты или Главного Администратора введите ваш закрытый персональный PIN-код.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="password"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              value={pinCode}
+              onChange={(e) => setPinCode(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleVerifyPin()}
+              placeholder="Введите секретный PIN-код"
+              className="flex-1 px-4 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none min-h-[44px]"
+            />
+            <button
+              onClick={handleVerifyPin}
+              className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl transition-all shadow-sm min-h-[44px]"
+            >
+              Подтвердить
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Roles & Permissions Reference */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

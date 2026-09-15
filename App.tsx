@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, FACULTIES, ADMIN_PIN, GROUP_STAROSTA_PINS } from './constants';
+import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, FACULTIES, ADMIN_PIN, GROUP_STAROSTA_PINS, createEmptyWeek } from './constants';
 import { getSemesterWeek, getWeekDateRange, getDayISODate, useAttendance, getSamaraDate, getSamaraISODate } from './attendance';
 import AttendanceTracker from './components/AttendanceTracker';
 import HomeworkTracker from './components/HomeworkTracker';
@@ -135,13 +135,68 @@ const App: React.FC = () => {
 
   const handleCreateCustomGroup = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanName = newGroupName.trim().toUpperCase();
-    if (!cleanName) {
+    const rawInput = newGroupName.trim();
+    if (!rawInput) {
       toast.error('Введите номер группы');
       return;
     }
-    const firstChar = cleanName.charAt(0);
-    const detectedCourse = /^[1-6]$/.test(firstChar) ? parseInt(firstChar, 10) : newGroupCourse;
+
+    const facObj = FACULTIES.find(f => f.id === newGroupFaculty) || { shortName: newGroupFaculty.toUpperCase() };
+    const facShort = facObj.shortName;
+
+    // Smart canonical normalization:
+    let cleanName = rawInput.toUpperCase();
+    let detectedCourse = newGroupCourse;
+
+    // Case 1: Just numbers entered, e.g. "111", "110", "109", "101"
+    if (/^\d{3,4}$/.test(rawInput)) {
+      cleanName = `${newGroupCourse}-${facShort}-${rawInput}`;
+    } else {
+      // Case 2: User entered "3-ИНГТ-110" or "3 ИНГТ 110" or "24ИНГТ-110" or "3ингт110"
+      const matchFull = rawInput.match(/^([1-6])[\s_-]*([а-яёa-z]+)[\s_-]*(\d+)/i);
+      if (matchFull) {
+        detectedCourse = parseInt(matchFull[1], 10);
+        cleanName = `${matchFull[1]}-${matchFull[2].toUpperCase()}-${matchFull[3]}`;
+      } else {
+        const firstChar = rawInput.charAt(0);
+        if (/^[1-6]$/.test(firstChar)) {
+          detectedCourse = parseInt(firstChar, 10);
+        }
+      }
+    }
+
+    // Check if cleanName is a known group or matches any existing group in allAvailableGroups
+    const cleanLower = cleanName.toLowerCase();
+    const cleanNoDashes = cleanLower.replace(/[^a-z0-9а-яё]/gi, '');
+
+    const existingMatch = allAvailableGroups.find(g => {
+      const gNameLower = g.name.toLowerCase();
+      const gIdLower = g.id.toLowerCase();
+      const gNoDashes = gNameLower.replace(/[^a-z0-9а-яё]/gi, '');
+      const gIdNoDashes = gIdLower.replace(/[^a-z0-9а-яё]/gi, '');
+      return (
+        gNameLower === cleanLower ||
+        gIdLower === cleanLower ||
+        gNoDashes === cleanNoDashes ||
+        gIdNoDashes === cleanNoDashes ||
+        (/^\d{3,4}$/.test(rawInput) && g.course === newGroupCourse && g.facultyId === newGroupFaculty && (g.name.endsWith(rawInput) || g.id.endsWith(rawInput)))
+      );
+    });
+
+    if (existingMatch) {
+      handleSelectGroup(existingMatch.id);
+      toast.info(`Группа ${existingMatch.name} уже есть в списке и была выбрана!`);
+      setNewGroupName('');
+      setIsAddingCustomGroup(false);
+      return;
+    }
+
+    // Validation: prevent random gibberish or empty groups
+    if (cleanName.length < 3 || !/\d/.test(cleanName)) {
+      toast.error('Пожалуйста, укажите корректный номер группы СамГТУ (например: 2-ИАИТ-108)');
+      return;
+    }
+
     const generatedId = cleanName.toLowerCase().replace(/[^a-z0-9а-яё]/gi, '-');
 
     const newGroup: GroupConfig = {
@@ -149,10 +204,20 @@ const App: React.FC = () => {
       name: cleanName,
       facultyId: newGroupFaculty,
       course: detectedCourse,
-      degree: 'Бакалавриат'
+      degree: detectedCourse === 5 ? 'Специалитет' : 'Бакалавриат'
     };
 
-    const updated = [...customGroups.filter(g => g.id !== generatedId), newGroup];
+    // Ensure empty schedule is initialized so app never crashes
+    if (!SCHEDULE_REGISTRY[generatedId]) {
+      SCHEDULE_REGISTRY[generatedId] = {
+        1: createEmptyWeek(),
+        2: createEmptyWeek(),
+        3: createEmptyWeek(),
+        4: createEmptyWeek()
+      };
+    }
+
+    const updated = [...customGroups.filter(g => g.id !== generatedId && g.name.toLowerCase() !== cleanLower), newGroup];
     setCustomGroups(updated);
     try {
       localStorage.setItem('custom_groups', JSON.stringify(updated));

@@ -12,6 +12,113 @@ interface BugReportModalProps {
   currentCourse?: number;
 }
 
+export function detectClientPlatform(): string {
+  if (typeof window === 'undefined' && typeof globalThis === 'undefined') return 'Desktop';
+  const tg = (typeof window !== 'undefined' && (window as any).Telegram) || (typeof globalThis !== 'undefined' && (globalThis as any).Telegram);
+  const tgPlatform = tg?.WebApp?.platform;
+  const ua = (typeof navigator !== 'undefined' ? navigator.userAgent : '') || '';
+  const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0));
+  const isSmallScreen = typeof window !== 'undefined' && window.innerWidth <= 768;
+
+  if (tgPlatform === 'android') return 'Телефон (Telegram Android)';
+  if (tgPlatform === 'ios') return 'Телефон (Telegram iOS)';
+  if (tgPlatform === 'tdesktop') return 'Компьютер (Telegram Desktop)';
+  if (tgPlatform === 'macos') return 'Mac (Telegram macOS)';
+  if (tgPlatform === 'web' || tgPlatform === 'weba') {
+    if (/Android/i.test(ua)) return 'Телефон (Telegram Web Android)';
+    if (/iPhone|iPad|iPod/i.test(ua)) return 'Телефон (Telegram Web iOS)';
+    if (isTouch && isSmallScreen) return 'Телефон (Telegram Web)';
+    return 'Компьютер (Telegram Web)';
+  }
+
+  if (/Android/i.test(ua)) return 'Телефон (Android)';
+  if (/iPhone|iPod/i.test(ua)) return 'Телефон (iPhone)';
+  if (/iPad/i.test(ua) || (/Macintosh/i.test(ua) && isTouch)) return 'Планшет (iPad)';
+  if (/Mobile/i.test(ua) || (isTouch && isSmallScreen)) return 'Телефон (Мобильный)';
+
+  return 'Компьютер (Desktop)';
+}
+
+async function stitchImagesToAlbum(files: File[]): Promise<File> {
+  const images = await Promise.all(
+    files.map(file => {
+      return new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          resolve(img);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error(`Не удалось прочитать файл ${file.name}`));
+        };
+        img.src = url;
+      });
+    })
+  );
+
+  const TARGET_WIDTH = 1200;
+  const HEADER_HEIGHT = 44;
+  const SEPARATOR_HEIGHT = 16;
+
+  let totalHeight = 0;
+  const scaledDimensions = images.map(img => {
+    const scale = TARGET_WIDTH / (img.naturalWidth || img.width || TARGET_WIDTH);
+    const h = Math.round((img.naturalHeight || img.height || 800) * scale);
+    totalHeight += HEADER_HEIGHT + h + SEPARATOR_HEIGHT;
+    return { width: TARGET_WIDTH, height: h };
+  });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = TARGET_WIDTH;
+  canvas.height = totalHeight;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas context not available');
+
+  // Background
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  let currentY = 0;
+  images.forEach((img, idx) => {
+    // Draw header banner
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(0, currentY, TARGET_WIDTH, HEADER_HEIGHT);
+
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`📸 Скриншот ${idx + 1} из ${images.length} (${files[idx]?.name || 'изображение'})`, 20, currentY + HEADER_HEIGHT / 2);
+
+    currentY += HEADER_HEIGHT;
+
+    // Draw image
+    const { width, height } = scaledDimensions[idx];
+    ctx.drawImage(img, 0, currentY, width, height);
+    currentY += height;
+
+    // Draw separator line
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(0, currentY, TARGET_WIDTH, 2);
+    currentY += SEPARATOR_HEIGHT;
+  });
+
+  return new Promise<File>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error('Не удалось объединить изображения'));
+          return;
+        }
+        resolve(new File([blob], `bugreport_album_${Date.now()}.jpg`, { type: 'image/jpeg' }));
+      },
+      'image/jpeg',
+      0.88
+    );
+  });
+}
+
 export const BugReportModal: React.FC<BugReportModalProps> = ({
   isOpen,
   onClose,
@@ -56,7 +163,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
   if (!isOpen) return null;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawFiles = Array.from(e.target.files || []);
+    const rawFiles: File[] = e.target.files ? Array.from(e.target.files) : [];
     if (rawFiles.length === 0) return;
 
     const availableSlots = 10 - screenshotFiles.length;
@@ -150,6 +257,8 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
         second: '2-digit'
       });
 
+      const clientInfo = detectClientPlatform();
+
       // Prepare text caption for Telegram
       const captionLines = [
         '🚨 БАГ-РЕПОРТ #bugreport #' + (groupTag || 'samgtu'),
@@ -162,7 +271,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
         cleanDesc.length > 700 ? cleanDesc.slice(0, 700) + '...' : cleanDesc,
         '',
         `⏰ Время: ${nowSamara} (Самара, UTC+4)`,
-        `🌐 Клиент: ${navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'}`
+        `🌐 Клиент: ${clientInfo}`
       ];
 
       const caption = captionLines.join('\n');
@@ -177,6 +286,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
           `Курс: ${course}`,
           `Группа: ${cleanGroup} (ID: ${currentGroupId})`,
           `Контакт для связи: ${contact.trim() || 'Не указан'}`,
+          `Клиент: ${clientInfo}`,
           `User Agent: ${navigator.userAgent}`,
           '----------------------------------------',
           'ПОДРОБНОЕ ОПИСАНИЕ ПРОБЛЕМЫ:',
@@ -199,31 +309,34 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
         const data = await res.json();
         if (!data.ok) throw new Error(data.description || 'Telegram отклонил отправку отчета');
       } else {
-        const total = screenshotFiles.length;
-        for (let i = 0; i < total; i++) {
-          const file = screenshotFiles[i];
-          const formData = new FormData();
-          formData.append('document', file, file.name);
+        // Single photo or multiple photos stitched into one album package
+        let fileToSend: File;
+        let finalCaption = caption;
 
-          let fileCaption = caption;
-          if (total > 1) {
-            if (i === 0) {
-              fileCaption = `${caption}\n\n📸 [Фото 1 из ${total}]`;
-            } else {
-              fileCaption = `🚨 БАГ-РЕПОРТ #${groupTag || 'samgtu'}\n👥 ${cleanGroup} | 📸 [Фото ${i + 1} из ${total}]\n📝 «${cleanDesc.slice(0, 100)}${cleanDesc.length > 100 ? '...' : ''}»`;
-            }
+        if (screenshotFiles.length === 1) {
+          fileToSend = screenshotFiles[0];
+        } else {
+          toast.loading('Объединение скриншотов в единый отчет...', { id: 'stitch-progress' });
+          try {
+            fileToSend = await stitchImagesToAlbum(screenshotFiles);
+            finalCaption = `${caption}\n\n📸 [Прикреплено скриншотов: ${screenshotFiles.length}]`;
+          } finally {
+            toast.dismiss('stitch-progress');
           }
-          formData.append('caption', fileCaption);
-
-          const res = await fetch(`${WORKER_BASE}/upload`, {
-            method: 'POST',
-            body: formData
-          });
-
-          if (!res.ok) throw new Error(`Ошибка шлюза при загрузке фото ${i + 1}: HTTP ${res.status}`);
-          const data = await res.json();
-          if (!data.ok) throw new Error(data.description || `Telegram отклонил отправку фото ${i + 1}`);
         }
+
+        const formData = new FormData();
+        formData.append('document', fileToSend, fileToSend.name || `bugreport_${Date.now()}.jpg`);
+        formData.append('caption', finalCaption);
+
+        const res = await fetch(`${WORKER_BASE}/upload`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!res.ok) throw new Error(`Ошибка шлюза при загрузке: HTTP ${res.status}`);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.description || 'Telegram отклонил отправку отчета');
       }
 
       setIsSuccess(true);
