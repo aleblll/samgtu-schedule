@@ -16,13 +16,11 @@ const GroupManager: React.FC<GroupManagerProps> = ({ currentGroupId, userRole })
   }, [currentGroupId]);
 
   const getHealedStudents = (groupId: string, parsed: Student[]): Student[] => {
-    if (groupId === 'ingt-310' && (parsed.length !== 16 || parsed.some(s => s.name?.includes('Пронин')))) {
-      localStorage.setItem(`students_ingt-310`, JSON.stringify(STUDENTS_REGISTRY['ingt-310']));
-      return STUDENTS_REGISTRY['ingt-310'];
-    }
-    if ((groupId === 'faid-310' || groupId === 'faid-110') && parsed.length !== 22) {
-      localStorage.setItem(`students_${groupId}`, JSON.stringify(STUDENTS_REGISTRY['faid-310']));
-      return STUDENTS_REGISTRY['faid-310'];
+    if (!Array.isArray(parsed)) return STUDENTS_REGISTRY[groupId] || [];
+    if (groupId === 'ingt-310' && parsed.some(s => s.name?.includes('Пронин'))) {
+      const cleaned = parsed.filter(s => !s.name?.includes('Пронин'));
+      localStorage.setItem(`students_ingt-310`, JSON.stringify(cleaned));
+      return cleaned;
     }
     return parsed;
   };

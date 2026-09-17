@@ -382,7 +382,20 @@ export async function verifyAndSync() {
   console.log(`================================================================\n`);
 
   if (isApply) {
-    console.log(`Применяю обновления в ${CONSTANTS_PATH}...`);
+    let totalParsedLessons = 0;
+    for (const weeks of Object.values(updatedSchedules)) {
+      for (const days of Object.values(weeks)) {
+        for (const day of days) {
+          totalParsedLessons += day.lessons.length;
+        }
+      }
+    }
+    if (totalParsedLessons < 50) {
+      console.error(`🚨 КРИТИЧЕСКАЯ ОШИБКА: Спарсено всего ${totalParsedLessons} пар (порог безопасности: 50). Запись в constants.ts заблокирована для предотвращения стирания данных!`);
+      process.exit(1);
+    }
+
+    console.log(`Применяю обновления в ${CONSTANTS_PATH} (всего проверено ${totalParsedLessons} пар)...`);
     let fileContent = fs.readFileSync(CONSTANTS_PATH, 'utf-8');
 
     // 1. Update ingt-310 inside SCHEDULE_REGISTRY export

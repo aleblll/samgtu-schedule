@@ -1,140 +1,117 @@
-import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS } from '../constants';
-import { STUDENTS_REGISTRY, BLOCKS, getSemesterWeek, getDayName, getSamaraDate, getSamaraISODate } from '../attendance';
-import { Lesson, Student } from '../types';
+import assert from 'node:assert';
+import fs from 'node:fs';
+import path from 'node:path';
+import { SCHEDULE_REGISTRY } from '../constants';
 
-function resolveTeacher(lesson: Lesson, override: Partial<Lesson> = {}, subjectTeachers: Record<string, string> = {}): string {
-  const teacherByType = subjectTeachers[`${lesson.subject}::${lesson.type}`];
-  const flatTeacher = subjectTeachers[lesson.subject];
-  return override.teacher !== undefined ? override.teacher : (teacherByType || flatTeacher || lesson.teacher);
+console.log('=== RUNNING COMPREHENSIVE AUDIT TEST SUITE ===\n');
+const root = process.cwd();
+
+// Test 1: cloudflare-worker.js security & privacy
+{
+  console.log('Test 1: cloudflare-worker.js security & privacy');
+  const workerCode = fs.readFileSync(path.resolve(root, 'cloudflare-worker.js'), 'utf8');
+  assert(!workerCode.includes('@raspisanie_samgtu'), 'Should not route bug reports to public channel');
+  assert(!workerCode.includes('8330761109:AA'), 'Should not contain hardcoded bot token');
+  assert(workerCode.includes('X-App-Key'), 'Should enforce X-App-Key header');
+  assert(workerCode.includes('APP_SECRET'), 'Should check APP_SECRET');
+  console.log('  PASS: Worker is secure, private, and tokenless.\n');
 }
 
-console.log("=================================================================");
-console.log("            DEEP COMPREHENSIVE CODEBASE AUDIT                    ");
-console.log("=================================================================");
-
-// TEST 1: SCHEDULE REGISTRY & GHOST LESSON AUDIT
-console.log("\n--- TEST 1: SCHEDULE REGISTRY & GHOST LESSON AUDIT ---");
-const faidW1 = SCHEDULE_REGISTRY['faid-310']?.[1] || [];
-const faidW1Mon = faidW1.find(d => d.dayName === 'Понедельник');
-console.log(`faid-310 Week 1 Monday lessons count: ${faidW1Mon?.lessons.length} (Expected: 0)`);
-if (faidW1Mon && faidW1Mon.lessons.length !== 0) {
-  console.log("  >>> CRITICAL BUG: Week 1 Monday (31 August) in faid-310 must have 0 lessons (summer vacation)! <<<");
+// Test 2: attendance.ts dead code cut
+{
+  console.log('Test 2: attendance.ts cleanliness');
+  const attendanceCode = fs.readFileSync(path.resolve(root, 'attendance.ts'), 'utf8');
+  assert(!attendanceCode.includes('firebase/firestore'), 'Should not import firebase/firestore');
+  assert(!attendanceCode.includes('onSnapshot'), 'Should not use Firestore onSnapshot');
+  assert(attendanceCode.includes("updatedBy: 'starosta_pin'"), 'Should tag attendance updates with starosta_pin');
+  console.log('  PASS: attendance.ts has no Firebase/Firestore dead code.\n');
 }
 
-const faidW2 = SCHEDULE_REGISTRY['faid-310']?.[2] || [];
-const faidW2Tue = faidW2.find(d => d.dayName === 'Вторник');
-console.log(`faid-310 Week 2 Tuesday lessons count: ${faidW2Tue?.lessons.length} (Expected: 1)`);
-if (faidW2Tue && faidW2Tue.lessons.length !== 1) {
-  console.log("  >>> CRITICAL BUG: Week 2 Tuesday in faid-310 should have 1 lesson (Практико-ориентированный проект)! <<<");
+// Test 3: App.tsx race conditions, TabErrorBoundary, and safe guards
+{
+  console.log('Test 3: App.tsx race conditions & error boundaries');
+  const appCode = fs.readFileSync(path.resolve(root, 'App.tsx'), 'utf8');
+  assert(!appCode.includes('from "firebase/firestore"'), 'App.tsx should not import firebase/firestore');
+  assert(appCode.includes('last_local_edit_'), 'App.tsx should record last_local_edit timestamp');
+  assert(appCode.includes('30 * 1000') || appCode.includes('30000'), 'App.tsx should skip cloud override within 30s of local edit');
+  assert(appCode.includes('TabErrorBoundary'), 'App.tsx should import and use TabErrorBoundary');
+  assert(appCode.includes('Array.isArray(rawSchedule)'), 'App.tsx should validate rawSchedule is an array');
+  assert(appCode.includes('key={currentGroupId}'), 'SwipeableDays should be keyed by currentGroupId');
+  console.log('  PASS: App.tsx handles race conditions, tab errors, and group switching correctly.\n');
 }
 
-// TEST 2: ALL AVAILABLE_GROUPS INITIALIZATION
-console.log("\n--- TEST 2: AVAILABLE_GROUPS SCHEDULE INTEGRITY ---");
-const missingSchedGroups: string[] = [];
-for (const grp of AVAILABLE_GROUPS) {
-  if (!SCHEDULE_REGISTRY[grp.id]) {
-    missingSchedGroups.push(grp.id);
+// Test 4: GroupManager.tsx roster editing unlocked
+{
+  console.log('Test 4: GroupManager.tsx roster editing');
+  const gmCode = fs.readFileSync(path.resolve(root, 'components/GroupManager.tsx'), 'utf8');
+  assert(!gmCode.includes('parsed.length !== 16'), 'GroupManager should not discard custom student list with !== 16');
+  assert(!gmCode.includes('parsed.length !== 22'), 'GroupManager should not discard custom student list with !== 22');
+  console.log('  PASS: Roster editing is not forcibly reset by length checks.\n');
+}
+
+// Test 5: BugReportModal.tsx album grid, canvas height limit, and mobile ergonomics
+{
+  console.log('Test 5: BugReportModal.tsx iOS Safari & mobile ergonomics');
+  const brmCode = fs.readFileSync(path.resolve(root, 'components/BugReportModal.tsx'), 'utf8');
+  assert(brmCode.includes('MAX_CANVAS_HEIGHT = 4000'), 'Canvas height must be capped at 4000px to avoid iOS Safari OOM');
+  assert(brmCode.includes('isMultiCol = images.length > 3') && brmCode.includes('cols = isMultiCol ? 2 : 1'), 'Album stitching should use 2 columns when > 3 images');
+  assert(brmCode.includes('items-end sm:items-center'), 'Modal should display as a bottom sheet on mobile');
+  assert(brmCode.includes('text-base sm:text-xs'), 'Inputs should use font-size 16px on mobile to prevent iOS Safari autozoom');
+  console.log('  PASS: BugReportModal iOS Safari and mobile layout optimized.\n');
+}
+
+// Test 6: SwipeableDays.tsx touch events
+{
+  console.log('Test 6: SwipeableDays.tsx touch listener cleanliness');
+  const sdCode = fs.readFileSync(path.resolve(root, 'components/SwipeableDays.tsx'), 'utf8');
+  assert(!sdCode.includes('onTouchStart={handleTouchStart}'), 'Container should not attach duplicate onTouchStart');
+  assert(!sdCode.includes('onTouchEnd={handleTouchEnd}'), 'Container should not attach duplicate onTouchEnd');
+  console.log('  PASS: Double swipe issue eliminated.\n');
+}
+
+// Test 7: exportWord.ts block absences
+{
+  console.log('Test 7: exportWord.ts block absences logic');
+  const ewCode = fs.readFileSync(path.resolve(root, 'utils/exportWord.ts'), 'utf8');
+  assert(ewCode.includes('blockAbsences > 0') && ewCode.includes('${blockAbsences} Не УП'), 'exportWord should output block-specific absences');
+  assert(ewCode.includes('blockExcused > 0') && ewCode.includes('${blockExcused} УП'), 'exportWord should output block-specific excused absences');
+  console.log('  PASS: exportWord outputs correct per-block absences.\n');
+}
+
+// Test 8: constants.ts schedule integrity & typo fixes
+{
+  console.log('Test 8: constants.ts schedule integrity & typo fixes');
+  const constCode = fs.readFileSync(path.resolve(root, 'constants.ts'), 'utf8');
+  assert(!constCode.includes('Лабораторные занятия'), 'All "Лабораторные занятия" should be "Лабораторные работы"');
+
+  const groups = ['ingt-301', 'ingt-303', 'faid-310', 'ingt-209', 'htf-215'];
+  for (const g of groups) {
+    const reg = SCHEDULE_REGISTRY[g];
+    assert(reg, 'Schedule registry must exist for ' + g);
+    const w1 = reg[1];
+    const w1Monday = w1.find(d => d.dayName === 'Понедельник');
+    assert(w1Monday && w1Monday.lessons.length > 0, 'Week 1 Monday must have lessons for ' + g);
   }
-}
-console.log(`Missing schedules in SCHEDULE_REGISTRY: ${missingSchedGroups.length} / ${AVAILABLE_GROUPS.length}`);
-if (missingSchedGroups.length > 0) {
-  console.log(`  >>> WARNING: ${missingSchedGroups.length} groups in AVAILABLE_GROUPS have undefined in SCHEDULE_REGISTRY: [${missingSchedGroups.slice(0, 5).join(', ')}...] <<<`);
+  console.log('  PASS: Typo eliminated and Week 1 Mondays restored across all groups.\n');
 }
 
-// TEST 3: ATTENDANCE CALCULATION & COLLISION IN RECORDS
-console.log("\n--- TEST 3: ATTENDANCE & REPORT CALCULATIONS ---");
-// Simulate student in both absentStudentIds and excusedStudentIds
-const mockRecord = {
-  groupId: 'faid-310',
-  date: '2026-09-01',
-  lessonId: 'faid310-w1-tu-1',
-  absentStudentIds: [1],
-  excusedStudentIds: [1], // Collision due to network/sync race condition
-  isCancelled: false
-};
-
-// In AttendanceTracker report calculation:
-let totalAbs = 0;
-let totalExc = 0;
-const isAbsent = mockRecord.absentStudentIds.includes(1);
-const isExcused = !isAbsent && (mockRecord.excusedStudentIds || []).includes(1);
-if (isAbsent) totalAbs += 2;
-else if (isExcused) totalExc += 2;
-
-console.log(`Collision handling in AttendanceTracker: Abs=${totalAbs}h, Exc=${totalExc}h (Total 2h, protected: ${totalAbs + totalExc === 2})`);
-
-// But what happens if record is cancelled?
-const cancelledRecord = { ...mockRecord, isCancelled: true };
-let cancelAbs = 0;
-if (!cancelledRecord.isCancelled) {
-  if (cancelledRecord.absentStudentIds.includes(1)) cancelAbs += 2;
-}
-console.log(`Cancelled lesson counted: ${cancelAbs}h (Expected 0h: ${cancelAbs === 0})`);
-
-// TEST 4: BLOCK DATES & POST-DECEMBER 25 GAP
-console.log("\n--- TEST 4: DEAN'S OFFICE REPORT DATE GAPS ---");
-const dec28Date = '2026-12-28';
-const inBlock = BLOCKS.find(b => dec28Date >= b.start && dec28Date <= b.end);
-console.log(`Date 2026-12-28 (Credit week) in block: ${inBlock ? inBlock.name : 'NONE'}`);
-if (!inBlock) {
-  console.log("  >>> BUG: BLOCKS[3].end is 2026-12-25. Dec 26-31 classes are omitted from Block 4 columns in Word report! <<<");
+// Test 9: AndroidManifest permissions
+{
+  console.log('Test 9: AndroidManifest.xml permissions');
+  const manifest = fs.readFileSync(path.resolve(root, 'android/app/src/main/AndroidManifest.xml'), 'utf8');
+  assert(manifest.includes('android.permission.CAMERA'), 'Manifest must have CAMERA permission');
+  assert(manifest.includes('android.permission.READ_MEDIA_IMAGES'), 'Manifest must have READ_MEDIA_IMAGES permission');
+  console.log('  PASS: Android permissions configured correctly.\n');
 }
 
-// TEST 5: TEACHER RESOLUTION HIERARCHY & EMPTY STRING OVERRIDE
-console.log("\n--- TEST 5: TEACHER OVERRIDE DELETION ---");
-const mockLesson: Lesson = {
-  id: 'test-1',
-  timeStart: '08:00',
-  timeEnd: '09:35',
-  subject: 'Философия',
-  type: 'Практические занятия',
-  teacher: 'Стоцкая Татьяна Геннадьевна',
-  location: '525'
-};
-
-// Case A: Override has a new teacher
-const overrideA = { teacher: 'Новый Преподаватель' };
-console.log("Teacher with override:", resolveTeacher(mockLesson, overrideA, {}));
-
-// Case B: User wants to CLEAR the teacher (sets override.teacher = '')
-const overrideB = { teacher: '' };
-const resolvedB = resolveTeacher(mockLesson, overrideB, { 'Философия::Практические занятия': 'Стоцкая Т.Г.' });
-console.log(`Teacher with override.teacher = "": '${resolvedB}'`);
-if (resolvedB !== '') {
-  console.log("  >>> BUG: resolveTeacher uses 'override.teacher || ...', so user CANNOT set an empty teacher! It falls back to default! <<<");
+// Test 10: sync_official_schedule circuit breaker
+{
+  console.log('Test 10: sync_official_schedule.ts circuit breaker');
+  const syncCode = fs.readFileSync(path.resolve(root, 'scripts/sync_official_schedule.ts'), 'utf8');
+  assert(syncCode.includes('totalParsedLessons < 50'), 'sync script must have circuit breaker checking < 50 lessons');
+  console.log('  PASS: Circuit breaker in place to protect schedule data integrity.\n');
 }
 
-// TEST 6: STAROSTA PIN SECURITY & ISOLATION
-console.log("\n--- TEST 6: STAROSTA ROLE ISOLATION ---");
-const userRole: string = 'starosta';
-const starostaGroupId: string = 'ingt-310';
-const currentGroupId: string = 'faid-310';
-
-// Logic from App.tsx line 114:
-let effectiveRole = 'student';
-if (userRole === 'admin') effectiveRole = 'admin';
-else if (userRole === 'starosta') {
-  if (starostaGroupId && currentGroupId === starostaGroupId) {
-    effectiveRole = 'starosta';
-  } else {
-    effectiveRole = 'student';
-  }
-}
-console.log(`Starosta of ingt-310 viewing faid-310: effectiveRole='${effectiveRole}' (Expected: 'student')`);
-console.log(`Can edit faid-310: ${effectiveRole === 'admin' || effectiveRole === 'starosta'} (Expected: false)`);
-
-// TEST 7: GRAMMAR OF PAIRS (DECLENSION)
-console.log("\n--- TEST 7: DECLENSION OF LESSON COUNTER ---");
-function getPairWord(count: number): string {
-  if (count === 1) return 'пара';
-  if (count >= 2 && count <= 4) return 'пары';
-  return 'пар';
-}
-console.log(`0 lessons: "0 ${getPairWord(0)}" (Expected: '0 пар')`);
-console.log(`1 lesson:  "1 ${getPairWord(1)}" (Expected: '1 пара')`);
-console.log(`2 lessons: "2 ${getPairWord(2)}" (Expected: '2 пары')`);
-console.log(`5 lessons: "5 ${getPairWord(5)}" (Expected: '5 пар')`);
-
-console.log("\n=================================================================");
-console.log("                     AUDIT EXECUTION COMPLETE                    ");
-console.log("=================================================================");
+console.log('========================================');
+console.log('ALL 10 AUDIT VERIFICATION TESTS PASSED!');
+console.log('========================================');

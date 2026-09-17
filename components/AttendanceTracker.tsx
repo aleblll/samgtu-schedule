@@ -4,7 +4,6 @@ import { STUDENTS_REGISTRY, useAttendance, BLOCKS, getSemesterWeek, getDayName, 
 import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, FACULTIES } from '../constants';
 import { Lesson, Student } from '../types';
 import { toast } from 'sonner';
-import { exportAttendanceToWord } from '../utils/exportWord';
 
 interface AttendanceTrackerProps {
   isAuthenticated: boolean;
@@ -154,6 +153,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
       const faculty = FACULTIES.find(f => f.id === groupConfig.facultyId) || FACULTIES[0];
       
       toast.info('Формирование Word отчета пропусков...');
+      const { exportAttendanceToWord } = await import('../utils/exportWord');
       await exportAttendanceToWord(records, students, groupConfig, faculty);
       toast.success('Официальный отчет в Word выгружен!');
     } catch (error) {

@@ -95,7 +95,7 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none text-slate-900 dark:text-white"
+              className="w-full px-3.5 py-2.5 text-base sm:text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none text-slate-900 dark:text-white"
               required
             />
           </div>
@@ -110,7 +110,7 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
                 placeholder="ФИО преподавателя"
                 value={teacher}
                 onChange={(e) => setTeacher(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none text-slate-900 dark:text-white"
+                className="w-full px-3.5 py-2.5 text-base sm:text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none text-slate-900 dark:text-white"
               />
             </div>
 
@@ -123,7 +123,7 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
                 placeholder="напр. Корпус 1, 109Б"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none text-slate-900 dark:text-white"
+                className="w-full px-3.5 py-2.5 text-base sm:text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none text-slate-900 dark:text-white"
               />
             </div>
           </div>
@@ -179,7 +179,7 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
               placeholder="напр. Принести калькулятор, методичка №2"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none text-slate-900 dark:text-white"
+              className="w-full px-3.5 py-2.5 text-base sm:text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none text-slate-900 dark:text-white"
             />
           </div>
 
@@ -241,14 +241,14 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
                   placeholder="Название (напр. Презентация / Диск / Moodle)"
                   value={newLinkTitle}
                   onChange={(e) => setNewLinkTitle(e.target.value)}
-                  className="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none"
+                  className="w-full px-2.5 py-1.5 text-base sm:text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none"
                 />
                 <input
                   type="url"
                   placeholder="URL-ссылка (https://...)"
                   value={newLinkUrl}
                   onChange={(e) => setNewLinkUrl(e.target.value)}
-                  className="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none"
+                  className="w-full px-2.5 py-1.5 text-base sm:text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none"
                 />
                 <div className="flex justify-end gap-2 pt-1">
                   <button

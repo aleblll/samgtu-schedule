@@ -59,21 +59,42 @@ async function stitchImagesToAlbum(files: File[]): Promise<File> {
     })
   );
 
+  const MAX_CANVAS_HEIGHT = 4000;
+  const isMultiCol = images.length > 3;
+  const cols = isMultiCol ? 2 : 1;
   const TARGET_WIDTH = 1200;
-  const HEADER_HEIGHT = 44;
-  const SEPARATOR_HEIGHT = 16;
+  const colWidth = Math.floor(TARGET_WIDTH / cols);
+  const HEADER_HEIGHT = 38;
+  const PADDING = 8;
 
-  let totalHeight = 0;
-  const scaledDimensions = images.map(img => {
-    const scale = TARGET_WIDTH / (img.naturalWidth || img.width || TARGET_WIDTH);
-    const h = Math.round((img.naturalHeight || img.height || 800) * scale);
-    totalHeight += HEADER_HEIGHT + h + SEPARATOR_HEIGHT;
-    return { width: TARGET_WIDTH, height: h };
+  // Compute dimensions for each item when scaled to colWidth
+  const itemDimensions = images.map(img => {
+    const origW = img.naturalWidth || img.width || colWidth;
+    const origH = img.naturalHeight || img.height || 800;
+    const scale = colWidth / origW;
+    const h = Math.round(origH * scale);
+    return { width: colWidth, height: h, totalItemH: HEADER_HEIGHT + h + PADDING };
   });
 
+  let colHeights = new Array(cols).fill(0);
+  const itemPlacements: Array<{ col: number; x: number; y: number; itemH: number; imgH: number }> = [];
+
+  itemDimensions.forEach((dim, idx) => {
+    const targetCol = isMultiCol ? (idx % cols) : 0;
+    const x = targetCol * colWidth;
+    const y = colHeights[targetCol];
+    itemPlacements.push({ col: targetCol, x, y, itemH: dim.totalItemH, imgH: dim.height });
+    colHeights[targetCol] += dim.totalItemH;
+  });
+
+  const rawTotalHeight = Math.max(...colHeights);
+  const globalScale = rawTotalHeight > MAX_CANVAS_HEIGHT ? (MAX_CANVAS_HEIGHT / rawTotalHeight) : 1;
+  const finalWidth = Math.round(TARGET_WIDTH * globalScale);
+  const finalHeight = Math.min(MAX_CANVAS_HEIGHT, Math.round(rawTotalHeight * globalScale));
+
   const canvas = document.createElement('canvas');
-  canvas.width = TARGET_WIDTH;
-  canvas.height = totalHeight;
+  canvas.width = finalWidth;
+  canvas.height = finalHeight;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas context not available');
 
@@ -81,28 +102,24 @@ async function stitchImagesToAlbum(files: File[]): Promise<File> {
   ctx.fillStyle = '#0f172a';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  let currentY = 0;
+  if (globalScale !== 1) {
+    ctx.scale(globalScale, globalScale);
+  }
+
   images.forEach((img, idx) => {
-    // Draw header banner
+    const p = itemPlacements[idx];
     ctx.fillStyle = '#1e293b';
-    ctx.fillRect(0, currentY, TARGET_WIDTH, HEADER_HEIGHT);
+    ctx.fillRect(p.x, p.y, colWidth, HEADER_HEIGHT);
 
     ctx.fillStyle = '#38bdf8';
-    ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = 'bold 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.textBaseline = 'middle';
-    ctx.fillText(`📸 Скриншот ${idx + 1} из ${images.length} (${files[idx]?.name || 'изображение'})`, 20, currentY + HEADER_HEIGHT / 2);
+    ctx.fillText(`📸 Фото ${idx + 1}/${images.length}`, p.x + 12, p.y + HEADER_HEIGHT / 2);
 
-    currentY += HEADER_HEIGHT;
+    ctx.drawImage(img, p.x, p.y + HEADER_HEIGHT, colWidth, p.imgH);
 
-    // Draw image
-    const { width, height } = scaledDimensions[idx];
-    ctx.drawImage(img, 0, currentY, width, height);
-    currentY += height;
-
-    // Draw separator line
     ctx.fillStyle = '#334155';
-    ctx.fillRect(0, currentY, TARGET_WIDTH, 2);
-    currentY += SEPARATOR_HEIGHT;
+    ctx.fillRect(p.x, p.y + HEADER_HEIGHT + p.imgH, colWidth, 2);
   });
 
   return new Promise<File>((resolve, reject) => {
@@ -115,7 +132,7 @@ async function stitchImagesToAlbum(files: File[]): Promise<File> {
         resolve(new File([blob], `bugreport_album_${Date.now()}.jpg`, { type: 'image/jpeg' }));
       },
       'image/jpeg',
-      0.88
+      0.85
     );
   });
 }
@@ -394,9 +411,9 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div 
-        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90dvh]"
+        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[85dvh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -470,7 +487,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
                   <select
                     value={course}
                     onChange={(e) => setCourse(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-base sm:text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                   >
                     {[1, 2, 3, 4, 5, 6].map(c => (
                       <option key={c} value={c}>{c} курс</option>
@@ -488,7 +505,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
                     onChange={(e) => setGroupName(e.target.value)}
                     placeholder="Например: 2-ХТФ-115"
                     required
-                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-base sm:text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                   />
                 </div>
               </div>
@@ -503,7 +520,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
                   value={contact}
                   onChange={(e) => setContact(e.target.value)}
                   placeholder="@username или +7 999 000-00-00"
-                  className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-base sm:text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                 />
               </div>
 
@@ -518,7 +535,7 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
                   placeholder="Опишите, что именно пошло не так: какая пара, день недели, неверная аудитория или сбой..."
                   rows={4}
                   required
-                  className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none"
+                  className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-base sm:text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none"
                 />
               </div>
 

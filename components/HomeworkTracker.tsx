@@ -142,11 +142,6 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
     // Load on mount or refresh
     loadCloud(true);
 
-    // Poll every 15 seconds for real-time sync across classmates
-    const interval = setInterval(() => {
-      loadCloud(false);
-    }, 15000);
-
     // Instant sync on tab focus or returning from Telegram
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -158,7 +153,6 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
 
     return () => {
       isMounted = false;
-      clearInterval(interval);
       window.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleVisibilityChange);
     };

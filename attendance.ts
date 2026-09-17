@@ -1,6 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { collection, doc, setDoc, onSnapshot, serverTimestamp, query, where } from 'firebase/firestore';
-import { db, auth } from './firebase';
 import { toast } from 'sonner';
 import { Student, Registry } from './types';
 import { fetchGroupCloudData, pushGroupCloudData } from './utils/cloudSync';
@@ -288,8 +286,6 @@ export const useAttendance = (isAuthenticated: boolean, currentGroupId: string |
     if (!currentGroupId) return;
 
     let isMounted = true;
-    let pollTimer: ReturnType<typeof setInterval> | null = null;
-    let firestoreUnsub: (() => void) | null = null;
 
     const setupSubscription = async () => {
       // 1. Universal REST Cloud sync
@@ -316,41 +312,6 @@ export const useAttendance = (isAuthenticated: boolean, currentGroupId: string |
           } catch (e) {}
         }
       }
-
-      // 2. Poll every 20s for attendance updates across devices
-      pollTimer = setInterval(async () => {
-        if (!isMounted) return;
-        const c = await fetchGroupCloudData(false, currentGroupId);
-        if (!isMounted) return;
-        if (c && Array.isArray(c.attendance) && c.attendance.length > 0) {
-          setRecords(c.attendance);
-          try {
-            localStorage.setItem(`attendance_${currentGroupId}`, JSON.stringify(c.attendance));
-          } catch (e) {}
-        }
-      }, 20000);
-
-      // 3. Also try Firestore in background if available
-      try {
-        const q = query(collection(db, 'attendance'), where('groupId', '==', currentGroupId));
-        firestoreUnsub = onSnapshot(
-          q,
-          (snapshot) => {
-            const cloudRecords = snapshot.docs.map(docSnap => {
-              const data = docSnap.data() as AttendanceRecord;
-              return { ...data, docId: docSnap.id };
-            });
-
-            if (isMounted && cloudRecords.length > 0) {
-              setRecords(cloudRecords);
-              try {
-                localStorage.setItem(`attendance_${currentGroupId}`, JSON.stringify(cloudRecords));
-              } catch (e) {}
-            }
-          },
-          () => {}
-        );
-      } catch (err) {}
     };
 
     setupSubscription();
@@ -370,8 +331,6 @@ export const useAttendance = (isAuthenticated: boolean, currentGroupId: string |
 
     return () => {
       isMounted = false;
-      if (pollTimer) clearInterval(pollTimer);
-      if (firestoreUnsub) firestoreUnsub();
       window.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [currentGroupId, refreshTrigger]);
@@ -412,7 +371,7 @@ export const useAttendance = (isAuthenticated: boolean, currentGroupId: string |
         excusedStudentIds: update.excusedStudentIds || [],
         isCancelled: update.isCancelled ?? false,
         updatedAt: new Date().toISOString(),
-        updatedBy: auth.currentUser?.uid || 'starosta_pin'
+        updatedBy: 'starosta_pin'
       };
       map.set(`${update.date}_${update.lessonId}`, newRecord);
       createdRecords.push(newRecord);
@@ -429,21 +388,6 @@ export const useAttendance = (isAuthenticated: boolean, currentGroupId: string |
 
     // 4. Push the GUARANTEED valid array to REST Cloud immediately (syncs to all classmates)
     pushGroupCloudData({ attendance: updatedRecords }, groupId);
-
-    // 5. Sync to Firestore Cloud as well in the background
-    try {
-      for (const rec of createdRecords) {
-        if (rec.docId) {
-          const recordRef = doc(db, 'attendance', rec.docId);
-          setDoc(recordRef, {
-            ...rec,
-            updatedAt: serverTimestamp()
-          }, { merge: true }).catch(() => {});
-        }
-      }
-    } catch (error) {
-      console.warn('Firestore batch write saved locally:', error);
-    }
   };
 
   const markAttendance = async (

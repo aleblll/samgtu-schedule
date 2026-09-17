@@ -332,9 +332,6 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerCancel}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchCancel}
         onWheel={handleWheel}
       >
         <div 

@@ -84,8 +84,8 @@ export const exportAttendanceToWord = async (
       cumulativeExcused += blockExcused;
       
       const parts = [];
-      if (cumulativeAbsences > 0) parts.push(`${cumulativeAbsences} Не УП`);
-      if (cumulativeExcused > 0) parts.push(`${cumulativeExcused} УП`);
+      if (blockAbsences > 0) parts.push(`${blockAbsences} Не УП`);
+      if (blockExcused > 0) parts.push(`${blockExcused} УП`);
       const cellText = parts.length > 0 ? parts.join(', ') : '0';
 
       return new TableCell({

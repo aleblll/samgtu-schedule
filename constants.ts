@@ -301,6 +301,9 @@ SCHEDULE_REGISTRY['ingt-301'] = {
     {
       dayName: 'Понедельник',
       lessons: [
+        { id: 'ingt301-w1-mo-1', timeStart: '08:00', timeEnd: '09:35', subject: "Гидравлика и нефтегазовая гидромеханика", type: 'Лабораторные работы', location: "Корпус № 9, 216", teacher: "" },
+        { id: 'ingt301-w1-mo-2', timeStart: '09:45', timeEnd: '11:20', subject: "Гидравлика и нефтегазовая гидромеханика", type: 'Лабораторные работы', location: "Корпус № 9, 216", teacher: "" },
+        { id: 'ingt301-w1-mo-3', timeStart: '11:50', timeEnd: '13:25', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "Спортивный комплекс", teacher: "Кафедра физического воспитания" }
       ]
     },
     {
@@ -490,6 +493,10 @@ SCHEDULE_REGISTRY['ingt-303'] = {
     {
       dayName: 'Понедельник',
       lessons: [
+        { id: 'ingt303-w1-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Гидравлика и нефтегазовая гидромеханика", type: 'Лабораторные работы', location: "Корпус № 6, 25", teacher: "" },
+        { id: 'ingt303-w1-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Гидравлика и нефтегазовая гидромеханика", type: 'Лабораторные работы', location: "Корпус № 6, 25", teacher: "" },
+        { id: 'ingt303-w1-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Термодинамика и теплопередача", type: 'Лабораторные работы', location: "Корпус № 6, 30", teacher: "" },
+        { id: 'ingt303-w1-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Термодинамика и теплопередача", type: 'Лабораторные работы', location: "Корпус № 6, 30", teacher: "" }
       ]
     },
     {
@@ -685,6 +692,10 @@ SCHEDULE_REGISTRY['faid-310'] = {
     {
       dayName: 'Понедельник',
       lessons: [
+        { id: 'faid310-w1-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "Спортивный комплекс", teacher: "Кафедра физического воспитания" },
+        { id: 'faid310-w1-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Философия", type: 'Лекции', location: "Moodle, ауд. не указана", teacher: "Стоцкая Татьяна Геннадьевна" },
+        { id: 'faid310-w1-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Проектирование", type: 'Практические занятия', location: "Корпус № 13, 0603", teacher: "Смоленская Елена Олеговна" },
+        { id: 'faid310-w1-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Проектирование", type: 'Практические занятия', location: "Корпус № 13, 0603", teacher: "Смоленская Елена Олеговна" }
       ]
     },
     {
@@ -880,6 +891,9 @@ SCHEDULE_REGISTRY['ingt-209'] = {
     {
       dayName: 'Понедельник',
       lessons: [
+        { id: 'ingt209-w1-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Физика", type: 'Практические занятия', location: "Корпус № 1, 320", teacher: "" },
+        { id: 'ingt209-w1-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Защита информации", type: 'Практические занятия', location: "Корпус № 8, 113", teacher: "" },
+        { id: 'ingt209-w1-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Математика", type: 'Практические занятия', location: "Корпус № 11, 471", teacher: "" }
       ]
     },
     {
@@ -1077,6 +1091,10 @@ SCHEDULE_REGISTRY['htf-215'] = {
     {
       dayName: 'Понедельник',
       lessons: [
+        { id: 'htf215-w1-mo-1', timeStart: '09:45', timeEnd: '11:20', subject: "Физика", type: 'Лекции', location: "Корпус № 1, 423", teacher: "Косарева Евгения Александровна" },
+        { id: 'htf215-w1-mo-2', timeStart: '11:50', timeEnd: '13:25', subject: "Физика", type: 'Практические занятия', location: "Корпус № 1, 423", teacher: "Косарева Евгения Александровна" },
+        { id: 'htf215-w1-mo-3', timeStart: '13:35', timeEnd: '15:10', subject: "Математика", type: 'Лекции', location: "Корпус № 2, 39", teacher: "Арланова Екатерина Юрьевна" },
+        { id: 'htf215-w1-mo-4', timeStart: '15:40', timeEnd: '17:15', subject: "Математика", type: 'Лекции', location: "Корпус № 2, 39", teacher: "Арланова Екатерина Юрьевна" }
       ]
     },
     {
@@ -1291,8 +1309,8 @@ SCHEDULE_REGISTRY['ingt-311'] = {
       dayName: 'Понедельник',
       lessons: [
         { id: 'ingt311-w1-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "аудитория", teacher: "" },
-        { id: 'ingt311-w1-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Лабораторные занятия', location: "Корпус № 9, 409", teacher: "" },
-        { id: 'ingt311-w1-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Лабораторные занятия', location: "Корпус № 9, 409", teacher: "" },
+        { id: 'ingt311-w1-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Лабораторные работы', location: "Корпус № 9, 409", teacher: "" },
+        { id: 'ingt311-w1-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Лабораторные работы', location: "Корпус № 9, 409", teacher: "" },
         { id: 'ingt311-w1-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Безопасность жизнедеятельности", type: 'Лекции', location: "Корпус № 1, 432", teacher: "" }
       ]
     },
@@ -1390,8 +1408,8 @@ SCHEDULE_REGISTRY['ingt-311'] = {
       dayName: 'Понедельник',
       lessons: [
         { id: 'ingt311-w3-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "аудитория", teacher: "" },
-        { id: 'ingt311-w3-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Лабораторные занятия', location: "Корпус № 9, 409", teacher: "" },
-        { id: 'ingt311-w3-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Лабораторные занятия', location: "Корпус № 9, 409", teacher: "" },
+        { id: 'ingt311-w3-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Лабораторные работы', location: "Корпус № 9, 409", teacher: "" },
+        { id: 'ingt311-w3-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Лабораторные работы', location: "Корпус № 9, 409", teacher: "" },
         { id: 'ingt311-w3-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Безопасность жизнедеятельности", type: 'Лекции', location: "Корпус № 1, 432", teacher: "" }
       ]
     },
@@ -1433,8 +1451,8 @@ SCHEDULE_REGISTRY['ingt-311'] = {
       lessons: [
         { id: 'ingt311-w3-sa-1', timeStart: '08:00', timeEnd: '09:35', subject: "Конструирование и расчет сосудов и аппаратов нефтегазопереработки, работающих под давлением", type: 'Лекции', location: "Корпус № 9, 423", teacher: "" },
         { id: 'ingt311-w3-sa-2', timeStart: '09:45', timeEnd: '11:20', subject: "Конструирование и расчет сосудов и аппаратов нефтегазопереработки, работающих под давлением", type: 'Практические занятия', location: "Корпус № 9, 423", teacher: "" },
-        { id: 'ingt311-w3-sa-3', timeStart: '11:50', timeEnd: '13:25', subject: "Безопасность жизнедеятельности", type: 'Лабораторные занятия', location: "Корпус № 6, 85", teacher: "" },
-        { id: 'ingt311-w3-sa-4', timeStart: '13:35', timeEnd: '15:10', subject: "Безопасность жизнедеятельности", type: 'Лабораторные занятия', location: "Корпус № 6, 85", teacher: "" }
+        { id: 'ingt311-w3-sa-3', timeStart: '11:50', timeEnd: '13:25', subject: "Безопасность жизнедеятельности", type: 'Лабораторные работы', location: "Корпус № 6, 85", teacher: "" },
+        { id: 'ingt311-w3-sa-4', timeStart: '13:35', timeEnd: '15:10', subject: "Безопасность жизнедеятельности", type: 'Лабораторные работы', location: "Корпус № 6, 85", teacher: "" }
       ]
     }
   ],

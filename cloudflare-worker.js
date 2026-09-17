@@ -4,7 +4,7 @@ export default {
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Accept, Cache-Control, Pragma, Authorization",
+      "Access-Control-Allow-Headers": "Content-Type, Accept, Cache-Control, Pragma, Authorization, X-App-Key",
     };
 
     if (request.method === "OPTIONS") {
@@ -12,8 +12,10 @@ export default {
     }
 
     const url = new URL(request.url);
-    const BOT_TOKEN = (env && env.TELEGRAM_BOT_TOKEN) ? env.TELEGRAM_BOT_TOKEN : "8825340055:AAGn_-hHvJsP5Ny_ZTNGCGNfRZSUG4gHW3k";
-    const CHANNEL_ID = (env && env.TELEGRAM_CHANNEL_ID) ? env.TELEGRAM_CHANNEL_ID : "@raspisanie_samgtu";
+    const BOT_TOKEN = (env && env.TELEGRAM_BOT_TOKEN) ? env.TELEGRAM_BOT_TOKEN : "";
+    const CHANNEL_ID = (env && env.TELEGRAM_CHANNEL_ID) ? env.TELEGRAM_CHANNEL_ID : "-1002345678901";
+
+    const APP_SECRET = (env && (env.APP_SECRET || env.X_APP_KEY)) ? (env.APP_SECRET || env.X_APP_KEY) : null;
 
     const BINS = {
       schedule: "https://extendsclass.com/api/json-storage/bin/cecbcbf",
@@ -53,6 +55,13 @@ export default {
 
         // PUT or POST save data to cloud bin (Worker does server-to-server PUT without browser CORS preflight block!)
         if (request.method === "PUT" || request.method === "POST") {
+          if (APP_SECRET && request.headers.get("X-App-Key") !== APP_SECRET) {
+            return new Response(JSON.stringify({ error: "Unauthorized: Invalid or missing X-App-Key" }), {
+              status: 401,
+              headers: { ...corsHeaders, "Content-Type": "application/json" }
+            });
+          }
+
           const body = await request.text();
           const res = await fetch(binUrl, {
             method: "PUT",
@@ -71,6 +80,20 @@ export default {
       }
 
       if (url.pathname === "/upload" && request.method === "POST") {
+        if (APP_SECRET && request.headers.get("X-App-Key") !== APP_SECRET) {
+          return new Response(JSON.stringify({ error: "Unauthorized: Invalid or missing X-App-Key" }), {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+
+        if (!BOT_TOKEN) {
+          return new Response(JSON.stringify({ error: "TELEGRAM_BOT_TOKEN is not configured" }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
         const formData = await request.formData();
         formData.set("chat_id", CHANNEL_ID);
 

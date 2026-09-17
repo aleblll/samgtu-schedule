@@ -8,9 +8,9 @@ import SwipeableDays from './components/SwipeableDays';
 import BottomNav from './components/BottomNav';
 import GroupManager from './components/GroupManager';
 import AdminPanel from './components/AdminPanel';
-import { auth, db, loginWithGoogle, logout } from './firebase';
+import TabErrorBoundary from './components/TabErrorBoundary';
+import { auth, logout } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { Toaster, toast } from 'sonner';
 import { UserRole, Lesson, GroupConfig, WeekData } from './types';
 import { TeacherAssignmentScope } from './components/EditLessonModal';
@@ -452,14 +452,20 @@ const App: React.FC = () => {
         if ((cloud as any).schedule !== undefined) {
           SCHEDULE_REGISTRY[currentGroupId] = (cloud as any).schedule;
         }
-        if (cloud.scheduleOverrides !== undefined) {
+
+        const lastLocalEdit = Number(localStorage.getItem(`last_local_edit_${currentGroupId}`) || 0);
+        const isRecentLocalEdit = Date.now() - lastLocalEdit < 30000;
+        const cloudTimestamp = (cloud as any).lastUpdated ? new Date((cloud as any).lastUpdated).getTime() : 0;
+        const shouldSkipOverrides = isRecentLocalEdit && cloudTimestamp <= lastLocalEdit;
+
+        if (cloud.scheduleOverrides !== undefined && !shouldSkipOverrides) {
           const cleanOv = sanitizeOverrides(cloud.scheduleOverrides);
           setScheduleOverrides(cleanOv);
           try {
             localStorage.setItem(`schedule_overrides_${currentGroupId}`, JSON.stringify(cleanOv));
           } catch (e) {}
         }
-        if (cloud.subjectTeachers !== undefined) {
+        if (cloud.subjectTeachers !== undefined && !shouldSkipOverrides) {
           const cleanSt = sanitizeTeachers(cloud.subjectTeachers, currentGroupId);
           setSubjectTeachers(cleanSt);
           try {
@@ -630,6 +636,8 @@ const App: React.FC = () => {
       return;
     }
 
+    localStorage.setItem('last_local_edit_' + currentGroupId, String(Date.now()));
+
     const currentOverride = scheduleOverrides[lessonId] || {};
     const merged = {
       ...currentOverride,
@@ -726,12 +734,6 @@ const App: React.FC = () => {
         // Push to REST Cloud immediately (syncs to all classmates)
         pushGroupCloudData({ scheduleOverrides: updated, subjectTeachers: updatedTeachers }, currentGroupId);
 
-        try {
-          await setDoc(doc(db, 'subject_teachers', currentGroupId), updatedTeachers, { merge: true });
-        } catch (e) {
-          console.warn('Error syncing subject teachers:', e);
-        }
-
         if (isNoteChanged) {
           toast.success('Преподаватель и заметка к паре сохранены');
         } else {
@@ -762,12 +764,6 @@ const App: React.FC = () => {
 
         // Push to REST Cloud immediately (syncs to all classmates)
         pushGroupCloudData({ scheduleOverrides: updated, subjectTeachers: updatedTeachers }, currentGroupId);
-
-        try {
-          await setDoc(doc(db, 'subject_teachers', currentGroupId), updatedTeachers, { merge: true });
-        } catch (e) {
-          console.warn('Error syncing subject teachers:', e);
-        }
 
         if (isNoteChanged) {
           toast.success('Преподаватель (на все пары) и заметка сохранены');
@@ -802,16 +798,10 @@ const App: React.FC = () => {
       pushGroupCloudData({ scheduleOverrides: updated }, currentGroupId);
       toast.success('Данные пары сохранены для группы');
     }
-
-    // Sync with Firestore Cloud
-    try {
-      await setDoc(doc(db, 'schedule_overrides', lessonId), merged, { merge: true });
-    } catch (e) {
-      console.warn('Cloud sync error for update:', e);
-    }
   };
 
   const handleSaveSubjectTeachers = async (updated: Record<string, string>) => {
+    localStorage.setItem('last_local_edit_' + currentGroupId, String(Date.now()));
     setSubjectTeachers(updated);
     try {
       localStorage.setItem(`subject_teachers_${currentGroupId}`, JSON.stringify(updated));
@@ -821,16 +811,12 @@ const App: React.FC = () => {
     pushGroupCloudData({ subjectTeachers: updated }, currentGroupId);
 
     toast.success('Список преподавателей сохранен для всех 4 недель расписания');
-
-    try {
-      await setDoc(doc(db, 'subject_teachers', currentGroupId), updated);
-    } catch (e) {
-      console.warn('Error saving subject teachers to cloud:', e);
-    }
   };
 
   const handleResetLesson = async (lessonId: string) => {
     if (!canEdit) return;
+
+    localStorage.setItem('last_local_edit_' + currentGroupId, String(Date.now()));
 
     // Find original lesson
     let originalLesson: Lesson | undefined;
@@ -876,20 +862,15 @@ const App: React.FC = () => {
     pushGroupCloudData({ scheduleOverrides: updated }, currentGroupId);
 
     toast.info('Пара сброшена до исходного расписания');
-
-    try {
-      if (updated[lessonId]) {
-        await setDoc(doc(db, 'schedule_overrides', lessonId), updated[lessonId]);
-      } else {
-        await deleteDoc(doc(db, 'schedule_overrides', lessonId));
-      }
-    } catch (e) {}
   };
 
   // Merge default schedule with subject teachers, attendance cancellations, overrides & custom lessons
   const currentSchedule = useMemo(() => {
-    const rawSchedule = SCHEDULE_REGISTRY[currentGroupId]?.[selectedWeek] || [];
+    const rawSchedule = SCHEDULE_REGISTRY[currentGroupId]?.[selectedWeek];
+    if (!Array.isArray(rawSchedule)) return [];
+
     return rawSchedule.map(day => {
+      if (!day || !day.dayName) return { dayName: 'Понедельник', lessons: [] };
       const isoDate = getDayISODate(day.dayName, selectedWeek);
 
       // 31 августа - лето, до начала семестра. Категорически 0 пар!
@@ -900,20 +881,21 @@ const App: React.FC = () => {
         };
       }
 
-      // Для последующих циклов 1-й недели (28 сентября и далее) понедельник берется из числителя (Неделя 3)
-      let sourceLessons = day.lessons;
+      let sourceLessons = Array.isArray(day.lessons) ? day.lessons : [];
+      // Для последующих циклов 1-й недели (28 сентября и далее) понедельник берется из числителя (Неделя 3) если пуст
       if (day.dayName === 'Понедельник' && sourceLessons.length === 0 && isoDate !== '2026-08-31') {
         const w3Mon = SCHEDULE_REGISTRY[currentGroupId]?.[3]?.find(d => d.dayName === 'Понедельник');
-        if (w3Mon && w3Mon.lessons.length > 0) {
+        if (w3Mon && Array.isArray(w3Mon.lessons) && w3Mon.lessons.length > 0) {
           sourceLessons = w3Mon.lessons;
         }
       }
 
       const standardLessons = sourceLessons.map(lesson => {
+        if (!lesson || !lesson.id) return lesson;
         const override = scheduleOverrides[lesson.id] || {};
         const teacherByType = subjectTeachers[`${lesson.subject}::${lesson.type}`];
         const flatTeacher = subjectTeachers[lesson.subject];
-        const resolvedTeacher = override.teacher !== undefined ? override.teacher : (teacherByType || flatTeacher || lesson.teacher);
+        const resolvedTeacher = override.teacher !== undefined ? override.teacher : (teacherByType || flatTeacher || lesson.teacher || '');
         
         // Check if this lesson is marked as cancelled on this specific date in Attendance tracker
         const isCancelledInAttendance = attendanceRecords.some(
@@ -926,7 +908,7 @@ const App: React.FC = () => {
           teacher: resolvedTeacher,
           isCancelled: isCancelledInAttendance || !!override.isCancelled
         };
-      });
+      }).filter(Boolean);
 
       // Include dynamically added custom lessons for empty days / weeks
       const customLessons: Lesson[] = Object.entries(scheduleOverrides)
@@ -1159,66 +1141,77 @@ const App: React.FC = () => {
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 py-6 w-full max-w-full pb-28 sm:pb-24">
         {activeTab === 'schedule' && (
-          <SwipeableDays 
-            key={`${currentGroupId}_${selectedWeek}`}
-            days={currentSchedule} 
-            weekNumber={selectedWeek}
-            userRole={effectiveRole}
-            onUpdateLesson={handleUpdateLesson}
-            onResetLesson={handleResetLesson}
-          />
+          <TabErrorBoundary tabName="Расписание">
+            <SwipeableDays 
+              key={currentGroupId}
+              days={currentSchedule} 
+              weekNumber={selectedWeek}
+              userRole={effectiveRole}
+              onUpdateLesson={handleUpdateLesson}
+              onResetLesson={handleResetLesson}
+            />
+          </TabErrorBoundary>
         )}
 
         {activeTab === 'homework' && (
-          <HomeworkTracker
-            currentGroupId={currentGroupId}
-            userRole={effectiveRole}
-            refreshTrigger={refreshTrigger}
-          />
+          <TabErrorBoundary tabName="Домашние задания">
+            <HomeworkTracker
+              currentGroupId={currentGroupId}
+              userRole={effectiveRole}
+              refreshTrigger={refreshTrigger}
+            />
+          </TabErrorBoundary>
         )}
 
         {activeTab === 'attendance' && (
-          <AttendanceTracker
-            isAuthenticated={canEdit}
-            userRole={effectiveRole}
-            userEmail={user?.email || null}
-            currentGroupId={currentGroupId}
-            refreshTrigger={refreshTrigger}
-          />
+          <TabErrorBoundary tabName="Посещаемость">
+            <AttendanceTracker
+              isAuthenticated={canEdit}
+              userRole={effectiveRole}
+              userEmail={user?.email || null}
+              currentGroupId={currentGroupId}
+              refreshTrigger={refreshTrigger}
+            />
+          </TabErrorBoundary>
         )}
 
         {activeTab === 'group' && (
-          <GroupManager
-            currentGroupId={currentGroupId}
-            userRole={effectiveRole}
-          />
+          <TabErrorBoundary tabName="Управление группой">
+            <GroupManager
+              currentGroupId={currentGroupId}
+              userRole={effectiveRole}
+            />
+          </TabErrorBoundary>
         )}
 
         {activeTab === 'admin' && (
-          <AdminPanel
-            currentRole={effectiveRole}
-            currentGroupId={currentGroupId}
-            onRoleChange={(role, targetGroup) => {
-              setUserRole(role);
-              if (role === 'starosta' && targetGroup) {
-                setStarostaGroupId(targetGroup);
-                localStorage.setItem('starosta_group_id', targetGroup);
-              } else if (role !== 'starosta') {
-                setStarostaGroupId(null);
-                localStorage.removeItem('starosta_group_id');
-              }
-              if (targetGroup) {
-                setCurrentGroupId(targetGroup);
-                localStorage.setItem('my_group_id', targetGroup);
-                setBoundGroupId(targetGroup);
-              }
-            }}
-            userEmail={user?.email || null}
-          />
+          <TabErrorBoundary tabName="Панель администратора">
+            <AdminPanel
+              currentRole={effectiveRole}
+              currentGroupId={currentGroupId}
+              onRoleChange={(role, targetGroup) => {
+                setUserRole(role);
+                if (role === 'starosta' && targetGroup) {
+                  setStarostaGroupId(targetGroup);
+                  localStorage.setItem('starosta_group_id', targetGroup);
+                } else if (role !== 'starosta') {
+                  setStarostaGroupId(null);
+                  localStorage.removeItem('starosta_group_id');
+                }
+                if (targetGroup) {
+                  setCurrentGroupId(targetGroup);
+                  localStorage.setItem('my_group_id', targetGroup);
+                  setBoundGroupId(targetGroup);
+                }
+              }}
+              userEmail={user?.email || null}
+            />
+          </TabErrorBoundary>
         )}
 
         {activeTab === 'profile' && (
-          <div className="max-w-md mx-auto bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 space-y-6">
+          <TabErrorBoundary tabName="Профиль">
+            <div className="max-w-md mx-auto bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 space-y-6">
             <div className="text-center space-y-2">
               <div className="w-16 h-16 mx-auto bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                 <UserIcon className="w-8 h-8" />
@@ -1356,7 +1349,8 @@ const App: React.FC = () => {
                 <LogOut className="w-4 h-4" /> Выйти в режим Студента
               </button>
             )}
-          </div>
+            </div>
+          </TabErrorBoundary>
         )}
       </main>
 
