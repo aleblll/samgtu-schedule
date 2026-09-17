@@ -9,7 +9,7 @@ interface DayColumnProps {
   daySchedule: DaySchedule;
   weekNumber?: number;
   userRole?: string;
-  onUpdateLesson?: (lessonId: string, updated: Partial<Lesson>, applyScope?: TeacherAssignmentScope) => void;
+  onUpdateLesson?: (lessonId: string, updated: Partial<Lesson>, applyScope?: TeacherAssignmentScope, lessonDayName?: string) => void;
   onResetLesson?: (lessonId: string) => void;
 }
 
@@ -59,6 +59,7 @@ const DayColumn: React.FC<DayColumnProps> = ({
           <ClassCard 
             key={lesson.id} 
             lesson={lesson} 
+            dayName={daySchedule.dayName}
             userRole={userRole}
             onUpdateLesson={onUpdateLesson}
             onResetLesson={onResetLesson}

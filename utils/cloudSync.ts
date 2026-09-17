@@ -43,9 +43,9 @@ export const sanitizeTeachers = (teachers: Record<string, string>, groupId = 'in
     if (val === 'Кафедра ИНГТ' || !val) {
       if (groupDefaults[key]) {
         res[key] = groupDefaults[key];
-      } else if (key.includes('бурения')) {
+      } else if (key.includes('бурения') && groupId === 'ingt-310') {
         res[key] = 'Драницына Елена Геннадьевна';
-      } else if (key.includes('сосудов')) {
+      } else if (key.includes('сосудов') && groupId === 'ingt-310') {
         res[key] = 'Крючков Дмитрий Александрович';
       } else if (key.includes('Практико-ориентированный') && groupId === 'ingt-310') {
         res[key] = 'Колибасов Владимир Александрович';

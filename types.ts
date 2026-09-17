@@ -56,6 +56,7 @@ export interface Lesson {
   note?: string;
   isCancelled?: boolean;
   order?: number;
+  attachments?: HomeworkAttachment[];
 }
 
 export interface DaySchedule {

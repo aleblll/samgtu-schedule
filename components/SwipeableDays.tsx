@@ -9,7 +9,7 @@ interface SwipeableDaysProps {
   days: DaySchedule[];
   weekNumber?: number;
   userRole?: string;
-  onUpdateLesson?: (lessonId: string, updated: Partial<Lesson>, applyScope?: TeacherAssignmentScope) => void;
+  onUpdateLesson?: (lessonId: string, updated: Partial<Lesson>, applyScope?: TeacherAssignmentScope, lessonDayName?: string) => void;
   onResetLesson?: (lessonId: string) => void;
 }
 

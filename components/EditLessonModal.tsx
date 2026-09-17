@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, Check, RotateCcw } from 'lucide-react';
-import { Lesson } from '../types';
+import { X, Check, RotateCcw, Link2, Plus, Trash2, ExternalLink } from 'lucide-react';
+import { Lesson, HomeworkAttachment } from '../types';
 
 export type TeacherAssignmentScope = 'none' | 'type' | 'all';
 
@@ -26,16 +26,42 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
   const [isCancelled, setIsCancelled] = useState<boolean>(!!lesson.isCancelled);
   const [applyScope, setApplyScope] = useState<TeacherAssignmentScope>('type');
 
+  // Attachments & links
+  const [attachments, setAttachments] = useState<HomeworkAttachment[]>(() => {
+    return Array.isArray(lesson.attachments) ? [...lesson.attachments] : [];
+  });
+  const [isAddingLink, setIsAddingLink] = useState(false);
+  const [newLinkTitle, setNewLinkTitle] = useState('');
+  const [newLinkUrl, setNewLinkUrl] = useState('');
+
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddAttachment = () => {
+    if (!newLinkUrl.trim()) return;
+    let url = newLinkUrl.trim();
+    if (!/^https?:\/\//i.test(url)) {
+      url = `https://${url}`;
+    }
+    const name = newLinkTitle.trim() || url.replace(/^https?:\/\//i, '').split('/')[0] || 'Ссылка к паре';
+    setAttachments(prev => [...prev, { name, url, type: 'link' }]);
+    setNewLinkTitle('');
+    setNewLinkUrl('');
+    setIsAddingLink(false);
+  };
+
+  const handleRemoveAttachment = (idx: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     onSave({
       subject,
       teacher,
       location,
       note,
       isCancelled,
+      attachments,
     }, applyScope);
     onClose();
   };
@@ -157,25 +183,125 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
             />
           </div>
 
-          {/* Lesson Cancellation Toggle */}
-          <div className="p-3.5 bg-red-50/70 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 rounded-2xl flex items-center justify-between gap-3">
+          {/* Attachments / Files / Links Section */}
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-2xl space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
+                <Link2 className="w-3.5 h-3.5 text-indigo-500" />
+                <span>Материалы и ссылки к паре</span>
+                {attachments.length > 0 && (
+                  <span className="ml-1 text-[10px] bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.2 rounded-full font-bold">
+                    {attachments.length}
+                  </span>
+                )}
+              </div>
+              {!isAddingLink && (
+                <button
+                  type="button"
+                  onClick={() => setIsAddingLink(true)}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  <Plus className="w-3 h-3" /> Добавить ссылку
+                </button>
+              )}
+            </div>
+
+            {/* Existing Attachments List */}
+            {attachments.length > 0 && (
+              <div className="space-y-1.5">
+                {attachments.map((att, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between gap-2 p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700/50 text-xs"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <ExternalLink className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                      <span className="truncate font-medium text-slate-800 dark:text-slate-200">
+                        {att.name}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAttachment(idx)}
+                      className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                      title="Удалить ссылку"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add Link Form */}
+            {isAddingLink && (
+              <div className="space-y-2 p-2.5 bg-white dark:bg-slate-800/80 rounded-xl border border-indigo-100 dark:border-indigo-900/40">
+                <input
+                  type="text"
+                  placeholder="Название (напр. Презентация / Диск / Moodle)"
+                  value={newLinkTitle}
+                  onChange={(e) => setNewLinkTitle(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none"
+                />
+                <input
+                  type="url"
+                  placeholder="URL-ссылка (https://...)"
+                  value={newLinkUrl}
+                  onChange={(e) => setNewLinkUrl(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none"
+                />
+                <div className="flex justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => { setIsAddingLink(false); setNewLinkTitle(''); setNewLinkUrl(''); }}
+                    className="px-2.5 py-1 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddAttachment}
+                    disabled={!newLinkUrl.trim()}
+                    className="px-3 py-1 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg transition-colors"
+                  >
+                    Прикрепить
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Lesson Cancellation Toggle (Rock-solid Clickable Container) */}
+          <div 
+            onClick={() => setIsCancelled(!isCancelled)}
+            className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 cursor-pointer select-none ${
+              isCancelled 
+                ? 'bg-red-500/15 border-red-500/40 dark:bg-red-950/40 dark:border-red-800' 
+                : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/60 hover:border-red-200 dark:hover:border-red-900/40'
+            }`}
+          >
             <div>
-              <span className="text-xs font-bold text-red-700 dark:text-red-300 block">
-                Отмена пары на эту дату
-              </span>
-              <span className="text-[11px] text-red-600/80 dark:text-red-400 block mt-0.5">
-                {isCancelled ? 'Пара отменена (будет зачеркнута с красным бейджем)' : 'Включите, если занятие отменено преподавателем'}
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-bold ${isCancelled ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                  Отмена пары на эту дату
+                </span>
+                {isCancelled && (
+                  <span className="px-1.5 py-0.5 rounded-md text-[9px] font-extrabold uppercase bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800">
+                    Отменена
+                  </span>
+                )}
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                {isCancelled ? 'Пара будет зачеркнута с красным бейджем для всей группы' : 'Включите, если занятие отменено преподавателем'}
               </span>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer shrink-0">
-              <input
-                type="checkbox"
-                checked={isCancelled}
-                onChange={(e) => setIsCancelled(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-red-600"></div>
-            </label>
+            
+            {/* Custom Rock-solid Toggle Switch */}
+            <div className="relative inline-flex items-center shrink-0">
+              <div className={`w-11 h-6 rounded-full transition-colors relative ${isCancelled ? 'bg-red-600' : 'bg-slate-300 dark:bg-slate-700'}`}>
+                <div className={`w-5 h-5 bg-white rounded-full transition-transform absolute top-[2px] shadow-sm ${isCancelled ? 'translate-x-[22px]' : 'translate-x-[2px]'}`} />
+              </div>
+            </div>
           </div>
         </form>
 
@@ -193,9 +319,9 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
           </button>
 
           <button
-            type="submit"
-            form="edit-lesson-form"
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md shadow-indigo-200 dark:shadow-none transition-all min-h-[44px]"
+            type="button"
+            onClick={() => handleSubmit()}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md shadow-indigo-200 dark:shadow-none transition-all min-h-[44px] cursor-pointer"
           >
             <Check className="w-4 h-4" /> Сохранить для группы
           </button>

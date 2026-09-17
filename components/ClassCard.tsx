@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { Lesson } from '../types';
-import { MapPin, User, Users, Info, Edit3 } from 'lucide-react';
+import { MapPin, User, Users, Info, Edit3, ExternalLink, Link2 } from 'lucide-react';
 import EditLessonModal, { TeacherAssignmentScope } from './EditLessonModal';
 
 interface ClassCardProps {
   lesson: Lesson;
+  dayName?: string;
   userRole?: string;
-  onUpdateLesson?: (lessonId: string, updated: Partial<Lesson>, applyScope?: TeacherAssignmentScope) => void;
+  onUpdateLesson?: (lessonId: string, updated: Partial<Lesson>, applyScope?: TeacherAssignmentScope, lessonDayName?: string) => void;
   onResetLesson?: (lessonId: string) => void;
 }
 
 const ClassCard: React.FC<ClassCardProps> = ({ 
   lesson, 
+  dayName,
   userRole = 'student',
   onUpdateLesson,
   onResetLesson,
@@ -104,6 +106,38 @@ const ClassCard: React.FC<ClassCardProps> = ({
             </div>
           )}
 
+          {/* Attached Files & Links */}
+          {lesson.attachments && lesson.attachments.length > 0 && (
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <Link2 className="w-3 h-3 text-indigo-500" />
+                Материалы к паре:
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {lesson.attachments.map((att, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (att.url) {
+                        if (typeof window !== 'undefined' && window.Telegram?.WebApp?.openLink) {
+                          window.Telegram.WebApp.openLink(att.url);
+                        } else {
+                          window.open(att.url, '_blank', 'noopener,noreferrer');
+                        }
+                      }
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1 bg-indigo-50/70 hover:bg-indigo-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-700 dark:text-indigo-300 text-[11px] font-semibold rounded-lg transition-all border border-indigo-100 dark:border-slate-700 cursor-pointer"
+                  >
+                    <ExternalLink className="w-3 h-3 text-indigo-500 shrink-0" />
+                    <span className="truncate max-w-[160px]">{att.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Edit button for Starosta and Admin */}
           {canEdit && (
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex justify-end">
@@ -123,7 +157,7 @@ const ClassCard: React.FC<ClassCardProps> = ({
           lesson={lesson}
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
-          onSave={(updated, applyScope) => onUpdateLesson && onUpdateLesson(lesson.id, updated, applyScope)}
+          onSave={(updated, applyScope) => onUpdateLesson && onUpdateLesson(lesson.id, updated, applyScope, dayName)}
           onReset={() => onResetLesson && onResetLesson(lesson.id)}
         />
       )}

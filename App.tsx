@@ -28,9 +28,7 @@ import {
 
 declare global {
   interface Window {
-    Telegram?: {
-      WebApp?: any;
-    };
+    Telegram?: any;
   }
 }
 
@@ -108,12 +106,14 @@ const App: React.FC = () => {
       headerTapCountRef.current += 1;
       if (headerTapCountRef.current >= 5) {
         headerTapCountRef.current = 0;
-        setIsDebugLogsModalOpen(true);
-        logger.action('UI', 'Debug console opened via 5-tap gesture on header');
-        if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
-          window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        if (effectiveRole === 'admin') {
+          setIsDebugLogsModalOpen(true);
+          logger.action('UI', 'Debug console opened via 5-tap gesture on header');
+          if (typeof window !== 'undefined' && window.Telegram?.WebApp?.HapticFeedback) {
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+          }
+          toast.info('Режим диагностики активирован');
         }
-        toast.info('Режим диагностики активирован');
       }
     } else {
       headerTapCountRef.current = 1;
@@ -533,6 +533,15 @@ const App: React.FC = () => {
       localStorage.removeItem('starosta_group_id');
       toast.success('Активирован режим ГЛАВНОГО АДМИНИСТРАТОРА (все группы)');
       setQuickPin('');
+    } else if (pin === '111' || pin === '3111' || pin === 'ingt111') {
+      setUserRole('starosta');
+      setStarostaGroupId('ingt-311');
+      localStorage.setItem('starosta_group_id', 'ingt-311');
+      setCurrentGroupId('ingt-311');
+      localStorage.setItem('my_group_id', 'ingt-311');
+      setBoundGroupId('ingt-311');
+      toast.success('Активирован режим СТАРОСТЫ (3-ИНГТ-111)');
+      setQuickPin('');
     } else if (pin === '101') {
       setUserRole('starosta');
       setStarostaGroupId('ingt-301');
@@ -609,8 +618,13 @@ const App: React.FC = () => {
     toast.success('Вы перешли в режим Студента');
   };
 
-  // Schedule Customization Handlers (Editing Teacher, Room, Notes)
-  const handleUpdateLesson = async (lessonId: string, updatedLesson: Partial<Lesson>, applyScope: TeacherAssignmentScope = 'type') => {
+  // Schedule Customization Handlers (Editing Teacher, Room, Notes, Attachments, Cancellations)
+  const handleUpdateLesson = async (
+    lessonId: string, 
+    updatedLesson: Partial<Lesson>, 
+    applyScope: TeacherAssignmentScope = 'type',
+    lessonDayName?: string
+  ) => {
     if (!canEdit) {
       toast.error('Только Староста своей группы или Администратор могут редактировать пары');
       return;
@@ -625,6 +639,13 @@ const App: React.FC = () => {
     // If note is emptied or whitespace, delete the note property so it does not persist
     if (updatedLesson.note !== undefined && updatedLesson.note.trim() === '') {
       delete merged.note;
+    }
+
+    // Handle cancellation state cleanly in override
+    if (updatedLesson.isCancelled === false) {
+      delete merged.isCancelled;
+    } else if (updatedLesson.isCancelled === true) {
+      merged.isCancelled = true;
     }
 
     const updated = {
@@ -665,21 +686,27 @@ const App: React.FC = () => {
     const isTeacherChanged = updatedLesson.teacher !== undefined && updatedLesson.teacher.trim() !== currentTeacher.trim();
     const isNoteChanged = updatedLesson.note !== undefined && updatedLesson.note !== (currentOverride.note || '');
     const isLocationChanged = updatedLesson.location !== undefined && updatedLesson.location !== (currentOverride.location || originalLesson?.location || '');
-    const isCancelledChanged = updatedLesson.isCancelled !== undefined && updatedLesson.isCancelled !== !!currentOverride.isCancelled;
+    const isCancelledChanged = updatedLesson.isCancelled !== undefined;
+    const isAttachmentsChanged = updatedLesson.attachments !== undefined;
 
-    if (isCancelledChanged) {
-      // Find the day for this lesson to get ISO date
+    // Resolve accurate dayName and isoDate:
+    let resolvedDayName = lessonDayName;
+    if (!resolvedDayName) {
       const allDays = Object.values(SCHEDULE_REGISTRY[currentGroupId] || {}).flatMap(days => days);
       const targetDay = allDays.find(d => d.lessons.some(l => l.id === lessonId));
-      const dayName = targetDay?.dayName || 'Понедельник';
-      const isoDate = getDayISODate(dayName, selectedWeek);
+      resolvedDayName = targetDay?.dayName || 'Понедельник';
+    }
+    const isoDate = getDayISODate(resolvedDayName, selectedWeek);
+
+    // ALWAYS synchronize attendance cancellation if updatedLesson.isCancelled was provided:
+    if (isCancelledChanged) {
       const existingAtt = attendanceRecords.find(r => r.date === isoDate && r.lessonId === lessonId);
       markAttendance(
         isoDate, 
         lessonId, 
         existingAtt?.absentStudentIds || [], 
         existingAtt?.excusedStudentIds || [], 
-        updatedLesson.isCancelled!
+        !!updatedLesson.isCancelled
       );
     }
 
@@ -755,10 +782,13 @@ const App: React.FC = () => {
     } else if (isCancelledChanged) {
       pushGroupCloudData({ scheduleOverrides: updated }, currentGroupId);
       if (updatedLesson.isCancelled) {
-        toast.warning('Пара отменена для всей группы');
+        toast.warning('Пара отменена на эту дату');
       } else {
         toast.success('Пара восстановлена в расписании');
       }
+    } else if (isAttachmentsChanged) {
+      pushGroupCloudData({ scheduleOverrides: updated }, currentGroupId);
+      toast.success('Материалы к паре сохранены для группы');
     } else if (isNoteChanged) {
       // Only note was changed:
       pushGroupCloudData({ scheduleOverrides: updated }, currentGroupId);
@@ -1263,31 +1293,33 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Diagnostics & In-App Console Card */}
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">
-                  <Terminal className="w-4 h-4 text-emerald-500" />
-                  <span>Логи и диагностика</span>
+            {/* Diagnostics & In-App Console Card - Only visible to Admin */}
+            {effectiveRole === 'admin' && (
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">
+                    <Terminal className="w-4 h-4 text-emerald-500" />
+                    <span>Логи и диагностика</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-md">
+                    Консоль
+                  </span>
                 </div>
-                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-md">
-                  Консоль
-                </span>
+                <p className="text-[11px] text-slate-400">
+                  Мобильная консоль разработчика для просмотра логов, ошибок и состояния приложения на смартфоне.
+                </p>
+                <button
+                  onClick={() => {
+                    logger.action('UI', 'Debug console opened from Profile tab');
+                    setIsDebugLogsModalOpen(true);
+                  }}
+                  className="w-full py-2.5 px-4 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-xs rounded-xl transition-all shadow-sm min-h-[44px] flex items-center justify-center gap-2"
+                >
+                  <Terminal className="w-3.5 h-3.5 text-emerald-500" />
+                  Логи и диагностика
+                </button>
               </div>
-              <p className="text-[11px] text-slate-400">
-                Мобильная консоль разработчика для просмотра логов, ошибок и состояния приложения на смартфоне.
-              </p>
-              <button
-                onClick={() => {
-                  logger.action('UI', 'Debug console opened from Profile tab');
-                  setIsDebugLogsModalOpen(true);
-                }}
-                className="w-full py-2.5 px-4 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-xs rounded-xl transition-all shadow-sm min-h-[44px] flex items-center justify-center gap-2"
-              >
-                <Terminal className="w-3.5 h-3.5 text-emerald-500" />
-                Логи и диагностика
-              </button>
-            </div>
+            )}
 
 {/* Quick PIN Login Form */}
             <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 space-y-3">
