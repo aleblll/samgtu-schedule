@@ -339,6 +339,9 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
 
         const res = await fetch(`${WORKER_BASE}/upload`, {
           method: 'POST',
+          headers: {
+            ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
+          },
           body: formData
         });
 
@@ -369,6 +372,9 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
 
         const res = await fetch(`${WORKER_BASE}/upload`, {
           method: 'POST',
+          headers: {
+            ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
+          },
           body: formData
         });
 
@@ -385,6 +391,9 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
           diagFormData.append('caption', `📋 Диагностический дамп логов и снимок системы [Ошибок: ${diagErrors}] #${groupTag || 'samgtu'}`);
           await fetch(`${WORKER_BASE}/upload`, {
             method: 'POST',
+            headers: {
+              ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
+            },
             body: diagFormData
           });
         } catch (diagErr) {

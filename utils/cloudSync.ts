@@ -164,7 +164,8 @@ const fetchJson = async (url: string, timeoutMs = 6000) => {
       headers: {
         'Accept': 'application/json',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache'
+        'Pragma': 'no-cache',
+        ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
       }
     });
     clearTimeout(id);
@@ -197,7 +198,8 @@ const putJson = async (url: string, body: any, timeoutMs = 7000) => {
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
       },
       body: JSON.stringify(body)
     });

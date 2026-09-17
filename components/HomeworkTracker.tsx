@@ -210,6 +210,9 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
 
       const res = await fetch(`${TG_WORKER_URL}/upload`, {
         method: 'POST',
+        headers: {
+          ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
+        },
         body: formData
       });
 
