@@ -39,5 +39,4 @@ antigravity-mobile/
 *.env
 .env.local
 
-# External projects
-vpn-deploy/
+
