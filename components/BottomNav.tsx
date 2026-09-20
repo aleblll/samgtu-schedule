@@ -16,14 +16,14 @@ const BottomNav: React.FC<BottomNavProps> = ({
   isLoggedIn
 }) => {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-1 pt-1.5 pb-safe shadow-lg sm:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-300/80 dark:border-slate-800 px-1 pt-1.5 pb-safe shadow-lg sm:hidden">
       <div className="flex justify-around items-center max-w-md mx-auto">
         <button
           onClick={() => onTabChange('schedule')}
           className={`flex flex-col items-center justify-center min-h-[48px] py-1 px-2 rounded-xl transition-all ${
             currentTab === 'schedule'
               ? 'text-indigo-600 dark:text-indigo-400 font-bold scale-105'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
           }`}
         >
           <Calendar className="w-5 h-5 mb-0.5" />
@@ -35,7 +35,7 @@ const BottomNav: React.FC<BottomNavProps> = ({
           className={`flex flex-col items-center justify-center min-h-[48px] py-1 px-2 rounded-xl transition-all ${
             currentTab === 'homework'
               ? 'text-indigo-600 dark:text-indigo-400 font-bold scale-105'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
           }`}
         >
           <BookOpen className="w-5 h-5 mb-0.5" />
@@ -47,7 +47,7 @@ const BottomNav: React.FC<BottomNavProps> = ({
           className={`flex flex-col items-center justify-center min-h-[48px] py-1 px-2 rounded-xl transition-all ${
             currentTab === 'attendance'
               ? 'text-indigo-600 dark:text-indigo-400 font-bold scale-105'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
           }`}
         >
           <ClipboardCheck className="w-5 h-5 mb-0.5" />
@@ -60,7 +60,7 @@ const BottomNav: React.FC<BottomNavProps> = ({
             className={`flex flex-col items-center justify-center min-h-[48px] py-1 px-2 rounded-xl transition-all ${
               currentTab === 'group'
                 ? 'text-indigo-600 dark:text-indigo-400 font-bold scale-105'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
             }`}
           >
             <Users className="w-5 h-5 mb-0.5" />
@@ -74,7 +74,7 @@ const BottomNav: React.FC<BottomNavProps> = ({
             className={`flex flex-col items-center justify-center min-h-[48px] py-1 px-2 rounded-xl transition-all ${
               currentTab === 'admin'
                 ? 'text-amber-600 dark:text-amber-400 font-bold scale-105'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
             }`}
           >
             <Shield className="w-5 h-5 mb-0.5" />
@@ -87,7 +87,7 @@ const BottomNav: React.FC<BottomNavProps> = ({
           className={`flex flex-col items-center justify-center min-h-[48px] py-1 px-2 rounded-xl transition-all ${
             currentTab === 'profile'
               ? 'text-indigo-600 dark:text-indigo-400 font-bold scale-105'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
           }`}
         >
           <User className="w-5 h-5 mb-0.5" />

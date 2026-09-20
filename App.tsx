@@ -327,7 +327,15 @@ const App: React.FC = () => {
   };
 
   const filteredGroups = useMemo(() => {
+    const q = groupSearchQuery.toLowerCase().trim();
     return allAvailableGroups.filter(grp => {
+      // Global search across all faculties if user typed 2+ characters
+      if (q.length >= 2) {
+        const matchName = grp.name.toLowerCase().includes(q);
+        const fac = FACULTIES.find(f => f.id === grp.facultyId);
+        const matchFac = fac?.name.toLowerCase().includes(q) || fac?.shortName.toLowerCase().includes(q);
+        return matchName || matchFac;
+      }
       if (selectedFacultyFilter !== 'all') {
         if (selectedFacultyFilter === 'asa' && grp.facultyId === 'faid') {
           // match FAID as part of ASA
@@ -338,8 +346,7 @@ const App: React.FC = () => {
       if (selectedCourseFilter !== 0 && grp.course !== selectedCourseFilter) {
         return false;
       }
-      if (groupSearchQuery.trim()) {
-        const q = groupSearchQuery.toLowerCase().trim();
+      if (q) {
         const matchName = grp.name.toLowerCase().includes(q);
         const fac = FACULTIES.find(f => f.id === grp.facultyId);
         const matchFac = fac?.name.toLowerCase().includes(q) || fac?.shortName.toLowerCase().includes(q);
@@ -475,7 +482,7 @@ const App: React.FC = () => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       try {
         window.Telegram.WebApp.setHeaderColor?.(darkMode ? '#0f172a' : '#ffffff');
-        window.Telegram.WebApp.setBackgroundColor?.(darkMode ? '#020617' : '#f1f5f9');
+        window.Telegram.WebApp.setBackgroundColor?.(darkMode ? '#020617' : '#eaeff5');
       } catch (e) {}
     }
   }, [darkMode]);
@@ -973,11 +980,11 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen w-full max-w-full overflow-x-clip bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-200 pb-28">
+    <div className="min-h-screen w-full max-w-full overflow-x-clip bg-[#eaeff5] dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-200 pb-28">
       <Toaster position="top-center" offset={75} richColors />
 
       {/* Header with Safe Area Inset */}
-      <header className="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 w-full pt-safe shadow-2xs">
+      <header className="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-300/80 dark:border-slate-800 w-full pt-safe shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -1573,7 +1580,7 @@ const App: React.FC = () => {
             </div>
 
             {/* Footer with Custom Group Adder */}
-            <div className="p-4 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 shrink-0 space-y-3">
+            <div className="p-4 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 shrink-0 space-y-3 pb-safe">
               {!isAddingCustomGroup ? (
                 <div className="flex items-center justify-between">
                   <button

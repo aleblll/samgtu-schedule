@@ -7,7 +7,7 @@
 }
 
 @utility pt-safe {
-  padding-top: max(var(--tg-safe-area-inset-top, 0px), env(safe-area-inset-top, 0px));
+  padding-top: max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px), env(safe-area-inset-top, 0px));
 }
 
 @utility pb-safe {
@@ -32,7 +32,7 @@ html {
 }
 
 body {
-  background-color: #f1f5f9;
+  background-color: #eaeff5;
   color: #0f172a;
   overflow-x: hidden;
   width: 100%;

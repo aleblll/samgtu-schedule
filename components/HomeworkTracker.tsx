@@ -69,6 +69,11 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
   const [filterMode, setFilterMode] = useState<'all' | 'upcoming' | 'past'>('upcoming');
   const [subjectFilter, setSubjectFilter] = useState<string>('all');
 
+  // Reset subject filter when switching group so subjects from previous group don't filter out everything
+  useEffect(() => {
+    setSubjectFilter('all');
+  }, [currentGroupId]);
+
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<HomeworkItem | null>(null);

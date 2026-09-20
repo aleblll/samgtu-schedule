@@ -179,7 +179,7 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
     startX.current = null;
     startY.current = null;
 
-    const isDominantHorizontal = Math.abs(diffX) > diffY * 1.05;
+    const isDominantHorizontal = Math.abs(diffX) > diffY * 1.35;
     const isDistance = Math.abs(diffX) >= 28;
     const isFlick = Math.abs(diffX) >= 18 && elapsed < 350;
 
@@ -235,7 +235,7 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
     startX.current = null;
     startY.current = null;
 
-    const isDominantHorizontal = Math.abs(diffX) > diffY * 1.05;
+    const isDominantHorizontal = Math.abs(diffX) > diffY * 1.35;
     const isDistance = Math.abs(diffX) >= 28;
     const isFlick = Math.abs(diffX) >= 18 && elapsed < 350;
 

@@ -24,10 +24,10 @@ const ClassCard: React.FC<ClassCardProps> = ({
   // Determine badge color based on lesson type
   const getTypeColor = (type: string) => {
     const lowerType = type.toLowerCase();
-    if (lowerType.includes('лекц')) return 'bg-blue-50 text-blue-700 border border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/40';
-    if (lowerType.includes('прак')) return 'bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/40';
-    if (lowerType.includes('лаб')) return 'bg-amber-50 text-amber-700 border border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/40';
-    return 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+    if (lowerType.includes('лекц')) return 'bg-blue-100/90 text-blue-900 border border-blue-300/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/40 font-bold';
+    if (lowerType.includes('прак')) return 'bg-emerald-100/90 text-emerald-900 border border-emerald-300/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/40 font-bold';
+    if (lowerType.includes('лаб')) return 'bg-amber-100/90 text-amber-900 border border-amber-300/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/40 font-bold';
+    return 'bg-slate-200/80 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 font-bold';
   };
 
   const formatGroups = (groups: string) => {
@@ -41,7 +41,7 @@ const ClassCard: React.FC<ClassCardProps> = ({
       <div className={`w-full rounded-2xl p-4 transition-all duration-200 h-full flex flex-col justify-between ${
         isCancelled
           ? 'bg-slate-100/70 dark:bg-slate-900/40 border border-red-200 dark:border-red-900/30 opacity-75 shadow-xs'
-          : 'bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/90 shadow-xs hover:shadow-sm hover:border-slate-300 dark:hover:border-slate-700'
+          : 'bg-white dark:bg-slate-900 border border-slate-300/80 dark:border-slate-800/90 shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-slate-400/80 dark:hover:border-slate-700'
       }`}>
         <div>
           <div className="flex justify-between items-start mb-2.5">
@@ -49,7 +49,7 @@ const ClassCard: React.FC<ClassCardProps> = ({
               <span className={`text-base font-bold leading-tight ${isCancelled ? 'text-slate-400 line-through' : 'text-slate-900 dark:text-white'}`}>
                 {lesson.timeStart}
               </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
+              <span className="text-[11px] text-slate-600 dark:text-slate-400 font-semibold">
                 - {lesson.timeEnd}
               </span>
             </div>
@@ -82,26 +82,26 @@ const ClassCard: React.FC<ClassCardProps> = ({
           )}
         </div>
 
-        <div className="space-y-2 mt-2 pt-3 border-t border-slate-200/70 dark:border-slate-800">
+        <div className="space-y-2 mt-2 pt-3 border-t border-slate-200/90 dark:border-slate-800">
           <div className="flex items-start gap-2">
-            <MapPin className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 mt-0.5 shrink-0" />
-            <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
+            <MapPin className="w-3.5 h-3.5 text-slate-500 dark:text-slate-500 mt-0.5 shrink-0" />
+            <span className="text-xs text-slate-800 dark:text-slate-300 font-semibold">
               {lesson.location || 'Аудитория уточняется'}
             </span>
           </div>
           
           <div className="flex items-start gap-2">
-            <User className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 mt-0.5 shrink-0" />
-            <span className="text-xs text-slate-600 dark:text-slate-400">
+            <User className="w-3.5 h-3.5 text-slate-500 dark:text-slate-500 mt-0.5 shrink-0" />
+            <span className="text-xs text-slate-700 dark:text-slate-400 font-medium">
               {lesson.teacher || 'Преподаватель не назначен'}
             </span>
           </div>
 
           {lesson.groups && (
             <div className="flex items-start gap-2">
-              <Users className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 mt-0.5 shrink-0" />
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 w-full break-words leading-tight">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">Группы:</span> {formatGroups(lesson.groups)}
+              <Users className="w-3.5 h-3.5 text-slate-500 dark:text-slate-500 mt-0.5 shrink-0" />
+              <span className="text-[10px] text-slate-600 dark:text-slate-400 w-full break-words leading-tight">
+                <span className="font-bold text-slate-800 dark:text-slate-200">Группы:</span> {formatGroups(lesson.groups)}
               </span>
             </div>
           )}
@@ -143,7 +143,7 @@ const ClassCard: React.FC<ClassCardProps> = ({
             <div className="pt-2 border-t border-slate-200/70 dark:border-slate-800/80 flex justify-end">
               <button
                 onClick={() => setIsEditModalOpen(true)}
-                className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 dark:border-transparent dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition-all shadow-2xs"
+                className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-100 hover:bg-slate-200/80 border border-slate-300/80 dark:border-transparent dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-300 text-xs font-bold rounded-xl transition-all shadow-2xs"
               >
                 <Edit3 className="w-3.5 h-3.5" /> Редактировать данные пары
               </button>
