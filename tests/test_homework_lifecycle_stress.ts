@@ -55,18 +55,25 @@ const originalFetch = global.fetch;
   }
 
   // Intercept REST endpoints
-  if (url.includes('ff808181a067127101a06866951a0496')) { // homework endpoint
+  if (url.includes('/sync/homework') || url.includes('dfdebcc') || url.includes('ff808181a067127101a06866951a0496')) {
     if (options.method === 'PUT') {
       const body = JSON.parse(options.body || '{}');
-      mockCloudPayload = body.data || { items: [] };
+      const payload = body.payload ? JSON.parse(body.payload) : (body.data || body);
+      mockCloudPayload = {
+        items: payload.items || (payload.byGroup?.['ingt-310']?.items) || [],
+        deletedIds: payload.deletedIds || (payload.byGroup?.['ingt-310']?.deletedIds) || [],
+        updatedAt: body.updatedAt || Date.now()
+      };
       return {
         ok: true,
+        text: async () => JSON.stringify({ status: 'success', data: mockCloudPayload }),
         json: async () => ({ status: 'success', data: mockCloudPayload })
       };
     }
     return {
       ok: true,
-      json: async () => ({ data: mockCloudPayload || { items: [] } })
+      text: async () => JSON.stringify(mockCloudPayload || { items: [] }),
+      json: async () => ({ data: mockCloudPayload || { items: [] }, payload: JSON.stringify(mockCloudPayload || { items: [] }) })
     };
   }
 

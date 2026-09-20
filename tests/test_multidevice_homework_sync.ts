@@ -1,4 +1,4 @@
-﻿import { HomeworkItem } from '../types';
+import { HomeworkItem } from '../types';
 
 class LocalStorageInstance {
   private store: Map<string, string> = new Map();
@@ -47,28 +47,31 @@ let currentDeviceStorage: LocalStorageInstance = storagePhone;
 (global as any).window = global;
 
 (global as any).fetch = async (url: string, options: any = {}) => {
-  if (url.includes('ff808181a067127101a06866951a0496')) {
-    if (options.method === 'PUT') {
+  const method = options.method || 'GET';
+  if (url.includes('/sync/homework') || url.includes('dfdebcc') || url.includes('ff808181a067127101a06866951a0496')) {
+    if (method === 'PUT') {
       const body = JSON.parse(options.body || '{}');
-      if (body.data) {
-        centralCloud = {
-          items: body.data.items || [],
-          deletedIds: body.data.deletedIds || [],
-          updatedAt: body.data.updatedAt || Date.now()
-        };
-      }
+      const payload = body.payload ? JSON.parse(body.payload) : (body.data || body);
+      centralCloud = {
+        items: payload.items || (payload.byGroup?.['ingt-310']?.items) || [],
+        deletedIds: payload.deletedIds || (payload.byGroup?.['ingt-310']?.deletedIds) || [],
+        updatedAt: body.updatedAt || Date.now()
+      };
       return {
         ok: true,
+        text: async () => JSON.stringify({ status: 'success', data: centralCloud }),
         json: async () => ({ status: 'success', data: centralCloud })
       };
     }
     return {
       ok: true,
-      json: async () => ({ data: centralCloud })
+      text: async () => JSON.stringify(centralCloud),
+      json: async () => ({ data: centralCloud, payload: JSON.stringify(centralCloud) })
     };
   }
   return {
     ok: true,
+    text: async () => JSON.stringify({ data: {} }),
     json: async () => ({ data: {} })
   };
 };

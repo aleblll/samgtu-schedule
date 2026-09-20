@@ -19,7 +19,9 @@ const GroupManager: React.FC<GroupManagerProps> = ({ currentGroupId, userRole })
     if (!Array.isArray(parsed)) return STUDENTS_REGISTRY[groupId] || [];
     if (groupId === 'ingt-310' && parsed.some(s => s.name?.includes('Пронин'))) {
       const cleaned = parsed.filter(s => !s.name?.includes('Пронин'));
-      localStorage.setItem(`students_ingt-310`, JSON.stringify(cleaned));
+      try {
+        localStorage.setItem(`students_ingt-310`, JSON.stringify(cleaned));
+      } catch (e) {}
       return cleaned;
     }
     return parsed;
@@ -70,7 +72,11 @@ const GroupManager: React.FC<GroupManagerProps> = ({ currentGroupId, userRole })
   const saveStudentsToStorage = (updated: Student[]) => {
     setStudents(updated);
     if (currentGroupId) {
-      localStorage.setItem(`students_${currentGroupId}`, JSON.stringify(updated));
+      try {
+        localStorage.setItem(`students_${currentGroupId}`, JSON.stringify(updated));
+      } catch (e) {
+        console.warn('Failed to persist students to storage:', e);
+      }
     }
   };
 

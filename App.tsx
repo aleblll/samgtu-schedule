@@ -191,8 +191,10 @@ const App: React.FC = () => {
   const handleSelectGroup = (groupId: string) => {
     setBoundGroupId(groupId);
     setCurrentGroupId(groupId);
-    localStorage.setItem('my_group_id', groupId);
-    localStorage.setItem('selected_group_id', groupId);
+    try {
+      localStorage.setItem('my_group_id', groupId);
+      localStorage.setItem('selected_group_id', groupId);
+    } catch (e) {}
     setIsGroupSelectionModalOpen(false);
     const grp = allAvailableGroups.find(g => g.id === groupId);
     toast.success(`Выбрана группа ${grp?.name || groupId}`);
@@ -398,7 +400,9 @@ const App: React.FC = () => {
 
   // Sync group selection and reload group-specific overrides and teachers
   useEffect(() => {
-    localStorage.setItem('selected_group_id', currentGroupId);
+    try {
+      localStorage.setItem('selected_group_id', currentGroupId);
+    } catch (e) {}
     logger.info('SCHEDULE', `Current group switched to: ${currentGroupId}`);
     try {
       const savedOv = localStorage.getItem(`schedule_overrides_${currentGroupId}`);
@@ -452,12 +456,16 @@ const App: React.FC = () => {
 
   // Save role to localStorage
   useEffect(() => {
-    localStorage.setItem('user_role', userRole);
+    try {
+      localStorage.setItem('user_role', userRole);
+    } catch (e) {}
   }, [userRole]);
 
   // Theme preference persistence and Telegram UI sync
   useEffect(() => {
-    localStorage.setItem('app_theme', darkMode ? 'dark' : 'light');
+    try {
+      localStorage.setItem('app_theme', darkMode ? 'dark' : 'light');
+    } catch (e) {}
     if (darkMode) {
       document.documentElement.classList.add('dark');
     } else {
@@ -623,7 +631,9 @@ const App: React.FC = () => {
       return;
     }
 
-    localStorage.setItem('last_local_edit_' + currentGroupId, String(Date.now()));
+    try {
+      localStorage.setItem('last_local_edit_' + currentGroupId, String(Date.now()));
+    } catch (e) {}
 
     const currentOverride = scheduleOverrides[lessonId] || {};
     const merged = {
@@ -788,7 +798,9 @@ const App: React.FC = () => {
   };
 
   const handleSaveSubjectTeachers = async (updated: Record<string, string>) => {
-    localStorage.setItem('last_local_edit_' + currentGroupId, String(Date.now()));
+    try {
+      localStorage.setItem('last_local_edit_' + currentGroupId, String(Date.now()));
+    } catch (e) {}
     setSubjectTeachers(updated);
     try {
       localStorage.setItem(`subject_teachers_${currentGroupId}`, JSON.stringify(updated));
@@ -803,7 +815,9 @@ const App: React.FC = () => {
   const handleResetLesson = async (lessonId: string) => {
     if (!canEdit) return;
 
-    localStorage.setItem('last_local_edit_' + currentGroupId, String(Date.now()));
+    try {
+      localStorage.setItem('last_local_edit_' + currentGroupId, String(Date.now()));
+    } catch (e) {}
 
     // Find original lesson
     let originalLesson: Lesson | undefined;
@@ -1206,14 +1220,14 @@ const App: React.FC = () => {
                 setUserRole(role);
                 if (role === 'starosta' && targetGroup) {
                   setStarostaGroupId(targetGroup);
-                  localStorage.setItem('starosta_group_id', targetGroup);
+                  try { localStorage.setItem('starosta_group_id', targetGroup); } catch (e) {}
                 } else if (role !== 'starosta') {
                   setStarostaGroupId(null);
-                  localStorage.removeItem('starosta_group_id');
+                  try { localStorage.removeItem('starosta_group_id'); } catch (e) {}
                 }
                 if (targetGroup) {
                   setCurrentGroupId(targetGroup);
-                  localStorage.setItem('my_group_id', targetGroup);
+                  try { localStorage.setItem('my_group_id', targetGroup); } catch (e) {}
                   setBoundGroupId(targetGroup);
                 }
               }}

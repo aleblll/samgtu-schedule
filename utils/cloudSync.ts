@@ -165,7 +165,7 @@ const fetchJson = async (url: string, timeoutMs = 6000) => {
         'Accept': 'application/json',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
-        ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
+        ...(import.meta.env?.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
       }
     });
     clearTimeout(id);
@@ -199,7 +199,7 @@ const putJson = async (url: string, body: any, timeoutMs = 7000) => {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
+        ...(import.meta.env?.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
       },
       body: JSON.stringify(body)
     });
@@ -461,9 +461,17 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
       const currentRaw = await fetchWithFallback(ENDPOINTS.homework, FALLBACK_BINS.homework);
       const current = parseCloudPayload(currentRaw) || {};
       const byGroup = current.byGroup || {};
+
+      // Merge remote cloud tombstones to prevent parallel device race conditions
+      const cloudGroup = byGroup[groupId] || {};
+      const cloudDeleted = Array.isArray(cloudGroup.deletedIds) ? cloudGroup.deletedIds : [];
+      const mergedDeleted = Array.from(new Set([...allDeleted, ...cloudDeleted]));
+      const mergedDeletedSet = new Set(mergedDeleted);
+      const cleanItems = sanitizedHw.filter(it => !mergedDeletedSet.has(it.id));
+
       byGroup[groupId] = {
-        items: sanitizedHw,
-        deletedIds: allDeleted,
+        items: cleanItems,
+        deletedIds: mergedDeleted,
         updatedAt: Date.now()
       };
 
@@ -529,7 +537,7 @@ export const fetchOfficialSamgtuSchedule = async (samgtuGroupId: number, weekNum
     const res = await fetch(url, {
       headers: {
         'Accept': 'application/json',
-        ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
+        ...(import.meta.env?.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
       }
     });
     if (!res.ok) return null;
