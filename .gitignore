@@ -39,4 +39,5 @@ antigravity-mobile/
 *.env
 .env.local
 
-
+# Obsidian workspace state
+**/.obsidian/workspace*.json
