@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { UserRole } from '../types';
-import { Shield, ShieldAlert, ShieldCheck, Key, UserCheck, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Shield, ShieldAlert, ShieldCheck, Key, UserCheck, CheckCircle2, RefreshCw, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import { verifyPinCode } from '../utils/auth';
 import { SAMGTU_GROUP_MAP } from '../utils/samgtuGroupMap';
@@ -25,6 +25,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentRole, onRoleChange, curr
     summary: string;
     details: string[];
   } | null>(null);
+  const [isSimulatingMaintenance, setIsSimulatingMaintenance] = useState(() => {
+    return localStorage.getItem('simulate_maintenance') === 'true';
+  });
+
+  const handleToggleMaintenance = () => {
+    const nextVal = !isSimulatingMaintenance;
+    if (nextVal) {
+      localStorage.setItem('simulate_maintenance', 'true');
+      sessionStorage.removeItem('admin_maintenance_bypass');
+      sessionStorage.removeItem('dismiss_maintenance');
+      setIsSimulatingMaintenance(true);
+      toast.warning('Режим техработ включен. При следующем обновлении отобразится экран обслуживания.');
+    } else {
+      localStorage.removeItem('simulate_maintenance');
+      sessionStorage.removeItem('admin_maintenance_bypass');
+      sessionStorage.removeItem('dismiss_maintenance');
+      setIsSimulatingMaintenance(false);
+      toast.success('Режим техработ выключен.');
+    }
+  };
 
   const handleVerifyPin = async () => {
     const pin = pinCode.trim();
@@ -246,6 +266,38 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentRole, onRoleChange, curr
                 )}
               </div>
             )}
+
+            {/* Maintenance Mode Controls */}
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Wrench className="w-4 h-4 text-amber-500" />
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Режим технических работ</span>
+                </div>
+                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                  isSimulatingMaintenance 
+                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' 
+                    : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                }`}>
+                  {isSimulatingMaintenance ? 'ВКЛЮЧЕН (ТЕСТ)' : 'ВЫКЛЮЧЕН'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Включает экран-заглушку технических работ для проверки интерфейса обслуживания, кнопки офлайн-расписания и аварийного входа по PIN.
+              </p>
+              <button
+                type="button"
+                onClick={handleToggleMaintenance}
+                className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  isSimulatingMaintenance
+                    ? 'bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200'
+                    : 'bg-amber-500 hover:bg-amber-600 text-white shadow-xs'
+                }`}
+              >
+                <Wrench className="w-3.5 h-3.5" />
+                {isSimulatingMaintenance ? 'Отключить режим техработ' : 'Активировать экран техработ'}
+              </button>
+            </div>
           </div>
         </div>
       ) : currentRole === 'starosta' ? (

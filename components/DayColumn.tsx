@@ -41,15 +41,15 @@ const DayColumn: React.FC<DayColumnProps> = ({
     <div className="flex flex-col w-full min-w-0 max-w-full">
       <div className="mb-4 flex items-center justify-between gap-2">
         <div className="flex items-baseline gap-2">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
             {daySchedule.dayName}
           </h2>
-          <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-0.5 rounded-lg">
+          <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50/90 dark:bg-indigo-950/60 border border-indigo-200/60 dark:border-indigo-800/60 px-2.5 py-0.5 rounded-lg shadow-2xs">
             {calendarDate}
           </span>
         </div>
 
-        <span className="text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-full">
+        <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 bg-slate-200/70 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/60 px-2.5 py-0.5 rounded-full">
           {daySchedule.lessons.length} {daySchedule.lessons.length === 1 ? 'пара' : (daySchedule.lessons.length >= 2 && daySchedule.lessons.length <= 4) ? 'пары' : 'пар'}
         </span>
       </div>
@@ -66,7 +66,7 @@ const DayColumn: React.FC<DayColumnProps> = ({
           />
         ))}
         {daySchedule.lessons.length === 0 && (
-          <div className="p-8 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl text-center space-y-3">
+          <div className="p-8 bg-white/70 dark:bg-slate-900/40 border-2 border-dashed border-slate-200/90 dark:border-slate-800 rounded-3xl text-center space-y-3 shadow-2xs">
             <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
               В этот день занятий нет
             </div>
@@ -81,7 +81,7 @@ const DayColumn: React.FC<DayColumnProps> = ({
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-bold text-xs rounded-xl transition-all shadow-sm"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 font-bold text-xs rounded-xl transition-all border border-indigo-200/60 dark:border-transparent shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" /> Добавить пару
               </button>

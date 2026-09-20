@@ -13,6 +13,8 @@ import './test_qa_ingt209_verification';
 import './test_bugreport_feature';
 import './test_logger_diagnostics';
 import './test_telemetry';
+import './test_cancellation_and_privacy';
+import './test_security_audit';
 import { runHomeworkLifecycleStressTest } from './test_homework_lifecycle_stress';
 await runHomeworkLifecycleStressTest();
 console.log("\n=================================================");

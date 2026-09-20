@@ -32,6 +32,8 @@ html {
 }
 
 body {
+  background-color: #f8fafc;
+  color: #0f172a;
   overflow-x: hidden;
   width: 100%;
   min-height: 100%;
@@ -40,6 +42,11 @@ body {
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
   -webkit-tap-highlight-color: transparent;
+}
+
+.dark body, body:where(.dark, .dark *) {
+  background-color: #020617;
+  color: #f8fafc;
 }
 
 *, *::before, *::after {

@@ -263,6 +263,26 @@ export default {
     };
 
     try {
+      // 0. Maintenance & Service Health Endpoint
+      if (url.pathname === "/status" || url.pathname === "/maintenance") {
+        const isMaintenance = (env && (env.MAINTENANCE_MODE === "true" || env.MAINTENANCE_MODE === true)) || false;
+        const message = (env && env.MAINTENANCE_MESSAGE) || "Ведутся плановые технические работы по обновлению базы данных расписания.";
+        const estimatedEndTime = (env && env.MAINTENANCE_UNTIL) || null;
+        return new Response(JSON.stringify({
+          ok: true,
+          maintenance: isMaintenance,
+          message,
+          estimatedEndTime,
+          timestamp: new Date().toISOString()
+        }), {
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache, no-store, must-revalidate"
+          }
+        });
+      }
+
       // 1. Cloud Storage Sync (Schedule, Homework, Attendance)
       // Solves CORS Preflight 500 error & provides atomic server-to-server updates
       if (url.pathname.startsWith("/sync/")) {

@@ -14,12 +14,13 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { Toaster, toast } from 'sonner';
 import { UserRole, Lesson, GroupConfig, WeekData } from './types';
 import { TeacherAssignmentScope } from './components/EditLessonModal';
-import { fetchGroupCloudData, pushGroupCloudData, sanitizeTeachers, sanitizeOverrides } from './utils/cloudSync';
+import { fetchGroupCloudData, pushGroupCloudData, sanitizeTeachers, sanitizeOverrides, WORKER_BASE } from './utils/cloudSync';
 import { SEED_SCHEDULE_OVERRIDES, SEED_SUBJECT_TEACHERS, getSeedSubjectTeachers } from './defaultData';
 import { ScheduleImportModal } from './components/ScheduleImportModal';
 import { verifyPinCode } from './utils/auth';
 import BugReportModal from './components/BugReportModal';
 import DebugLogsModal from './components/DebugLogsModal';
+import MaintenanceScreen from './components/MaintenanceScreen';
 import { logger } from './utils/logger';
 import {
   LogIn, LogOut, Calendar, BookOpen, Bug, ClipboardCheck, Sun, Moon,
@@ -97,6 +98,44 @@ const App: React.FC = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
   const [isBugReportModalOpen, setIsBugReportModalOpen] = useState<boolean>(false);
   const [isDebugLogsModalOpen, setIsDebugLogsModalOpen] = useState<boolean>(false);
+
+  // Maintenance Mode states
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState<boolean>(() => {
+    return localStorage.getItem('simulate_maintenance') === 'true';
+  });
+  const [maintenanceMessage, setMaintenanceMessage] = useState<string>(
+    'Ведутся плановые технические работы по обновлению базы данных расписания.'
+  );
+  const [maintenanceUntil, setMaintenanceUntil] = useState<string | null>(null);
+  const [isMaintenanceDismissed, setIsMaintenanceDismissed] = useState<boolean>(() => {
+    return sessionStorage.getItem('admin_maintenance_bypass') === 'true' || sessionStorage.getItem('dismiss_maintenance') === 'true';
+  });
+
+  const checkMaintenanceStatus = async () => {
+    if (localStorage.getItem('simulate_maintenance') === 'true') {
+      setIsMaintenanceMode(true);
+      return;
+    }
+    try {
+      const res = await fetch(`${WORKER_BASE}/status`, { signal: AbortSignal.timeout(3500) });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.maintenance) {
+          setIsMaintenanceMode(true);
+          if (data.message) setMaintenanceMessage(data.message);
+          if (data.estimatedEndTime) setMaintenanceUntil(data.estimatedEndTime);
+          return;
+        }
+      }
+      setIsMaintenanceMode(false);
+    } catch {
+      setIsMaintenanceMode(false);
+    }
+  };
+
+  useEffect(() => {
+    checkMaintenanceStatus();
+  }, []);
 
   const headerTapCountRef = React.useRef<number>(0);
   const lastHeaderTapTimeRef = React.useRef<number>(0);
@@ -893,12 +932,38 @@ const App: React.FC = () => {
     });
   }, [currentGroupId, selectedWeek, scheduleOverrides, attendanceRecords, subjectTeachers]);
 
+  if (isMaintenanceMode && !isMaintenanceDismissed) {
+    return (
+      <MaintenanceScreen
+        message={maintenanceMessage}
+        estimatedEndTime={maintenanceUntil}
+        onRetry={async () => {
+          await checkMaintenanceStatus();
+          if (!isMaintenanceMode) {
+            toast.success('Сервер доступен! Расписание обновлено.');
+          } else {
+            toast.info('Технические работы еще продолжаются.');
+          }
+        }}
+        onContinueOffline={() => {
+          sessionStorage.setItem('dismiss_maintenance', 'true');
+          setIsMaintenanceDismissed(true);
+          toast.info('Включен автономный режим просмотра расписания');
+        }}
+        onAdminBypass={() => {
+          sessionStorage.setItem('admin_maintenance_bypass', 'true');
+          setIsMaintenanceDismissed(true);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-clip bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-200 pb-28">
       <Toaster position="top-center" offset={75} richColors />
 
       {/* Header with Safe Area Inset */}
-      <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 w-full pt-safe">
+      <header className="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 w-full pt-safe shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -924,7 +989,7 @@ const App: React.FC = () => {
             </div>
 
             {/* Desktop Navigation Tabs (Senior Review P0) */}
-            <nav className="hidden sm:flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl">
+            <nav className="hidden sm:flex items-center gap-1 bg-slate-100/90 border border-slate-200/60 dark:border-transparent dark:bg-slate-800/80 p-1 rounded-2xl">
               <button
                 onClick={() => setActiveTab('schedule')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
@@ -1017,7 +1082,7 @@ const App: React.FC = () => {
           </div>
 
           {/* Group and Week Controls */}
-          <div className="mt-3 space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+          <div className="mt-3 space-y-2 pt-2 border-t border-slate-200/70 dark:border-slate-800/80">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <button
@@ -1026,12 +1091,12 @@ const App: React.FC = () => {
                     setSelectedCourseFilter(currentGroupConfig.course || 0);
                     setIsGroupSelectionModalOpen(true);
                   }}
-                  className="text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 py-1.5 min-h-[36px] flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                  className="text-xs font-bold text-slate-900 dark:text-slate-100 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200/90 dark:border-slate-700/80 rounded-xl px-2.5 py-1.5 min-h-[36px] flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
                   title="Выбрать факультет, курс и группу"
                 >
                   {effectiveRole === 'starosta' && <Shield className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />}
                   <span>{currentGroupConfig.name}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">({currentGroupConfig.course} курс)</span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">({currentGroupConfig.course} курс)</span>
                   <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                 </button>
               </div>
@@ -1040,18 +1105,18 @@ const App: React.FC = () => {
                 {canEdit && activeTab === 'schedule' && (
                   <button
                     onClick={() => setIsSubjectTeachersModalOpen(true)}
-                    className="flex items-center gap-1 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-[11px] font-bold rounded-xl transition-all"
+                    className="flex items-center gap-1 px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-[11px] font-bold rounded-xl transition-all border border-indigo-200/50 dark:border-transparent"
                   >
                     <UserCheck className="w-3.5 h-3.5" /> Преподаватели
                   </button>
                 )}
                 
-                <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
                   effectiveRole === 'admin' 
-                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' 
+                    ? 'bg-purple-50 text-purple-700 border-purple-200/70 dark:bg-purple-900/30 dark:text-purple-300 dark:border-transparent' 
                     : effectiveRole === 'starosta' 
-                      ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' 
-                      : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200/70 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-transparent' 
+                      : 'bg-slate-100 text-slate-700 border-slate-200/70 dark:bg-slate-800 dark:text-slate-400 dark:border-transparent'
                 }`}>
                   {effectiveRole === 'admin' ? 'admin' : (userRole === 'starosta' ? (effectiveRole === 'starosta' ? 'starosta' : 'гость (студент)') : 'student')}
                 </span>
@@ -1061,24 +1126,24 @@ const App: React.FC = () => {
             {/* 4-Week Cycle Switcher - Grid of 4 equal buttons (Zero overflow!) */}
             {activeTab === 'schedule' && (
               <div className="space-y-1.5 w-full">
-                <div className="grid grid-cols-4 gap-1.5 bg-slate-100 dark:bg-slate-800/90 p-1 rounded-2xl w-full">
+                <div className="grid grid-cols-4 gap-1.5 bg-slate-200/60 dark:bg-slate-800/90 border border-slate-200/60 dark:border-transparent p-1 rounded-2xl w-full">
                   {[1, 2, 3, 4].map(w => (
                     <button
                       key={w}
                       onClick={() => setSelectedWeek(w)}
-                      className={`py-1.5 text-center rounded-xl text-xs font-bold transition-all ${
+                      className={`py-1.5 text-center rounded-xl text-xs font-bold transition-all cursor-pointer ${
                         selectedWeek === w
-                          ? 'bg-indigo-600 text-white shadow-sm'
-                          : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
                       }`}
                     >
                       Нед. {w} {w === currentWeek && '★'}
                     </button>
                   ))}
                 </div>
-                <div className="text-center text-[11px] font-medium text-slate-400">
+                <div className="text-center text-[11px] font-medium text-slate-500 dark:text-slate-400">
                   Даты недели: <span className="text-indigo-600 dark:text-indigo-400 font-bold">{getWeekDateRange(selectedWeek)}</span>
-                  {selectedWeek === currentWeek && <span className="text-amber-500 font-semibold ml-1.5">(Текущая)</span>}
+                  {selectedWeek === currentWeek && <span className="text-amber-600 dark:text-amber-400 font-semibold ml-1.5">(Текущая)</span>}
                 </div>
               </div>
             )}
