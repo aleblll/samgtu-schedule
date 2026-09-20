@@ -2,6 +2,10 @@ import { logger, getSystemDiagnostics, InAppLogger } from '../utils/logger';
 import { calculateStudentAbsenceHours, calculateAttendancePercentage, getSamaraFutureISODate, getSamaraISODate } from '../attendance';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let passCount = 0;
 let failCount = 0;
@@ -86,7 +90,7 @@ check('Error metadata captured', errLogs[0].data?.filename === 'App.tsx');
 
 // --- 5. BugReportModal Integration Inspection ---
 console.log('\n--- 5. BugReportModal Diagnostics Integration ---');
-const bugReportModalPath = path.join('C:\\Users\\A.le_BL\\.gemini\\antigravity\\scratch', 'components', 'BugReportModal.tsx');
+const bugReportModalPath = path.resolve(__dirname, '..', 'components', 'BugReportModal.tsx');
 const bugReportContent = fs.readFileSync(bugReportModalPath, 'utf8');
 
 check('BugReportModal imports logger and getSystemDiagnostics', bugReportContent.includes("import { logger, getSystemDiagnostics } from '../utils/logger'"));
@@ -98,7 +102,7 @@ check('Companion JSON document uploaded with screenshots', bugReportContent.incl
 
 // --- 6. Mobile Debug Console Component ---
 console.log('\n--- 6. Mobile Debug Console Component ---');
-const debugModalPath = path.join('C:\\Users\\A.le_BL\\.gemini\\antigravity\\scratch', 'components', 'DebugLogsModal.tsx');
+const debugModalPath = path.resolve(__dirname, '..', 'components', 'DebugLogsModal.tsx');
 check('DebugLogsModal.tsx exists', fs.existsSync(debugModalPath));
 const debugModalContent = fs.readFileSync(debugModalPath, 'utf8');
 check('DebugLogsModal has error filter', debugModalContent.includes('ERRORS_ONLY'));
@@ -108,7 +112,7 @@ check('DebugLogsModal has HapticFeedback support', debugModalContent.includes('H
 
 // --- 7. App.tsx Integration ---
 console.log('\n--- 7. App.tsx Triggers & Console Integration ---');
-const appPath = path.join('C:\\Users\\A.le_BL\\.gemini\\antigravity\\scratch', 'App.tsx');
+const appPath = path.resolve(__dirname, '..', 'App.tsx');
 const appContent = fs.readFileSync(appPath, 'utf8');
 check('App.tsx imports DebugLogsModal', appContent.includes("import DebugLogsModal from './components/DebugLogsModal'"));
 check('App.tsx mounts DebugLogsModal', appContent.includes('<DebugLogsModal'));

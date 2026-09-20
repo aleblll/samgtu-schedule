@@ -1,6 +1,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectDir = path.resolve(__dirname, '..');
 let passCount = 0;
 let failCount = 0;
 
@@ -17,8 +21,6 @@ function check(label: string, condition: boolean, detail?: string) {
 console.log('================================================================');
 console.log('       QA VERIFICATION SUITE: BUG REPORT & SUPPORT FEATURE       ');
 console.log('================================================================\n');
-
-const projectDir = 'C:\\Users\\A.le_BL\\.gemini\\antigravity\\scratch';
 
 // 1. Check BugReportModal file
 console.log('--- 1. Component File Check ---');
