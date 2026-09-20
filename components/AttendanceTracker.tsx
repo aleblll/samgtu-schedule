@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ClipboardCheck, Download, FileText, Table as TableIcon } from 'lucide-react';
 import { STUDENTS_REGISTRY, useAttendance, BLOCKS, getSemesterWeek, getDayName, getSamaraISODate } from '../attendance';
 import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, FACULTIES } from '../constants';
-import { Lesson, Student } from '../types';
+import { Lesson, Student, GroupConfig } from '../types';
 import { toast } from 'sonner';
 import { exportAttendanceToWord } from '../utils/exportWord';
 
@@ -150,12 +150,22 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
   const handleExportWord = async () => {
     try {
       setIsExporting(true);
-      const groupConfig = AVAILABLE_GROUPS.find(g => g.id === currentGroupId) || AVAILABLE_GROUPS[0];
+      const groupConfig: GroupConfig = AVAILABLE_GROUPS.find(g => g.id === currentGroupId) || {
+        id: currentGroupId,
+        name: currentGroupId,
+        facultyId: 'oil',
+        degree: 'Бакалавриат',
+        course: 3
+      };
       const faculty = FACULTIES.find(f => f.id === groupConfig.facultyId) || FACULTIES[0];
       
-      toast.info('Формирование Word отчета пропусков...');
-      await exportAttendanceToWord(records, students, groupConfig, faculty);
-      toast.success('Официальный отчет в Word выгружен!');
+      toast.info('Формирование официального Word отчета...');
+      const result = await exportAttendanceToWord(records, students, groupConfig, faculty);
+      if (result?.sentToTelegramChat) {
+        toast.success('Ведомость Word отправлена вам в диалог с ботом и сохраняется на устройство!');
+      } else {
+        toast.success('Официальный отчет в Word выгружен!');
+      }
     } catch (error) {
       console.error('Export error:', error);
       toast.error('Не удалось сформировать Word документ: ' + (error instanceof Error ? error.message : String(error)));

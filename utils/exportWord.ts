@@ -4,13 +4,20 @@ import { Student, GroupConfig, Faculty } from '../types';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { WORKER_BASE } from './cloudSync';
+
+export interface ExportWordResult {
+  success: boolean;
+  sentToTelegramChat: boolean;
+  method: 'capacitor' | 'tma_download_file' | 'tma_open_link' | 'web_share' | 'browser_blob';
+}
 
 export const exportAttendanceToWord = async (
   records: AttendanceRecord[],
   students: Student[],
   groupConfig: GroupConfig,
   faculty: Faculty
-) => {
+): Promise<ExportWordResult> => {
   const tableRows: TableRow[] = [];
 
   // Header Row 1
@@ -239,14 +246,68 @@ export const exportAttendanceToWord = async (
           files: [result.uri],
           dialogTitle: 'Сохранить или отправить Word (.docx) отчет'
         });
-        return;
+        return { success: true, sentToTelegramChat: false, method: 'capacitor' };
       }
     } catch (nativeError) {
-      console.warn('Native share failed, falling back to browser blob download:', nativeError);
+      console.warn('Native share failed, falling back to TMA / browser download:', nativeError);
     }
   }
 
-  // 2. Try Mobile Web Share API (Level 2) - Native save/share on Android & iOS (including Telegram Mini App)
+  // 2. Telegram Mini App (Level 2: TMA Android WebView / iOS / Desktop)
+  const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null;
+  const isTMA = Boolean(tg && (tg.initData || tg.initDataUnsafe?.user));
+
+  if (isTMA) {
+    try {
+      const userId = tg.initDataUnsafe?.user?.id;
+      const formData = new FormData();
+      formData.append('document', blob, filename);
+      formData.append('filename', filename);
+      if (userId) {
+        formData.append('chat_id', String(userId));
+      }
+      formData.append(
+        'caption',
+        `📄 Официальная ведомость пропусков (${groupConfig.name || 'СамГТУ'})\n📅 Сформировано: ${new Date().toLocaleDateString('ru-RU')}`
+      );
+
+      const uploadRes = await fetch(`${WORKER_BASE}/export-doc`, {
+        method: 'POST',
+        headers: {
+          ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
+        },
+        body: formData
+      });
+
+      if (uploadRes.ok) {
+        const data = await uploadRes.json();
+        if (data.ok && data.direct_url) {
+          const directUrl = data.direct_url;
+          const sentToPm = Boolean(data.sent_to_pm);
+
+          // 2.A. Telegram Bot API >= 8.0: Native Telegram download dialog
+          if (typeof tg.downloadFile === 'function' && (typeof tg.isVersionAtLeast === 'function' ? tg.isVersionAtLeast('8.0') : true)) {
+            tg.downloadFile({ url: directUrl, file_name: filename }, (accepted: boolean) => {
+              if (!accepted && typeof tg.openLink === 'function') {
+                tg.openLink(directUrl);
+              }
+            });
+            return { success: true, sentToTelegramChat: sentToPm, method: 'tma_download_file' };
+          }
+
+          // 2.B. Telegram < 8.0: Open HTTPS URL in native phone browser (Chrome/Safari)
+          if (typeof tg.openLink === 'function') {
+            tg.openLink(directUrl);
+            return { success: true, sentToTelegramChat: sentToPm, method: 'tma_open_link' };
+          }
+        }
+      }
+    } catch (tmaError) {
+      console.warn('TMA cloud gateway export failed, trying Web Share fallback:', tmaError);
+    }
+  }
+
+  // 3. Try Mobile Web Share API (Level 3) - Native save/share on Mobile Browsers
   if (typeof navigator !== 'undefined' && typeof File !== 'undefined' && typeof navigator.canShare === 'function') {
     try {
       const file = new File([blob], filename, {
@@ -258,18 +319,18 @@ export const exportAttendanceToWord = async (
           title: filename,
           text: `Ведомость посещаемости (${groupConfig.name || 'СамГТУ'})`
         });
-        return;
+        return { success: true, sentToTelegramChat: false, method: 'web_share' };
       }
     } catch (shareError: any) {
       // If user simply closed the share sheet, do not throw
       if (shareError?.name === 'AbortError') {
-        return;
+        return { success: true, sentToTelegramChat: false, method: 'web_share' };
       }
       console.warn('Web Share API failed, falling back to anchor download:', shareError);
     }
   }
 
-  // 3. Fallback: Standard HTML5 Blob Anchor Download (Desktop / Web)
+  // 4. Fallback: Standard HTML5 Blob Anchor Download (Desktop / Web)
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.style.display = 'none';
@@ -281,4 +342,6 @@ export const exportAttendanceToWord = async (
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
   }, 3000);
+
+  return { success: true, sentToTelegramChat: false, method: 'browser_blob' };
 };

@@ -392,6 +392,109 @@ export default {
         });
       }
 
+      // 2b. Private Document Export for Starosta (Word .docx reports)
+      if (url.pathname === "/export-doc" && request.method === "POST") {
+        if (APP_SECRET && request.headers.get("X-App-Key") !== APP_SECRET) {
+          return new Response(JSON.stringify({ error: "Unauthorized: Invalid or missing X-App-Key" }), {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+
+        const now = Date.now();
+        if (isUploadRateLimited(now)) {
+          return new Response(JSON.stringify({ error: "Too many export requests. Please wait a moment." }), {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+        recordUploadSent(now);
+
+        if (!BOT_TOKEN) {
+          return new Response(JSON.stringify({ error: "TELEGRAM_BOT_TOKEN is not configured" }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const formData = await request.formData();
+        const file = formData.get("document");
+        const requestedChatId = formData.get("chat_id");
+        const rawFileName = formData.get("filename") || "Ведомость_посещаемости.docx";
+        const caption = formData.get("caption") || "📄 Официальная ведомость пропусков";
+
+        if (!file) {
+          return new Response(JSON.stringify({ error: "Missing document file in formData" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+
+        const PRIVATE_STORAGE_CHAT = (env && (env.TELEGRAM_DEV_CHAT_ID || env.DEV_CHAT_ID))
+          ? (env.TELEGRAM_DEV_CHAT_ID || env.DEV_CHAT_ID)
+          : CHANNEL_ID;
+
+        let tgJson = null;
+        let sentToUser = false;
+
+        // Step 1: If requestedChatId (starosta's user ID) is present, send directly to their PM
+        if (requestedChatId) {
+          const userFormData = new FormData();
+          userFormData.append("chat_id", String(requestedChatId));
+          userFormData.append("document", file, String(rawFileName));
+          userFormData.append("caption", String(caption));
+
+          try {
+            const userTgRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, {
+              method: "POST",
+              body: userFormData
+            });
+            tgJson = await userTgRes.json();
+            if (tgJson && tgJson.ok) {
+              sentToUser = true;
+            }
+          } catch (e) {
+            console.warn("Direct send to user chat failed, falling back to private storage chat:", e);
+          }
+        }
+
+        // Step 2: Fallback to private storage chat if direct send failed (e.g. 403 Forbidden)
+        if (!sentToUser) {
+          const fallbackFormData = new FormData();
+          fallbackFormData.append("chat_id", String(PRIVATE_STORAGE_CHAT));
+          fallbackFormData.append("document", file, String(rawFileName));
+          fallbackFormData.append("caption", `[Архив ведомостей] ${caption}`);
+
+          const fallbackRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, {
+            method: "POST",
+            body: fallbackFormData
+          });
+          tgJson = await fallbackRes.json();
+        }
+
+        if (!tgJson || !tgJson.ok) {
+          return new Response(JSON.stringify({ error: tgJson?.description || "Failed to store document in Telegram" }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+
+        const fileId = tgJson.result.document.file_id;
+        const fileName = tgJson.result.document.file_name || rawFileName;
+        const directUrl = `${url.origin}/file?file_id=${fileId}&download=1&filename=${encodeURIComponent(fileName)}`;
+
+        return new Response(JSON.stringify({
+          ok: true,
+          file_id: fileId,
+          filename: fileName,
+          direct_url: directUrl,
+          sent_to_pm: sentToUser
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
       // 3. Direct File Streaming (Bypasses RKN / Works in Russia without VPN!)
       if (url.pathname === "/file") {
         const fileId = url.searchParams.get("file_id");
@@ -403,13 +506,28 @@ export default {
 
         const directUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${info.result.file_path}`;
         const fileRes = await fetch(directUrl);
-        const fileName = (info.result.file_path || "").split("/").pop() || "file";
+        
+        const queryFilename = url.searchParams.get("filename") || url.searchParams.get("name");
+        const rawFileName = queryFilename || (info.result.file_path || "").split("/").pop() || "file";
+        
+        // RFC 5987: ASCII fallback + UTF-8 encoded filename for Russian characters on mobile
+        const safeAsciiName = rawFileName.replace(/[^\x20-\x7E]/g, '_');
+        const utf8EncodedName = encodeURIComponent(rawFileName);
+
+        let contentType = fileRes.headers.get("Content-Type") || "application/octet-stream";
+        if (rawFileName.toLowerCase().endsWith(".docx")) {
+          contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        }
+
+        const isDownload = url.searchParams.get("download") === "1" || rawFileName.toLowerCase().endsWith(".docx");
+        const dispositionType = isDownload ? "attachment" : "inline";
 
         return new Response(fileRes.body, {
           headers: {
             ...corsHeaders,
-            "Content-Type": fileRes.headers.get("Content-Type") || "application/octet-stream",
-            "Content-Disposition": `inline; filename="${encodeURIComponent(fileName)}"`
+            "Content-Type": contentType,
+            "Content-Disposition": `${dispositionType}; filename="${safeAsciiName}"; filename*=UTF-8''${utf8EncodedName}`,
+            "Cache-Control": "private, max-age=3600"
           }
         });
       }
