@@ -268,7 +268,7 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
 
   if (!days || days.length === 0) {
     return (
-      <div className="text-center py-16 px-4 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-3">
+      <div className="text-center py-16 px-4 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-3">
         <div className="w-12 h-12 mx-auto bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400">
           <Calendar className="w-6 h-6" />
         </div>

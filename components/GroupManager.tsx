@@ -113,7 +113,7 @@ const GroupManager: React.FC<GroupManagerProps> = ({ currentGroupId, userRole })
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
       {/* Header Info */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-xs border border-slate-200/90 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
             <Users className="w-6 h-6" />
@@ -136,7 +136,7 @@ const GroupManager: React.FC<GroupManagerProps> = ({ currentGroupId, userRole })
 
       {/* Add Student Form (Starosta / Admin) */}
       {canEdit && (
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-xs border border-slate-200/90 dark:border-slate-800">
           <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Добавить студента</h3>
           <div className="flex flex-col sm:flex-row gap-3">
             <input
@@ -158,8 +158,8 @@ const GroupManager: React.FC<GroupManagerProps> = ({ currentGroupId, userRole })
       )}
 
       {/* Students List */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
-        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xs border border-slate-200/90 dark:border-slate-800 overflow-hidden">
+        <div className="divide-y divide-slate-200/80 dark:divide-slate-800">
           {students.map((student, index) => (
             <div
               key={student.id}

@@ -467,7 +467,7 @@ const App: React.FC = () => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       try {
         window.Telegram.WebApp.setHeaderColor?.(darkMode ? '#0f172a' : '#ffffff');
-        window.Telegram.WebApp.setBackgroundColor?.(darkMode ? '#020617' : '#f8fafc');
+        window.Telegram.WebApp.setBackgroundColor?.(darkMode ? '#020617' : '#f1f5f9');
       } catch (e) {}
     }
   }, [darkMode]);
@@ -959,7 +959,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen w-full max-w-full overflow-x-clip bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-200 pb-28">
+    <div className="min-h-screen w-full max-w-full overflow-x-clip bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-200 pb-28">
       <Toaster position="top-center" offset={75} richColors />
 
       {/* Header with Safe Area Inset */}
@@ -1224,7 +1224,7 @@ const App: React.FC = () => {
 
         {activeTab === 'profile' && (
           <TabErrorBoundary tabName="Профиль">
-            <div className="max-w-md mx-auto bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 space-y-6">
+            <div className="max-w-md mx-auto bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xs border border-slate-200/90 dark:border-slate-800 space-y-6">
             <div className="text-center space-y-2">
               <div className="w-16 h-16 mx-auto bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                 <UserIcon className="w-8 h-8" />
@@ -1388,9 +1388,9 @@ const App: React.FC = () => {
       {/* Group Selection Modal (Faculty / Course / Group Hierarchy) */}
       {isGroupSelectionModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[92dvh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[92dvh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 shrink-0">
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-200/80 dark:border-slate-800 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
                   <GraduationCap className="w-5 h-5" />
@@ -1415,7 +1415,7 @@ const App: React.FC = () => {
             </div>
 
             {/* Search and Filters */}
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 shrink-0 space-y-3">
+            <div className="p-4 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 shrink-0 space-y-3">
               {/* Quick Search & LK Import Button */}
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
@@ -1559,7 +1559,7 @@ const App: React.FC = () => {
             </div>
 
             {/* Footer with Custom Group Adder */}
-            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 shrink-0 space-y-3">
+            <div className="p-4 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 shrink-0 space-y-3">
               {!isAddingCustomGroup ? (
                 <div className="flex items-center justify-between">
                   <button

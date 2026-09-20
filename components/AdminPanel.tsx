@@ -344,7 +344,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentRole, onRoleChange, curr
           </div>
         </div>
       ) : (
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-4">
           <div className="flex items-center gap-3">
             <Key className="w-5 h-5 text-amber-500" />
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">Авторизация по PIN-коду</h3>
@@ -375,7 +375,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentRole, onRoleChange, curr
 
       {/* Roles & Permissions Reference */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 space-y-2">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-2">
           <div className="flex items-center justify-between">
             <span className="font-bold text-sm text-slate-900 dark:text-white">Студент</span>
             <UserCheck className="w-4 h-4 text-emerald-500" />
@@ -385,7 +385,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentRole, onRoleChange, curr
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 space-y-2">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-2">
           <div className="flex items-center justify-between">
             <span className="font-bold text-sm text-slate-900 dark:text-white">Староста</span>
             <CheckCircle2 className="w-4 h-4 text-indigo-500" />
@@ -395,7 +395,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentRole, onRoleChange, curr
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 space-y-2">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-2">
           <div className="flex items-center justify-between">
             <span className="font-bold text-sm text-slate-900 dark:text-white">Администратор</span>
             <ShieldAlert className="w-4 h-4 text-amber-500" />

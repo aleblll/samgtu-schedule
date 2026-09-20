@@ -68,9 +68,9 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[90dvh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[90dvh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden">
         {/* Header */}
-        <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 p-4 sm:p-5 shrink-0">
+        <div className="flex justify-between items-center border-b border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shrink-0">
           <div>
             <h3 className="font-bold text-base text-slate-900 dark:text-white">Редактирование данных пары</h3>
             <p className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5">
@@ -212,7 +212,7 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
                 {attachments.map((att, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between gap-2 p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700/50 text-xs"
+                    className="flex items-center justify-between gap-2 p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700/50 text-xs"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <ExternalLink className="w-3.5 h-3.5 text-blue-500 shrink-0" />
@@ -306,7 +306,7 @@ const EditLessonModal: React.FC<EditLessonModalProps> = ({
         </form>
 
         {/* Fixed Footer with Safe Area */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 shrink-0 flex gap-2 pb-[max(1rem,env(safe-area-inset-bottom,0px))] bg-white dark:bg-slate-900">
+        <div className="p-4 border-t border-slate-200/80 dark:border-slate-800 shrink-0 flex gap-2 pb-[max(1rem,env(safe-area-inset-bottom,0px))] bg-white dark:bg-slate-900">
           <button
             type="button"
             onClick={() => {

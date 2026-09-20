@@ -246,22 +246,31 @@ export const exportAttendanceToWord = async (
     }
   }
 
-  // Direct On-Device Download (No Telegram channel upload, 100% private)
-  const isTg = typeof window !== 'undefined' && !!(window as any).Telegram?.WebApp;
-  const tg = isTg ? (window as any).Telegram.WebApp : null;
-  const url = window.URL.createObjectURL(blob);
-
-  // If Telegram Mini App provides native downloadFile (Bot API 6.9+), use it
-  if (tg && typeof tg.downloadFile === 'function') {
+  // 2. Try Mobile Web Share API (Level 2) - Native save/share on Android & iOS (including Telegram Mini App)
+  if (typeof navigator !== 'undefined' && typeof File !== 'undefined' && typeof navigator.canShare === 'function') {
     try {
-      tg.downloadFile({ url, file_name: filename });
-      return;
-    } catch (tgDlErr) {
-      console.warn('Telegram downloadFile failed, using browser anchor fallback:', tgDlErr);
+      const file = new File([blob], filename, {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: filename,
+          text: `Ведомость посещаемости (${groupConfig.name || 'СамГТУ'})`
+        });
+        return;
+      }
+    } catch (shareError: any) {
+      // If user simply closed the share sheet, do not throw
+      if (shareError?.name === 'AbortError') {
+        return;
+      }
+      console.warn('Web Share API failed, falling back to anchor download:', shareError);
     }
   }
 
-  // Standard browser / webview direct download
+  // 3. Fallback: Standard HTML5 Blob Anchor Download (Desktop / Web)
+  const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.style.display = 'none';
   document.body.appendChild(a);

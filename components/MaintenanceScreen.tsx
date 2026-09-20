@@ -86,7 +86,7 @@ export const MaintenanceScreen: React.FC<MaintenanceScreenProps> = ({
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
+    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
       <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-lg p-6 sm:p-8 text-center relative overflow-hidden">
         {/* Subtle decorative glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-2 bg-indigo-500/80 rounded-b-full blur-xs" />

@@ -161,9 +161,9 @@ const SubjectTeachersModal: React.FC<SubjectTeachersModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl max-w-2xl w-full max-h-[90dvh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl max-w-2xl w-full max-h-[90dvh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden">
         {/* Header */}
-        <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 p-4 sm:p-5 shrink-0">
+        <div className="flex justify-between items-center border-b border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
               <UserCheck className="w-5 h-5" />
@@ -274,7 +274,7 @@ const SubjectTeachersModal: React.FC<SubjectTeachersModalProps> = ({
         </form>
 
         {/* Fixed Footer with Safe Area */}
-        <div className="flex gap-2 p-4 pt-3 border-t border-slate-100 dark:border-slate-800 shrink-0 pb-[max(1rem,env(safe-area-inset-bottom,0px))] bg-white dark:bg-slate-900">
+        <div className="flex gap-2 p-4 pt-3 border-t border-slate-200/80 dark:border-slate-800 shrink-0 pb-[max(1rem,env(safe-area-inset-bottom,0px))] bg-white dark:bg-slate-900">
           <button
             type="button"
             onClick={onClose}

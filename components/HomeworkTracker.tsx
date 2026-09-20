@@ -459,7 +459,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
   return (
     <div className="space-y-5 w-full max-w-full">
       {/* Top Banner & Action */}
-      <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
@@ -546,7 +546,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
 
       {/* Homework Cards List */}
       {filteredItems.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-10 text-center border border-slate-100 dark:border-slate-800 space-y-2">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-10 text-center border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-2">
           <BookOpen className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600" />
           <h3 className="font-bold text-sm text-slate-700 dark:text-slate-300">
             {filterMode === 'upcoming' ? 'Все задания сданы! Нет горящих дедлайнов' : 'Заданий не найдено'}
@@ -562,7 +562,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
           {filteredItems.map(item => (
             <div
               key={item.id}
-              className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-4"
+              className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/90 dark:border-slate-800 shadow-xs hover:shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between gap-4"
             >
               <div className="space-y-2.5">
                 {/* Header: Subject & Due Badge */}
@@ -580,7 +580,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
 
                 {/* Description */}
                 {item.description && (
-                  <p className="text-xs text-slate-600 dark:text-slate-300 whitespace-pre-wrap leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  <p className="text-xs text-slate-600 dark:text-slate-300 whitespace-pre-wrap leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800">
                     {item.description}
                   </p>
                 )}
@@ -597,7 +597,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
 
                 {/* Attachments Section */}
                 {item.attachments && item.attachments.length > 0 && (
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+                  <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800 space-y-1.5">
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Прикрепленные файлы и ссылки ({item.attachments.length}):
                     </div>
@@ -628,7 +628,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
 
               {/* Starosta / Admin Controls */}
               {canEdit && (
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex justify-end items-center gap-2">
+                <div className="pt-3 border-t border-slate-200/80 dark:border-slate-800/80 flex justify-end items-center gap-2">
                   <button
                     onClick={() => openEditModal(item)}
                     className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
@@ -651,9 +651,9 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
       {/* Add / Edit Homework Modal (Mobile Bottom Sheet Pattern) */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[90dvh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[90dvh] sm:max-h-[85vh] flex flex-col shadow-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden">
             {/* Modal Header */}
-            <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 p-4 sm:p-5 shrink-0">
+            <div className="flex justify-between items-center border-b border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shrink-0">
               <div>
                 <h3 className="font-bold text-base text-slate-900 dark:text-white">
                   {editingItem ? 'Редактировать ДЗ' : 'Новое домашнее задание'}
@@ -755,7 +755,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
               </div>
 
               {/* Attachments list in form */}
-              <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="space-y-2 pt-2 border-t border-slate-200/80 dark:border-slate-800">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
                   Прикрепления (файлы и ссылки)
                 </label>
@@ -838,7 +838,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
             </form>
 
             {/* Fixed Footer with Safe Area */}
-            <div className="p-4 border-t border-slate-100 dark:border-slate-800 shrink-0 flex gap-2 pb-safe bg-white dark:bg-slate-900">
+            <div className="p-4 border-t border-slate-200/80 dark:border-slate-800 shrink-0 flex gap-2 pb-safe bg-white dark:bg-slate-900">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
@@ -869,7 +869,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-200/80 dark:border-slate-800">
               <div className="flex items-center gap-2 overflow-hidden">
                 <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">
@@ -892,7 +892,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
             {/* Content: Image Preview or Document Details */}
             <div className="flex-1 overflow-y-auto min-h-0 flex flex-col items-center justify-center py-2">
               {(previewAttachment.type === 'image' || previewAttachment.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) || previewAttachment.data?.startsWith('data:image/')) ? (
-                <div className="w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950 rounded-2xl p-2 border border-slate-100 dark:border-slate-800">
+                <div className="w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950 rounded-2xl p-2 border border-slate-200/80 dark:border-slate-800">
                   <img 
                     src={previewAttachment.url || previewAttachment.data} 
                     alt={previewAttachment.name}
@@ -918,7 +918,7 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-2">
+            <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800 flex flex-wrap gap-2">
               {previewAttachment.tgUrl && (
                 <button
                   onClick={() => {

@@ -4,6 +4,7 @@ import { STUDENTS_REGISTRY, useAttendance, BLOCKS, getSemesterWeek, getDayName, 
 import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, FACULTIES } from '../constants';
 import { Lesson, Student } from '../types';
 import { toast } from 'sonner';
+import { exportAttendanceToWord } from '../utils/exportWord';
 
 interface AttendanceTrackerProps {
   isAuthenticated: boolean;
@@ -153,12 +154,11 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
       const faculty = FACULTIES.find(f => f.id === groupConfig.facultyId) || FACULTIES[0];
       
       toast.info('Формирование Word отчета пропусков...');
-      const { exportAttendanceToWord } = await import('../utils/exportWord');
       await exportAttendanceToWord(records, students, groupConfig, faculty);
       toast.success('Официальный отчет в Word выгружен!');
     } catch (error) {
       console.error('Export error:', error);
-      toast.error('Не удалось сформировать Word документ');
+      toast.error('Не удалось сформировать Word документ: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setIsExporting(false);
     }
@@ -198,10 +198,10 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-16">
       {/* Top Header Bar with Export Button */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">Журнал посещаемости</h2>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Группа: <span className="font-semibold text-indigo-600 dark:text-indigo-400">{AVAILABLE_GROUPS.find(g => g.id === currentGroupId)?.name || currentGroupId}</span> • Режим: <span className="font-bold uppercase text-indigo-600 dark:text-indigo-400">{userRole}</span>
           </p>
         </div>
@@ -209,7 +209,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
         <button
           onClick={handleExportWord}
           disabled={isExporting}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl transition-all shadow-md shadow-emerald-200 dark:shadow-none w-full sm:w-auto"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl transition-all shadow-xs w-full sm:w-auto cursor-pointer disabled:opacity-60"
         >
           <Download className="w-4 h-4" />
           <span>{isExporting ? 'Формирование...' : 'Выгрузить Word (.docx)'}</span>
@@ -217,33 +217,33 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
       </div>
 
       {/* Mode Navigation Tabs */}
-      <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl">
+      <div className="flex bg-slate-200/70 dark:bg-slate-800 p-1 rounded-2xl border border-slate-200/60 dark:border-transparent">
         <button
           onClick={() => setActiveTab('mark')}
-          className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all ${
+          className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
             activeTab === 'mark'
-              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
         >
           Отметить н-ки
         </button>
         <button
           onClick={() => setActiveTab('report')}
-          className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all ${
+          className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
             activeTab === 'report'
-              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
         >
           Отчет (часы пропусков)
         </button>
         <button
           onClick={() => setActiveTab('details')}
-          className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all ${
+          className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
             activeTab === 'details'
-              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
           }`}
         >
           Сводка по парам
@@ -253,7 +253,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
       {/* TAB 1: MARK ATTENDANCE */}
       {activeTab === 'mark' && (
         <div className="space-y-6">
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <div className="flex flex-col">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Выберите дату занятий</label>
               <input 
@@ -269,7 +269,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
           </div>
 
           {lessons.length === 0 ? (
-            <div className="p-8 text-center text-slate-400 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800">
+            <div className="p-8 text-center text-slate-400 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
               В этот день по расписанию нет пар.
             </div>
           ) : (
@@ -292,8 +292,8 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
                         isCancelled
                           ? 'border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50 opacity-60'
                           : isSelected 
-                            ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 ring-2 ring-indigo-500/50' 
-                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-300'
+                            ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 ring-2 ring-indigo-500/50 shadow-xs' 
+                            : 'border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-300 shadow-2xs'
                       }`}
                     >
                       <div className="flex justify-between items-start mb-1">
@@ -322,8 +322,8 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
               {/* Student Marking Area */}
               <div className="lg:col-span-2">
                 {selectedLesson ? (
-                  <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
-                    <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex flex-wrap justify-between items-center gap-2">
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs">
+                    <div className="p-4 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/50 flex flex-wrap justify-between items-center gap-2">
                       <div>
                         <h3 className="font-bold text-sm text-slate-900 dark:text-white">Отметка посещаемости</h3>
                         <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-0.5 font-medium">
@@ -351,7 +351,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
                       </div>
                     )}
 
-                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                    <div className="divide-y divide-slate-200/80 dark:divide-slate-800">
                       {students.map((student, idx) => {
                         const record = getAttendance(selectedDate, selectedLesson.id);
                         const isExcused = (record.excusedStudentIds || []).includes(student.id);
@@ -424,7 +424,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="p-12 text-center text-slate-400 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800">
+                  <div className="p-12 text-center text-slate-400 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs">
                     <ClipboardCheck className="w-10 h-10 mx-auto mb-2 text-indigo-400" />
                     Выберите пару из списка слева, чтобы проставить посещаемость студентам.
                   </div>
@@ -437,7 +437,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
 
       {/* TAB 2: MONTHLY REPORT (HOURS ABSENT & WORD EXPORT) */}
       {activeTab === 'report' && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden p-6 space-y-6 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 overflow-hidden p-6 space-y-6 shadow-xs">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h3 className="font-bold text-base text-slate-900 dark:text-white">Сводка пропусков по 4 блокам</h3>
@@ -464,7 +464,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-slate-200/80 dark:divide-slate-800">
                 {reportData.map((row, idx) => (
                   <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
                     <td className="p-3 font-bold text-slate-400">{idx + 1}</td>
@@ -486,7 +486,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
 
       {/* TAB 3: PAIR DETAILS TABLE */}
       {activeTab === 'details' && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden p-6 space-y-4 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 overflow-hidden p-6 space-y-4 shadow-xs">
           <div className="flex justify-between items-center">
             <h3 className="font-bold text-base text-slate-900 dark:text-white">Сводная таблица по всем занятиям</h3>
             <span className="text-xs text-slate-400">Всего студентов: {students.length}</span>
@@ -503,7 +503,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
                   <th className="p-3 text-center">Итого пропусков</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-slate-200/80 dark:divide-slate-800">
                 {reportData.map((row, idx) => {
                   const totalAbs = row.totalAllTimeAbs;
                   const totalExc = row.totalAllTimeExc;
