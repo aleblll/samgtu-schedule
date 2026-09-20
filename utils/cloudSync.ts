@@ -519,3 +519,23 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
   const results = await Promise.allSettled(promises);
   return results.every(r => r.status === 'fulfilled' && r.value === true);
 };
+
+/**
+ * Fetches official SamGTU schedule via Cloudflare Worker proxy (CORS safe).
+ */
+export const fetchOfficialSamgtuSchedule = async (samgtuGroupId: number, weekNumber: number = 1): Promise<any> => {
+  const url = `${WORKER_BASE}/samgtu-schedule?groupId=${samgtuGroupId}&week=${weekNumber}`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
+      }
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    console.warn('[cloudSync] Failed to fetch official SamGTU schedule:', e);
+    return null;
+  }
+};

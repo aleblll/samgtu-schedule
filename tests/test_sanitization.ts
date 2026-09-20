@@ -1,0 +1,196 @@
+/**
+ * QA Suite: Mass Assignment Protection, Strict DTO Whitelisting & Upload Rate Limiting
+ * Tests that unexpected/injected fields (e.g., 'role', 'is_admin', backdoor properties)
+ * are strictly stripped from all cloud payloads before saving to the database.
+ */
+
+import worker, {
+  sanitizeHomeworkItem,
+  sanitizeAttendanceRecord,
+  sanitizeScheduleOverride,
+  sanitizeSyncPayload,
+  isUploadRateLimited,
+  recordUploadSent,
+  clearWorkerRateLimits
+} from '../cloudflare-worker.js';
+
+let passCount = 0;
+let failCount = 0;
+
+function check(label: string, condition: boolean, detail?: string) {
+  if (condition) {
+    passCount++;
+    console.log(`  [PASS] ${label}${detail ? ` (${detail})` : ''}`);
+  } else {
+    failCount++;
+    console.error(`  [FAIL] ${label}${detail ? ` (${detail})` : ''}`);
+  }
+}
+
+console.log('================================================================');
+console.log('     QA SUITE: MASS ASSIGNMENT & STRICT DTO SANITIZATION        ');
+console.log('================================================================\n');
+
+async function runSanitizationTests() {
+  // --- 1. Homework Item Sanitization (Stripping Injected Fields) ---
+  console.log('--- 1. Homework DTO Validation ---');
+  const maliciousHw = {
+    id: 'hw-101',
+    groupId: 'ingt-310',
+    subject: 'Математика',
+    title: 'ДЗ №1',
+    description: 'Решить задачи',
+    assignedDate: '2026-09-20',
+    dueDate: '2026-09-25',
+    attachments: [
+      { name: 'task.pdf', type: 'pdf', size: 1024, url: 'https://example.com/file', backdoor: 'malicious' }
+    ],
+    createdAt: '2026-09-20T04:00:00.000Z',
+    // Injected fields (Mass Assignment attempt)
+    role: 'admin',
+    isAdmin: true,
+    secretToken: 'stolen_token',
+    __proto__: { polluted: true }
+  };
+
+  const cleanHw = sanitizeHomeworkItem(maliciousHw);
+  check('Valid fields preserved in homework', cleanHw !== null && cleanHw.title === 'ДЗ №1' && cleanHw.subject === 'Математика');
+  check('Injected "role" stripped from homework', (cleanHw as any).role === undefined);
+  check('Injected "isAdmin" stripped from homework', (cleanHw as any).isAdmin === undefined);
+  check('Injected "secretToken" stripped from homework', (cleanHw as any).secretToken === undefined);
+  check('Attachment extra fields stripped', (cleanHw as any).attachments[0].backdoor === undefined);
+
+  // --- 2. Attendance Record Sanitization ---
+  console.log('\n--- 2. Attendance DTO Validation ---');
+  const maliciousAtt = {
+    studentId: 15,
+    lessonId: '310-w1-mo-1',
+    status: 'present',
+    date: '2026-09-20',
+    groupId: 'ingt-310',
+    updatedAt: 1726800000000,
+    // Injected fields
+    isSuperuser: true,
+    bypassPayment: true,
+    fakeGrade: 5
+  };
+
+  const cleanAtt = sanitizeAttendanceRecord(maliciousAtt);
+  check('Valid attendance status preserved', cleanAtt !== null && cleanAtt.status === 'present' && cleanAtt.studentId === 15);
+  check('Injected "isSuperuser" stripped from attendance', (cleanAtt as any).isSuperuser === undefined);
+  check('Injected "bypassPayment" stripped from attendance', (cleanAtt as any).bypassPayment === undefined);
+  check('Injected "fakeGrade" stripped from attendance', (cleanAtt as any).fakeGrade === undefined);
+
+  // Invalid status test
+  const invalidStatusAtt = sanitizeAttendanceRecord({ ...maliciousAtt, status: 'HACKED_STATUS' });
+  check('Invalid status sanitized to empty string', invalidStatusAtt !== null && invalidStatusAtt.status === '');
+
+  // --- 3. Schedule Override Sanitization ---
+  console.log('\n--- 3. Schedule Override DTO Validation ---');
+  const maliciousOverride = {
+    subject: 'Высшая математика',
+    location: 'Корпус № 1, 401',
+    teacher: 'Иванов И.И.',
+    isCancelled: true,
+    note: 'Перенос пары',
+    // Injected fields
+    deleteWholeDatabase: true,
+    executeCommand: 'rm -rf /'
+  };
+
+  const cleanOv = sanitizeScheduleOverride(maliciousOverride);
+  check('Valid override fields preserved', cleanOv !== null && cleanOv.subject === 'Высшая математика' && cleanOv.isCancelled === true);
+  check('Injected "deleteWholeDatabase" stripped', (cleanOv as any).deleteWholeDatabase === undefined);
+  check('Injected "executeCommand" stripped', (cleanOv as any).executeCommand === undefined);
+
+  // --- 4. Full Sync Payload Sanitization (Nested & byGroup) ---
+  console.log('\n--- 4. Full Sync Payload Structure Sanitization ---');
+  const fullPayload = {
+    byGroup: {
+      'ingt-310': {
+        items: [maliciousHw],
+        deletedIds: ['del-1', 'del-2'],
+        unauthorizedField: 'attacker_value'
+      }
+    },
+    injectedTopLevel: 'malicious'
+  };
+
+  const cleanFull = sanitizeSyncPayload('homework', fullPayload);
+  check('Top level injected field stripped', (cleanFull as any).injectedTopLevel === undefined);
+  check('byGroup group preserved', cleanFull.byGroup && cleanFull.byGroup['ingt-310'] !== undefined);
+  check('Group level unauthorizedField stripped', (cleanFull.byGroup['ingt-310'] as any).unauthorizedField === undefined);
+  check('Inner item stripped of injection', (cleanFull.byGroup['ingt-310'].items[0] as any).role === undefined);
+
+  // --- 5. Upload Rate Limiting (Anti-DoS) ---
+  console.log('\n--- 5. Upload Rate Limiting (Anti-DoS) ---');
+  clearWorkerRateLimits();
+
+  const t0 = 1000000;
+  check('1st upload allowed', !isUploadRateLimited(t0));
+  recordUploadSent(t0);
+
+  check('2nd upload allowed', !isUploadRateLimited(t0 + 5000));
+  recordUploadSent(t0 + 5000);
+
+  check('3rd upload allowed', !isUploadRateLimited(t0 + 10000));
+  recordUploadSent(t0 + 10000);
+
+  check('4th upload throttled (exceeded max 3/min)', isUploadRateLimited(t0 + 15000));
+
+  // After 61 seconds window expires
+  check('Upload allowed after 1 minute cooldown', !isUploadRateLimited(t0 + 62000));
+
+  // --- 6. End-to-End Worker PUT /sync Test ---
+  console.log('\n--- 6. End-to-End Worker PUT /sync Request Handling ---');
+  const originalFetch = globalThis.fetch;
+  let forwardedBody: any = null;
+
+  globalThis.fetch = async (input: any, init?: any): Promise<any> => {
+    if (init?.body) {
+      forwardedBody = JSON.parse(init.body);
+    }
+    return new Response(JSON.stringify({ status: 'success' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  };
+
+  const req = new Request('https://worker.test/sync/attendance', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      byGroup: {
+        'ingt-310': {
+          records: [maliciousAtt],
+          hackField: 'evil'
+        }
+      },
+      topHack: 'evil'
+    })
+  });
+
+  const res = await worker.fetch(req, {});
+  check('Worker PUT /sync returns HTTP 200', res.status === 200);
+  check('Forwarded body stripped of topHack', forwardedBody && forwardedBody.topHack === undefined);
+  check('Forwarded body stripped of hackField in group', forwardedBody && forwardedBody.byGroup['ingt-310'].hackField === undefined);
+  check('Forwarded attendance record stripped of isSuperuser', forwardedBody && forwardedBody.byGroup['ingt-310'].records[0].isSuperuser === undefined);
+
+  // Restore fetch
+  globalThis.fetch = originalFetch;
+
+  console.log('\n================================================================');
+  console.log(`TOTAL SANITIZATION TESTS: ${passCount + failCount}`);
+  console.log(`PASSED: ${passCount}`);
+  console.log(`FAILED: ${failCount}`);
+  console.log('================================================================\n');
+
+  if (failCount > 0) {
+    process.exit(1);
+  }
+}
+
+runSanitizationTests().catch(err => {
+  console.error('Fatal test error:', err);
+  process.exit(1);
+});

@@ -1,4 +1,4 @@
-import { SCHEDULE_REGISTRY, GROUP_STAROSTA_PINS, AVAILABLE_GROUPS } from '../constants';
+import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS } from '../constants';
 import { getSeedSubjectTeachers, SEED_SUBJECT_TEACHERS_BY_GROUP } from '../defaultData';
 import { sanitizeTeachers, sanitizeOverrides } from '../utils/cloudSync';
 import { getSemesterWeek, getSamaraISODate, getDayISODate } from '../attendance';

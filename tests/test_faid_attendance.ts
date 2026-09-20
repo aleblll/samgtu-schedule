@@ -1,4 +1,5 @@
-import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, GROUP_STAROSTA_PINS, ADMIN_PIN } from '../constants';
+import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS } from '../constants';
+import { verifyPinCode } from '../utils/auth';
 import { STUDENTS_REGISTRY, BLOCKS, getDayISODate, AttendanceRecord } from '../attendance';
 import { UserRole, Lesson } from '../types';
 
@@ -29,8 +30,11 @@ console.log("-------------------------------------------------------------------
 console.log("1. STAROSTA PIN 110 & AUTHORIZATION VERIFICATION (faid-310)");
 console.log("--------------------------------------------------------------------------------");
 
-// 1.1 Check GROUP_STAROSTA_PINS entry
-assert(GROUP_STAROSTA_PINS['faid-310'] === '110', "GROUP_STAROSTA_PINS['faid-310'] is configured to '110'");
+// 1.1 Verify Starosta and Admin PIN via verifyPinCode
+const authStarostaFaid = await verifyPinCode('381952');
+assert(authStarostaFaid !== null && authStarostaFaid.role === 'starosta' && authStarostaFaid.targetGroupId === 'faid-310', "verifyPinCode('381952') authorizes 3-ФАИД-110 (faid-310) starosta");
+const authAdmin = await verifyPinCode('94726108');
+assert(authAdmin !== null && authAdmin.role === 'admin', "verifyPinCode('94726108') authorizes global admin");
 
 // 1.2 Simulate PIN Authentication Logic from App.tsx
 function simulateQuickPinLogin(inputPin: string, currentGroupId: string) {
@@ -39,7 +43,7 @@ function simulateQuickPinLogin(inputPin: string, currentGroupId: string) {
   let starostaGroupId: string | null = null;
   let activeGroupId = currentGroupId;
 
-  if (pin === ADMIN_PIN) {
+  if (pin === '94726108') {
     userRole = 'admin';
     starostaGroupId = null;
   } else if (pin === '101') {

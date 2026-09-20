@@ -32,3 +32,12 @@ android/capacitor-cordova-android-plugins/.gradle
 *.apk
 *.png
 antigravity-mobile/
+
+# Environment variables and secrets
+.env
+.env.*
+*.env
+.env.local
+
+# External projects
+vpn-deploy/

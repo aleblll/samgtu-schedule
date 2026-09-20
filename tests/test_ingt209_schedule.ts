@@ -1,4 +1,5 @@
-import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, GROUP_STAROSTA_PINS } from '../constants';
+import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS } from '../constants';
+import { verifyPinCode } from '../utils/auth';
 import { STUDENTS_REGISTRY } from '../attendance';
 
 let totalTests = 0;
@@ -30,9 +31,8 @@ assert(groupConfig?.course === 2, "Group course is 2");
 
 // 2. STAROSTA PIN
 console.log("\n--- 2. Starosta PIN Code ---");
-assert(GROUP_STAROSTA_PINS['ingt-209'] === '109', "PIN for 'ingt-209' is '109'");
-assert(GROUP_STAROSTA_PINS['2-ingt-109'] === '109', "Alias PIN for '2-ingt-109' is '109'");
-assert(GROUP_STAROSTA_PINS['ingt-109'] === '109', "Alias PIN for 'ingt-109' is '109'");
+const auth209 = await verifyPinCode('925483');
+assert(auth209 !== null && auth209.role === 'starosta' && auth209.targetGroupId === 'ingt-209', "verifyPinCode for '925483' authorizes as starosta for 'ingt-209'");
 
 // 3. STUDENT ROSTER (Empty as requested)
 console.log("\n--- 3. Student Roster ---");

@@ -3,6 +3,8 @@
  * Ring buffer capped at 150 entries with automatic error interception and system diagnostics.
  */
 
+import { sendCrashReport } from './telemetry';
+
 export type LogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'ACTION';
 
 export interface LogEntry {
@@ -169,15 +171,31 @@ export class InAppLogger {
         colno: event.colno,
         stack: event.error?.stack
       });
+      try {
+        sendCrashReport({
+          component: 'window.onerror',
+          message: event.message || 'Uncaught window error',
+          stack: event.error?.stack || (event.filename ? `${event.filename}:${event.lineno}:${event.colno}` : undefined)
+        });
+      } catch {}
     });
 
     // 2. window.onunhandledrejection
     window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
       const reason = event.reason;
-      this.error('NETWORK', `Unhandled Promise Rejection: ${reason?.message || reason}`, {
-        reason: reason?.message || String(reason),
-        stack: reason?.stack
+      const errorMsg = reason instanceof Error ? reason.message : (reason?.message || String(reason || 'Unhandled Promise Rejection'));
+      const errorStack = reason instanceof Error ? reason.stack : reason?.stack;
+      this.error('NETWORK', `Unhandled Promise Rejection: ${errorMsg}`, {
+        reason: errorMsg,
+        stack: errorStack
       });
+      try {
+        sendCrashReport({
+          component: 'window.onunhandledrejection',
+          message: errorMsg,
+          stack: errorStack
+        });
+      } catch {}
     });
 
     // 3. Monkey-patch console.error and console.warn
@@ -272,3 +290,6 @@ export const getSystemDiagnostics = (): SystemDiagnostics => {
     errorLogsCount
   };
 };
+
+export { sendCrashReport } from './telemetry';
+

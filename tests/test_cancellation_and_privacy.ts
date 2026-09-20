@@ -1,4 +1,5 @@
-import { SCHEDULE_REGISTRY, GROUP_STAROSTA_PINS } from '../constants';
+import { SCHEDULE_REGISTRY } from '../constants';
+import { verifyPinCode } from '../utils/auth';
 import { getDayISODate } from '../attendance';
 import { sanitizeTeachers } from '../utils/cloudSync';
 import { Lesson } from '../types';
@@ -50,10 +51,12 @@ const sanitized311 = sanitizeTeachers({
 assert(!sanitized311['Техника и технология бурения нефтегазовых скважин'], 'sanitizeTeachers does not contaminate ingt-311 with бурение');
 assert(!sanitized311['Конструирование и расчет сосудов'], 'sanitizeTeachers does not contaminate ingt-311 with сосуды');
 
-// 2. Check PIN 111 for 3-ИНГТ-111
-console.log('\n--- 2. Starosta PIN 111 Authentication ---');
-assert(GROUP_STAROSTA_PINS['ingt-311'] === '111', 'GROUP_STAROSTA_PINS maps ingt-311 to 111');
-assert(GROUP_STAROSTA_PINS['3-ингт-111'] === '111', 'GROUP_STAROSTA_PINS maps 3-ингт-111 to 111');
+// 2. Check PIN for 3-ИНГТ-111 via cryptographic verifyPinCode
+console.log('\n--- 2. Starosta PIN Authentication ---');
+const auth311 = await verifyPinCode('572916');
+assert(auth311 !== null && auth311.role === 'starosta' && auth311.targetGroupId === 'ingt-311', 'verifyPinCode authorizes 3-ИНГТ-111 starosta correctly');
+const invalidAuth = await verifyPinCode('000000');
+assert(invalidAuth === null, 'verifyPinCode rejects invalid PIN');
 
 // 3. Check Lesson Cancellation Logic
 console.log('\n--- 3. Lesson Cancellation & Restoration ---');

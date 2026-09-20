@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, FACULTIES, ADMIN_PIN, GROUP_STAROSTA_PINS, createEmptyWeek } from './constants';
+import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, FACULTIES, createEmptyWeek } from './constants';
 import { getSemesterWeek, getWeekDateRange, getDayISODate, useAttendance, getSamaraDate, getSamaraISODate } from './attendance';
 import AttendanceTracker from './components/AttendanceTracker';
 import HomeworkTracker from './components/HomeworkTracker';
@@ -17,6 +17,7 @@ import { TeacherAssignmentScope } from './components/EditLessonModal';
 import { fetchGroupCloudData, pushGroupCloudData, sanitizeTeachers, sanitizeOverrides } from './utils/cloudSync';
 import { SEED_SCHEDULE_OVERRIDES, SEED_SUBJECT_TEACHERS, getSeedSubjectTeachers } from './defaultData';
 import { ScheduleImportModal } from './components/ScheduleImportModal';
+import { verifyPinCode } from './utils/auth';
 import BugReportModal from './components/BugReportModal';
 import DebugLogsModal from './components/DebugLogsModal';
 import { logger } from './utils/logger';
@@ -531,88 +532,35 @@ const App: React.FC = () => {
     setTimeout(() => setIsRefreshing(false), 500);
   };
 
-  const handleQuickPinLogin = () => {
-    const pin = quickPin.trim().toLowerCase();
-    if (pin === ADMIN_PIN) {
-      setUserRole('admin');
-      setStarostaGroupId(null);
-      localStorage.removeItem('starosta_group_id');
-      toast.success('Активирован режим ГЛАВНОГО АДМИНИСТРАТОРА (все группы)');
-      setQuickPin('');
-    } else if (pin === '111' || pin === '3111' || pin === 'ingt111') {
-      setUserRole('starosta');
-      setStarostaGroupId('ingt-311');
-      localStorage.setItem('starosta_group_id', 'ingt-311');
-      setCurrentGroupId('ingt-311');
-      localStorage.setItem('my_group_id', 'ingt-311');
-      setBoundGroupId('ingt-311');
-      toast.success('Активирован режим СТАРОСТЫ (3-ИНГТ-111)');
-      setQuickPin('');
-    } else if (pin === '101') {
-      setUserRole('starosta');
-      setStarostaGroupId('ingt-301');
-      localStorage.setItem('starosta_group_id', 'ingt-301');
-      setCurrentGroupId('ingt-301');
-      localStorage.setItem('my_group_id', 'ingt-301');
-      setBoundGroupId('ingt-301');
-      toast.success('Активирован режим СТАРОСТЫ (3-ИНГТ-101)');
-      setQuickPin('');
-    } else if (pin === '103') {
-      setUserRole('starosta');
-      setStarostaGroupId('ingt-303');
-      localStorage.setItem('starosta_group_id', 'ingt-303');
-      setCurrentGroupId('ingt-303');
-      localStorage.setItem('my_group_id', 'ingt-303');
-      setBoundGroupId('ingt-303');
-      toast.success('Активирован режим СТАРОСТЫ (3-ИНГТ-103)');
-      setQuickPin('');
-    } else if (pin === '110') {
-      setUserRole('starosta');
-      if (currentGroupId === 'faid-310' || currentGroupId === 'faid-110') {
-        setStarostaGroupId('faid-310');
-        localStorage.setItem('starosta_group_id', 'faid-310');
-        setCurrentGroupId('faid-310');
-        localStorage.setItem('my_group_id', 'faid-310');
-        setBoundGroupId('faid-310');
-        toast.success('Активирован режим СТАРОСТЫ (3-ФАИД-110)');
-      } else {
-        setStarostaGroupId('ingt-310');
-        localStorage.setItem('starosta_group_id', 'ingt-310');
-        setCurrentGroupId('ingt-310');
-        localStorage.setItem('my_group_id', 'ingt-310');
-        setBoundGroupId('ingt-310');
-        toast.success('Активирован режим СТАРОСТЫ (3-ИНГТ-110)');
+  const handleQuickPinLogin = async () => {
+    const pin = quickPin.trim();
+    if (!pin) return;
+
+    try {
+      const authRes = await verifyPinCode(pin);
+      if (!authRes) {
+        toast.error('Неверный PIN-код доступа');
+        return;
       }
-      setQuickPin('');
-    } else if (pin === '115' || pin === '2115' || pin === 'htf115' || pin === 'хтф115') {
-      setUserRole('starosta');
-      setStarostaGroupId('htf-215');
-      localStorage.setItem('starosta_group_id', 'htf-215');
-      setCurrentGroupId('htf-215');
-      localStorage.setItem('my_group_id', 'htf-215');
-      setBoundGroupId('htf-215');
-      toast.success('Активирован режим СТАРОСТЫ (2-ХТФ-115)');
-      setQuickPin('');
-    } else if (pin === '109' || pin === '2109' || pin === 'ingt109') {
-      setUserRole('starosta');
-      setStarostaGroupId('ingt-209');
-      localStorage.setItem('starosta_group_id', 'ingt-209');
-      setCurrentGroupId('ingt-209');
-      localStorage.setItem('my_group_id', 'ingt-209');
-      setBoundGroupId('ingt-209');
-      toast.success('Активирован режим СТАРОСТЫ (2-ИНГТ-109)');
-      setQuickPin('');
-    } else if (pin === 'faid110' || pin === '3110') {
-      setUserRole('starosta');
-      setStarostaGroupId('faid-310');
-      localStorage.setItem('starosta_group_id', 'faid-310');
-      setCurrentGroupId('faid-310');
-      localStorage.setItem('my_group_id', 'faid-310');
-      setBoundGroupId('faid-310');
-      toast.success('Активирован режим СТАРОСТЫ (3-ФАИД-110)');
-      setQuickPin('');
-    } else {
-      toast.error('Неверный PIN-код доступа');
+
+      if (authRes.role === 'admin') {
+        setUserRole('admin');
+        setStarostaGroupId(null);
+        localStorage.removeItem('starosta_group_id');
+        toast.success('Активирован режим ГЛАВНОГО АДМИНИСТРАТОРА (все группы)');
+        setQuickPin('');
+      } else if (authRes.role === 'starosta' && authRes.targetGroupId) {
+        setUserRole('starosta');
+        setStarostaGroupId(authRes.targetGroupId);
+        localStorage.setItem('starosta_group_id', authRes.targetGroupId);
+        setCurrentGroupId(authRes.targetGroupId);
+        localStorage.setItem('my_group_id', authRes.targetGroupId);
+        setBoundGroupId(authRes.targetGroupId);
+        toast.success(`Активирован режим СТАРОСТЫ (${authRes.groupName || authRes.targetGroupId})`);
+        setQuickPin('');
+      }
+    } catch {
+      toast.error('Ошибка проверки PIN-кода');
     }
   };
 
@@ -1323,9 +1271,8 @@ const App: React.FC = () => {
               <div className="flex gap-2">
                 <input
                   type="password"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={6}
+                  inputMode="text"
+                  maxLength={16}
                   value={quickPin}
                   onChange={(e) => setQuickPin(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleQuickPinLogin()}

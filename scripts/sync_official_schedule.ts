@@ -11,15 +11,8 @@ const __dirname = path.dirname(__filename);
 const CONSTANTS_PATH = path.resolve(__dirname, '../constants.ts');
 
 // 1. Фиксированный реестр групп (исключает путаницу ID)
-export const SAMGTU_GROUP_MAP: Record<string, { name: string; samgtuName: string; samgtuGroupId: number }> = {
-  'ingt-310': { name: '3-ИНГТ-110', samgtuName: 'Группа 24ИНГТ-110', samgtuGroupId: 31647 },
-  'ingt-311': { name: '3-ИНГТ-111', samgtuName: 'Группа 24ИНГТ-111', samgtuGroupId: 31663 },
-  'faid-310': { name: '3-ФАИД-110', samgtuName: 'Группа 24ФАД-110', samgtuGroupId: 31745 },
-  'ingt-301': { name: '3-ИНГТ-101', samgtuName: 'Группа 24ИНГТ-101', samgtuGroupId: 31661 },
-  'ingt-303': { name: '3-ИНГТ-103', samgtuName: 'Группа 24ИНГТ-103', samgtuGroupId: 31659 },
-  'ingt-209': { name: '2-ИНГТ-109', samgtuName: 'Группа 25ИНГТ-109', samgtuGroupId: 32385 },
-  'htf-215':  { name: '2-ХТФ-115',  samgtuName: 'Группа 25ХТФ-115',  samgtuGroupId: 32410 }
-};
+import { SAMGTU_GROUP_MAP } from '../utils/samgtuGroupMap';
+export { SAMGTU_GROUP_MAP };
 
 // Звонки СамГТУ
 export const TIME_SLOTS: Record<string, { timeStart: string; timeEnd: string }> = {
@@ -135,6 +128,11 @@ export function findExistingTeacher(groupId: string, subject: string, type: stri
     }
     return '';
   };
+
+  // Для группы 111 все преподаватели строго пустые по умолчанию
+  if (groupId === 'ingt-311') {
+    return '';
+  }
 
   // Для групп 101 и 103 Колибасов НЕ ведет проект и патенты (только 110)
   if ((groupId === 'ingt-301' || groupId === 'ingt-303') && (normSubj.includes('проект') || normSubj.includes('патентовед'))) {
@@ -314,10 +312,13 @@ export async function verifyAndSync() {
         existingLessonsCount += curLessons.length;
 
         // 31 августа - понедельник 1-й недели. Учеба начинается со вторника 1 сентября.
-        // В официальном реестре СамГТУ на 31 августа 0 пар. Оставляем как в СамГТУ (0 пар).
+        // Для 4-недельного цикла сохраняем пары понедельника числителя.
         const offLessons: Lesson[] = [];
 
-        if (offDay && offDay.at) {
+        if (weekNum === 1 && dayIdx === 1 && curLessons.length > 0) {
+          offLessons.push(...curLessons);
+          officialLessonsCount += curLessons.length;
+        } else if (offDay && offDay.at) {
           const sortedSlots = Object.entries(offDay.at as Record<string, any>)
             .map(([slotKey, slotData]) => ({ slotKey: Number(slotKey), slotData }))
             .sort((a, b) => a.slotKey - b.slotKey);
@@ -409,7 +410,7 @@ export async function verifyAndSync() {
     }
 
     // 2. Update remaining groups
-    for (const groupId of ['faid-310', 'ingt-301', 'ingt-303', 'ingt-209', 'htf-215']) {
+    for (const groupId of ['faid-310', 'ingt-311', 'ingt-301', 'ingt-303', 'ingt-209', 'htf-215']) {
       if (updatedSchedules[groupId]) {
         const serialized = serializeGroupSchedule(groupId, updatedSchedules[groupId]);
         const groupPattern = new RegExp('SCHEDULE_REGISTRY\\x5b\x27' + groupId + '\x27\\x5d\\s*=\\s*\\{[^]*?\\n\\};', 'm');
@@ -431,7 +432,9 @@ export async function verifyAndSync() {
 }
 
 // Запуск
-verifyAndSync().catch(err => {
-  console.error('Ошибка выполнения verifyAndSync:', err);
-  process.exit(1);
-});
+if (process.argv[1] && (process.argv[1].endsWith('sync_official_schedule.ts') || process.argv[1].endsWith('sync_official_schedule.js') || process.argv[1].includes('sync_official_schedule'))) {
+  verifyAndSync().catch(err => {
+    console.error('Ошибка выполнения verifyAndSync:', err);
+    process.exit(1);
+  });
+}

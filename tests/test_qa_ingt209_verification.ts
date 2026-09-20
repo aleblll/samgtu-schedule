@@ -3,7 +3,8 @@
  * Run with: npx tsx tests/test_qa_ingt209_verification.ts
  */
 
-import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, GROUP_STAROSTA_PINS, ADMIN_PIN } from '../constants';
+import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS } from '../constants';
+import { verifyPinCode } from '../utils/auth';
 import { STUDENTS_REGISTRY } from '../attendance';
 import { SEED_SUBJECT_TEACHERS_BY_GROUP } from '../defaultData';
 
@@ -233,10 +234,11 @@ check("Неделя 4 по расписанию, времени, типам и �
 // ============================================================================
 // SECTION 7: STAROSTA AUTHENTICATION BY PIN 109
 // ============================================================================
-console.log("\n>>> 7. Авторизация старосты по PIN 109 (GROUP_STAROSTA_PINS, App.tsx, AdminPanel)");
-check("GROUP_STAROSTA_PINS['ingt-209'] === '109'", GROUP_STAROSTA_PINS['ingt-209'] === '109', `PIN: ${GROUP_STAROSTA_PINS['ingt-209']}`);
-check("GROUP_STAROSTA_PINS['2-ingt-109'] === '109' (алиас)", GROUP_STAROSTA_PINS['2-ingt-109'] === '109');
-check("GROUP_STAROSTA_PINS['ingt-109'] === '109' (алиас)", GROUP_STAROSTA_PINS['ingt-109'] === '109');
+console.log("\n>>> 7. Авторизация старосты по PIN 925483 (verifyPinCode, App.tsx, AdminPanel)");
+const auth209 = await verifyPinCode('925483');
+check("verifyPinCode('925483') авторизует старосту 2-ИНГТ-109", auth209 !== null && auth209.role === 'starosta' && auth209.targetGroupId === 'ingt-209');
+const authAdmin = await verifyPinCode('94726108');
+check("verifyPinCode('94726108') авторизует главного администратора", authAdmin !== null && authAdmin.role === 'admin');
 
 // Моделирование логики App.tsx handleQuickPinLogin
 function simulateAppQuickPinLogin(inputPin: string) {
@@ -247,7 +249,7 @@ function simulateAppQuickPinLogin(inputPin: string) {
   let boundGroupId: string | null = null;
   let toastMsg = '';
 
-  if (pin === ADMIN_PIN) {
+  if (pin === '94726108') {
     userRole = 'admin';
     starostaGroupId = null;
     toastMsg = 'Активирован режим ГЛАВНОГО АДМИНИСТРАТОРА (все группы)';

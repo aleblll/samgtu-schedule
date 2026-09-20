@@ -248,7 +248,8 @@ export const SCHEDULE_REGISTRY: Registry<WeekData> = {
       {
         dayName: 'Вторник',
         lessons: [
-          { id: '310-w4-tu-1', timeStart: '09:45', timeEnd: '11:20', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 1, 4", teacher: "Колибасов Владимир Александрович" }
+          { id: '310-w4-tu-1', timeStart: '09:45', timeEnd: '11:20', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 1, 4", teacher: "Колибасов Владимир Александрович" },
+          { id: '310-w4-tu-2', timeStart: '11:50', timeEnd: '13:25', subject: "Актуальные вопросы профессиональной деятельности и построение карьеры", type: 'Лекции', location: "Корпус № 7, 793", teacher: "" }
         ]
       },
       {
@@ -453,7 +454,8 @@ SCHEDULE_REGISTRY['ingt-301'] = {
     {
       dayName: 'Вторник',
       lessons: [
-        { id: 'ingt301-w4-tu-1', timeStart: '09:45', timeEnd: '11:20', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 1, 225", teacher: "" }
+        { id: 'ingt301-w4-tu-1', timeStart: '09:45', timeEnd: '11:20', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 1, 225", teacher: "" },
+        { id: 'ingt301-w4-tu-2', timeStart: '11:50', timeEnd: '13:25', subject: "Актуальные вопросы профессиональной деятельности и построение карьеры", type: 'Лекции', location: "Корпус № 7, 793", teacher: "" }
       ]
     },
     {
@@ -645,7 +647,8 @@ SCHEDULE_REGISTRY['ingt-303'] = {
     {
       dayName: 'Вторник',
       lessons: [
-        { id: 'ingt303-w4-tu-1', timeStart: '13:35', timeEnd: '15:10', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 9, 315", teacher: "" }
+        { id: 'ingt303-w4-tu-1', timeStart: '11:50', timeEnd: '13:25', subject: "Актуальные вопросы профессиональной деятельности и построение карьеры", type: 'Лекции', location: "Корпус № 7, 793", teacher: "" },
+        { id: 'ingt303-w4-tu-2', timeStart: '13:35', timeEnd: '15:10', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 9, 315", teacher: "" }
       ]
     },
     {
@@ -850,7 +853,8 @@ SCHEDULE_REGISTRY['faid-310'] = {
     {
       dayName: 'Вторник',
       lessons: [
-        { id: 'faid310-w4-tu-1', timeStart: '11:50', timeEnd: '13:25', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 13, 0603", teacher: "Смоленская Елена Олеговна" }
+        { id: 'faid310-w4-tu-1', timeStart: '09:45', timeEnd: '11:20', subject: "Актуальные вопросы профессиональной деятельности и построение карьеры", type: 'Лекции', location: "Корпус № 12, 527", teacher: "" },
+        { id: 'faid310-w4-tu-2', timeStart: '11:50', timeEnd: '13:25', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 13, 0603", teacher: "Смоленская Елена Олеговна" }
       ]
     },
     {
@@ -939,7 +943,7 @@ SCHEDULE_REGISTRY['ingt-209'] = {
     {
       dayName: 'Понедельник',
       lessons: [
-        { id: 'ingt209-w2-mo-1', timeStart: '08:00', timeEnd: '09:35', subject: "Математика", type: 'Лекции', location: "Корпус № 3, 61", teacher: "" },
+        { id: 'ingt209-w2-mo-1', timeStart: '08:00', timeEnd: '09:35', subject: "Математика", type: 'Лекции', location: "Корпус № 3, 54", teacher: "" },
         { id: 'ingt209-w2-mo-2', timeStart: '09:45', timeEnd: '11:20', subject: "Материаловедение и технологии конструкционных материалов", type: 'Лекции', location: "Корпус № 3, 54", teacher: "" },
         { id: 'ingt209-w2-mo-3', timeStart: '11:50', timeEnd: '13:25', subject: "Физика", type: 'Лабораторные работы', location: "Корпус № 1, 320", teacher: "" },
         { id: 'ingt209-w2-mo-4', timeStart: '13:35', timeEnd: '15:10', subject: "Физика", type: 'Лабораторные работы', location: "Корпус № 1, 320", teacher: "" }
@@ -1037,7 +1041,7 @@ SCHEDULE_REGISTRY['ingt-209'] = {
     {
       dayName: 'Понедельник',
       lessons: [
-        { id: 'ingt209-w4-mo-1', timeStart: '08:00', timeEnd: '09:35', subject: "Математика", type: 'Лекции', location: "Корпус № 3, 61", teacher: "" },
+        { id: 'ingt209-w4-mo-1', timeStart: '08:00', timeEnd: '09:35', subject: "Математика", type: 'Лекции', location: "Корпус № 3, 54", teacher: "" },
         { id: 'ingt209-w4-mo-2', timeStart: '09:45', timeEnd: '11:20', subject: "Материаловедение и технологии конструкционных материалов", type: 'Лекции', location: "Корпус № 3, 54", teacher: "" },
         { id: 'ingt209-w4-mo-3', timeStart: '11:50', timeEnd: '13:25', subject: "Основы нефтегазопромыслового дела", type: 'Лабораторные работы', location: "8ц корпус № 1", teacher: "" },
         { id: 'ingt209-w4-mo-4', timeStart: '13:35', timeEnd: '15:10', subject: "Основы нефтегазопромыслового дела", type: 'Лабораторные работы', location: "8ц корпус № 1", teacher: "" }
@@ -1326,7 +1330,7 @@ SCHEDULE_REGISTRY['ingt-311'] = {
     {
       dayName: 'Среда',
       lessons: [
-        { id: 'ingt311-w1-we-1', timeStart: '13:35', timeEnd: '15:10', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "аудитория", teacher: "" },
+        { id: 'ingt311-w1-we-1', timeStart: '13:35', timeEnd: '15:10', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "Спортивный комплекс", teacher: "" },
         { id: 'ingt311-w1-we-2', timeStart: '15:40', timeEnd: '17:15', subject: "Компьютерное моделирование процессов и оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 1, 2", teacher: "" },
         { id: 'ingt311-w1-we-3', timeStart: '17:25', timeEnd: '19:00', subject: "Компьютерное моделирование процессов и оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 2", teacher: "" }
       ]
@@ -1334,17 +1338,17 @@ SCHEDULE_REGISTRY['ingt-311'] = {
     {
       dayName: 'Четверг',
       lessons: [
-        { id: 'ingt311-w1-th-1', timeStart: '08:00', timeEnd: '09:35', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3б, 208", teacher: "" },
-        { id: 'ingt311-w1-th-2', timeStart: '09:45', timeEnd: '11:20', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3б, 208", teacher: "" }
+        { id: 'ingt311-w1-th-1', timeStart: '08:00', timeEnd: '09:35', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3, 208", teacher: "" },
+        { id: 'ingt311-w1-th-2', timeStart: '09:45', timeEnd: '11:20', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3, 208", teacher: "" }
       ]
     },
     {
       dayName: 'Пятница',
       lessons: [
         { id: 'ingt311-w1-fr-1', timeStart: '09:45', timeEnd: '11:20', subject: "Теория колебаний и виброзащита оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 9, 409", teacher: "" },
-        { id: 'ingt311-w1-fr-2', timeStart: '11:50', timeEnd: '13:25', subject: "Научные исследования и опытно–конструкторские работы в области оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 1, 109", teacher: "" },
+        { id: 'ingt311-w1-fr-2', timeStart: '11:50', timeEnd: '13:25', subject: "Научные исследования и опытно-конструкторские работы в области оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 1, 109", teacher: "" },
         { id: 'ingt311-w1-fr-3', timeStart: '13:35', timeEnd: '15:10', subject: "Теория колебаний и виброзащита оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 2", teacher: "" },
-        { id: 'ingt311-w1-fr-4', timeStart: '15:40', timeEnd: '17:15', subject: "Научные исследования и опытно–конструкторские работы в области оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 109б", teacher: "" }
+        { id: 'ingt311-w1-fr-4', timeStart: '15:40', timeEnd: '17:15', subject: "Научные исследования и опытно-конструкторские работы в области оборудования нефтегазопереработки", type: 'Практические занятия', location: "109б корпус № 1", teacher: "" }
       ]
     },
     {
@@ -1359,16 +1363,16 @@ SCHEDULE_REGISTRY['ingt-311'] = {
     {
       dayName: 'Понедельник',
       lessons: [
-        { id: 'ingt311-w2-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Научные исследования и опытно–конструкторские работы в области оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 1, 109", teacher: "" },
+        { id: 'ingt311-w2-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Научные исследования и опытно-конструкторские работы в области оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 1, 109", teacher: "" },
         { id: 'ingt311-w2-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Теория колебаний и виброзащита оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 9, 409", teacher: "" },
         { id: 'ingt311-w2-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Теория колебаний и виброзащита оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 2", teacher: "" },
-        { id: 'ingt311-w2-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Научные исследования и опытно–конструкторские работы в области оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 109б", teacher: "" }
+        { id: 'ingt311-w2-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Научные исследования и опытно-конструкторские работы в области оборудования нефтегазопереработки", type: 'Практические занятия', location: "109б корпус № 1", teacher: "" }
       ]
     },
     {
       dayName: 'Вторник',
       lessons: [
-        { id: 'ingt311-w2-tu-1', timeStart: '11:50', timeEnd: '13:25', subject: "Практико–ориентированный проект", type: 'Практические занятия', location: "Корпус № 1, 4", teacher: "" }
+        { id: 'ingt311-w2-tu-1', timeStart: '11:50', timeEnd: '13:25', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 1, 4", teacher: "" }
       ]
     },
     {
@@ -1376,7 +1380,7 @@ SCHEDULE_REGISTRY['ingt-311'] = {
       lessons: [
         { id: 'ingt311-w2-we-1', timeStart: '09:45', timeEnd: '11:20', subject: "Процессы и аппараты нефтегазопереработки и нефтехимии", type: 'Лекции', location: "Корпус № 1, 118", teacher: "" },
         { id: 'ingt311-w2-we-2', timeStart: '11:50', timeEnd: '13:25', subject: "Процессы и аппараты нефтегазопереработки и нефтехимии", type: 'Практические занятия', location: "Корпус № 1, 118", teacher: "" },
-        { id: 'ingt311-w2-we-3', timeStart: '13:35', timeEnd: '15:10', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "аудитория", teacher: "" }
+        { id: 'ingt311-w2-we-3', timeStart: '13:35', timeEnd: '15:10', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "Спортивный комплекс", teacher: "" }
       ]
     },
     {
@@ -1407,7 +1411,7 @@ SCHEDULE_REGISTRY['ingt-311'] = {
     {
       dayName: 'Понедельник',
       lessons: [
-        { id: 'ingt311-w3-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "аудитория", teacher: "" },
+        { id: 'ingt311-w3-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "Спортивный комплекс", teacher: "" },
         { id: 'ingt311-w3-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Лабораторные работы', location: "Корпус № 9, 409", teacher: "" },
         { id: 'ingt311-w3-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Дисперсные системы в оборудовании нефтегазопереработки", type: 'Лабораторные работы', location: "Корпус № 9, 409", teacher: "" },
         { id: 'ingt311-w3-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Безопасность жизнедеятельности", type: 'Лекции', location: "Корпус № 1, 432", teacher: "" }
@@ -1425,7 +1429,7 @@ SCHEDULE_REGISTRY['ingt-311'] = {
     {
       dayName: 'Среда',
       lessons: [
-        { id: 'ingt311-w3-we-1', timeStart: '13:35', timeEnd: '15:10', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "аудитория", teacher: "" },
+        { id: 'ingt311-w3-we-1', timeStart: '13:35', timeEnd: '15:10', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "Спортивный комплекс", teacher: "" },
         { id: 'ingt311-w3-we-2', timeStart: '15:40', timeEnd: '17:15', subject: "Компьютерное моделирование процессов и оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 1, 2", teacher: "" },
         { id: 'ingt311-w3-we-3', timeStart: '17:25', timeEnd: '19:00', subject: "Компьютерное моделирование процессов и оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 2", teacher: "" }
       ]
@@ -1433,17 +1437,17 @@ SCHEDULE_REGISTRY['ingt-311'] = {
     {
       dayName: 'Четверг',
       lessons: [
-        { id: 'ingt311-w3-th-1', timeStart: '08:00', timeEnd: '09:35', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3б, 208", teacher: "" },
-        { id: 'ingt311-w3-th-2', timeStart: '09:45', timeEnd: '11:20', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3б, 208", teacher: "" }
+        { id: 'ingt311-w3-th-1', timeStart: '08:00', timeEnd: '09:35', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3, 208", teacher: "" },
+        { id: 'ingt311-w3-th-2', timeStart: '09:45', timeEnd: '11:20', subject: "Основы военной подготовки", type: 'Практические занятия', location: "Корпус № 3, 208", teacher: "" }
       ]
     },
     {
       dayName: 'Пятница',
       lessons: [
         { id: 'ingt311-w3-fr-1', timeStart: '09:45', timeEnd: '11:20', subject: "Теория колебаний и виброзащита оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 9, 409", teacher: "" },
-        { id: 'ingt311-w3-fr-2', timeStart: '11:50', timeEnd: '13:25', subject: "Научные исследования и опытно–конструкторские работы в области оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 1, 109", teacher: "" },
+        { id: 'ingt311-w3-fr-2', timeStart: '11:50', timeEnd: '13:25', subject: "Научные исследования и опытно-конструкторские работы в области оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 1, 109", teacher: "" },
         { id: 'ingt311-w3-fr-3', timeStart: '13:35', timeEnd: '15:10', subject: "Теория колебаний и виброзащита оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 2", teacher: "" },
-        { id: 'ingt311-w3-fr-4', timeStart: '15:40', timeEnd: '17:15', subject: "Научные исследования и опытно–конструкторские работы в области оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 109б", teacher: "" }
+        { id: 'ingt311-w3-fr-4', timeStart: '15:40', timeEnd: '17:15', subject: "Научные исследования и опытно-конструкторские работы в области оборудования нефтегазопереработки", type: 'Практические занятия', location: "109б корпус № 1", teacher: "" }
       ]
     },
     {
@@ -1460,16 +1464,17 @@ SCHEDULE_REGISTRY['ingt-311'] = {
     {
       dayName: 'Понедельник',
       lessons: [
-        { id: 'ingt311-w4-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Научные исследования и опытно–конструкторские работы в области оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 1, 109", teacher: "" },
+        { id: 'ingt311-w4-mo-1', timeStart: '11:50', timeEnd: '13:25', subject: "Научные исследования и опытно-конструкторские работы в области оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 1, 109", teacher: "" },
         { id: 'ingt311-w4-mo-2', timeStart: '13:35', timeEnd: '15:10', subject: "Теория колебаний и виброзащита оборудования нефтегазопереработки", type: 'Лекции', location: "Корпус № 9, 409", teacher: "" },
         { id: 'ingt311-w4-mo-3', timeStart: '15:40', timeEnd: '17:15', subject: "Теория колебаний и виброзащита оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 2", teacher: "" },
-        { id: 'ingt311-w4-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Научные исследования и опытно–конструкторские работы в области оборудования нефтегазопереработки", type: 'Практические занятия', location: "Корпус № 1, 109б", teacher: "" }
+        { id: 'ingt311-w4-mo-4', timeStart: '17:25', timeEnd: '19:00', subject: "Научные исследования и опытно-конструкторские работы в области оборудования нефтегазопереработки", type: 'Практические занятия', location: "109б корпус № 1", teacher: "" }
       ]
     },
     {
       dayName: 'Вторник',
       lessons: [
-        { id: 'ingt311-w4-tu-1', timeStart: '11:50', timeEnd: '13:25', subject: "Практико–ориентированный проект", type: 'Практические занятия', location: "Корпус № 1, 4", teacher: "" }
+        { id: 'ingt311-w4-tu-1', timeStart: '11:50', timeEnd: '13:25', subject: "Практико-ориентированный проект", type: 'Практические занятия', location: "Корпус № 1, 4", teacher: "" },
+        { id: 'ingt311-w4-tu-2', timeStart: '13:35', timeEnd: '15:10', subject: "Актуальные вопросы профессиональной деятельности и построение карьеры", type: 'Лекции', location: "Корпус № 1, 426", teacher: "" }
       ]
     },
     {
@@ -1477,7 +1482,7 @@ SCHEDULE_REGISTRY['ingt-311'] = {
       lessons: [
         { id: 'ingt311-w4-we-1', timeStart: '09:45', timeEnd: '11:20', subject: "Процессы и аппараты нефтегазопереработки и нефтехимии", type: 'Лекции', location: "Корпус № 1, 118", teacher: "" },
         { id: 'ingt311-w4-we-2', timeStart: '11:50', timeEnd: '13:25', subject: "Процессы и аппараты нефтегазопереработки и нефтехимии", type: 'Практические занятия', location: "Корпус № 1, 118", teacher: "" },
-        { id: 'ingt311-w4-we-3', timeStart: '13:35', timeEnd: '15:10', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "аудитория", teacher: "" }
+        { id: 'ingt311-w4-we-3', timeStart: '13:35', timeEnd: '15:10', subject: "Элективные курсы по физической культуре и спорту", type: 'Практические занятия', location: "Спортивный комплекс", teacher: "" }
       ]
     },
     {
@@ -1507,20 +1512,6 @@ SCHEDULE_REGISTRY['ingt-311'] = {
 };
 
 
-// Group-specific Starosta PIN codes
-export const GROUP_STAROSTA_PINS: Record<string, string> = {
-  'ingt-310': '110',
-  'ingt-311': '111',
-  'ingt-301': '101',
-  'ingt-303': '103',
-  'faid-310': '110',
-  'ingt-209': '109',
-  'htf-215': '115'
-};
-
-// Global Admin PIN
-export const ADMIN_PIN = '2808';
-
 // Helper for Telegram tags
 export const getGroupTag = (groupName: string): string => {
   return groupName.replace(/-/g, '');
@@ -1532,45 +1523,28 @@ SCHEDULE_REGISTRY['faid-110'] = SCHEDULE_REGISTRY['faid-310'];
 SCHEDULE_REGISTRY['3-фаид-110'] = SCHEDULE_REGISTRY['faid-310'];
 SCHEDULE_REGISTRY['3-faid-110'] = SCHEDULE_REGISTRY['faid-310'];
 SCHEDULE_REGISTRY['24фад-110'] = SCHEDULE_REGISTRY['faid-310'];
-GROUP_STAROSTA_PINS['3-фаид-110'] = '110';
-GROUP_STAROSTA_PINS['3-faid-110'] = '110';
 
 SCHEDULE_REGISTRY['3-ингт-110'] = SCHEDULE_REGISTRY['ingt-310'];
 SCHEDULE_REGISTRY['3-ingt-110'] = SCHEDULE_REGISTRY['ingt-310'];
 SCHEDULE_REGISTRY['24ингт-110'] = SCHEDULE_REGISTRY['ingt-310'];
-GROUP_STAROSTA_PINS['3-ингт-110'] = '110';
-GROUP_STAROSTA_PINS['3-ingt-110'] = '110';
 
 SCHEDULE_REGISTRY['3-ингт-111'] = SCHEDULE_REGISTRY['ingt-311'];
 SCHEDULE_REGISTRY['3-ingt-111'] = SCHEDULE_REGISTRY['ingt-311'];
 SCHEDULE_REGISTRY['24ингт-111'] = SCHEDULE_REGISTRY['ingt-311'];
-GROUP_STAROSTA_PINS['ingt-311'] = '111';
-GROUP_STAROSTA_PINS['3-ингт-111'] = '111';
-GROUP_STAROSTA_PINS['3-ingt-111'] = '111';
 
 SCHEDULE_REGISTRY['3-ингт-101'] = SCHEDULE_REGISTRY['ingt-301'];
 SCHEDULE_REGISTRY['3-ingt-101'] = SCHEDULE_REGISTRY['ingt-301'];
-GROUP_STAROSTA_PINS['ingt-301'] = '101';
-GROUP_STAROSTA_PINS['3-ингт-101'] = '101';
 
 SCHEDULE_REGISTRY['3-ингт-103'] = SCHEDULE_REGISTRY['ingt-303'];
 SCHEDULE_REGISTRY['3-ingt-103'] = SCHEDULE_REGISTRY['ingt-303'];
-GROUP_STAROSTA_PINS['ingt-303'] = '103';
-GROUP_STAROSTA_PINS['3-ингт-103'] = '103';
 
 SCHEDULE_REGISTRY['2-ingt-109'] = SCHEDULE_REGISTRY['ingt-209'];
 SCHEDULE_REGISTRY['ingt-109'] = SCHEDULE_REGISTRY['ingt-209'];
 SCHEDULE_REGISTRY['2-ингт-109'] = SCHEDULE_REGISTRY['ingt-209'];
-GROUP_STAROSTA_PINS['2-ingt-109'] = '109';
-GROUP_STAROSTA_PINS['ingt-109'] = '109';
-GROUP_STAROSTA_PINS['2-ингт-109'] = '109';
 
 SCHEDULE_REGISTRY['2-htf-115'] = SCHEDULE_REGISTRY['htf-215'];
 SCHEDULE_REGISTRY['htf-115'] = SCHEDULE_REGISTRY['htf-215'];
 SCHEDULE_REGISTRY['2-хтф-115'] = SCHEDULE_REGISTRY['htf-215'];
-GROUP_STAROSTA_PINS['2-htf-115'] = '115';
-GROUP_STAROSTA_PINS['htf-115'] = '115';
-GROUP_STAROSTA_PINS['2-хтф-115'] = '115';
 // Инициализация всех групп в AVAILABLE_GROUPS для устранения undefined в ДЗ
 AVAILABLE_GROUPS.forEach(grp => {
   if (!SCHEDULE_REGISTRY[grp.id]) {

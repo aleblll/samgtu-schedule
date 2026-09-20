@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Trash2, Send } from 'lucide-react';
+import { sendCrashReport } from '../utils/telemetry';
 
 interface Props {
   children: ReactNode;
@@ -29,6 +30,13 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error caught by ErrorBoundary:', error, errorInfo);
+    try {
+      sendCrashReport({
+        component: 'Root ErrorBoundary (White Screen Crash)',
+        message: error?.message || String(error),
+        stack: error?.stack || errorInfo?.componentStack || undefined
+      });
+    } catch {}
   }
 
   private handleReload = () => {

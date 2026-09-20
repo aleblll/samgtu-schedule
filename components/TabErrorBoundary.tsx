@@ -1,6 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { logger } from '../utils/logger';
+import { sendCrashReport } from '../utils/telemetry';
 
 interface Props {
   children: ReactNode;
@@ -29,6 +30,11 @@ export class TabErrorBoundary extends Component<Props, State> {
     console.error(`[TabErrorBoundary] Error caught in tab "${this.props.tabName}":`, error, errorInfo);
     try {
       logger.error('UI', `Ошибка рендера во вкладке [${this.props.tabName}]: ${error.message}\n${errorInfo.componentStack || ''}`);
+      sendCrashReport({
+        component: `TabErrorBoundary (${this.props.tabName})`,
+        message: error?.message || String(error),
+        stack: error?.stack || errorInfo?.componentStack || undefined
+      });
     } catch {}
   }
 

@@ -12,6 +12,7 @@ import './test_ingt209_schedule';
 import './test_qa_ingt209_verification';
 import './test_bugreport_feature';
 import './test_logger_diagnostics';
+import './test_telemetry';
 import { runHomeworkLifecycleStressTest } from './test_homework_lifecycle_stress';
 await runHomeworkLifecycleStressTest();
 console.log("\n=================================================");

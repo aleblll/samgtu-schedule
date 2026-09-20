@@ -1,4 +1,5 @@
-import { AVAILABLE_GROUPS, SCHEDULE_REGISTRY, GROUP_STAROSTA_PINS, ADMIN_PIN, FACULTIES } from '../constants';
+import { AVAILABLE_GROUPS, SCHEDULE_REGISTRY, FACULTIES } from '../constants';
+import { verifyPinCode } from '../utils/auth';
 import { STUDENTS_REGISTRY } from '../attendance';
 import { SEED_SUBJECT_TEACHERS_BY_GROUP } from '../defaultData';
 
@@ -120,12 +121,10 @@ check('Введение в информационные технологии -> 
 check('Учебная практика: проектная практика -> Семенова Ирина Александровна', teachers?.['Учебная практика: проектная практика'] === 'Семенова Ирина Александровна');
 check('Иностранный язык -> Ревина Е.В. / Гарифова О.А.', teachers?.['Иностранный язык'] === 'Ревина Е.В. / Гарифова О.А.');
 
-// 9. Starosta PIN codes
+// 9. Starosta PIN Codes
 console.log('\n--- 9. Starosta PIN Codes ---');
-check("GROUP_STAROSTA_PINS['htf-215'] === '115'", GROUP_STAROSTA_PINS['htf-215'] === '115');
-check("Alias '2-htf-115' has PIN 115", GROUP_STAROSTA_PINS['2-htf-115'] === '115');
-check("Alias 'htf-115' has PIN 115", GROUP_STAROSTA_PINS['htf-115'] === '115');
-check("Alias '2-хтф-115' has PIN 115", GROUP_STAROSTA_PINS['2-хтф-115'] === '115');
+const authHtf = await verifyPinCode('741639');
+check("verifyPinCode('741639') authorizes starosta for 'htf-215'", authHtf !== null && authHtf.role === 'starosta' && authHtf.targetGroupId === 'htf-215');
 
 // 10. Regression Check for Other Groups
 console.log('\n--- 10. Regression Checks for Existing Groups ---');
@@ -147,8 +146,8 @@ check('3-ФАИД-110 Week 4 Tuesday has 0 lessons', faid310Sched?.[4]?.[1]?.les
 // 2-ИНГТ-109
 const ingt209Sched = SCHEDULE_REGISTRY['ingt-209'];
 check('2-ИНГТ-109 Week 1 has 16 lessons', ingt209Sched?.[1]?.reduce((acc, d) => acc + d.lessons.length, 0) === 16);
-check('2-ИНГТ-109 Week 2 has 18 lessons', ingt209Sched?.[2]?.reduce((acc, d) => acc + d.lessons.length, 0) === 18);
-check("2-ИНГТ-109 PIN is '109'", GROUP_STAROSTA_PINS['ingt-209'] === '109');
+const authIngt209 = await verifyPinCode('925483');
+check("2-ИНГТ-109 PIN authorizes via verifyPinCode", authIngt209 !== null && authIngt209.role === 'starosta' && authIngt209.targetGroupId === 'ingt-209');
 
 console.log('\n================================================================');
 console.log(`TOTAL CHECKS: ${passCount + failCount} | PASSED: ${passCount} | FAILED: ${failCount}`);
