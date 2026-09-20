@@ -163,6 +163,20 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
       const result = await exportAttendanceToWord(records, students, groupConfig, faculty);
       if (result?.sentToTelegramChat) {
         toast.success('Ведомость Word отправлена вам в диалог с ботом и сохраняется на устройство!');
+      } else if (result?.downloadUrl) {
+        toast.success('Официальный отчет в Word выгружен!', {
+          action: {
+            label: 'Открыть',
+            onClick: () => {
+              const tg = (window as any).Telegram?.WebApp;
+              if (tg && typeof tg.openLink === 'function') {
+                tg.openLink(result.downloadUrl!);
+              } else {
+                window.open(result.downloadUrl!, '_blank');
+              }
+            }
+          }
+        });
       } else {
         toast.success('Официальный отчет в Word выгружен!');
       }

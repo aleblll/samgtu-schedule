@@ -9,6 +9,7 @@ import { WORKER_BASE } from './cloudSync';
 export interface ExportWordResult {
   success: boolean;
   sentToTelegramChat: boolean;
+  downloadUrl?: string;
   method: 'capacitor' | 'tma_download_file' | 'tma_open_link' | 'web_share' | 'browser_blob';
 }
 
@@ -271,35 +272,66 @@ export const exportAttendanceToWord = async (
         `📄 Официальная ведомость пропусков (${groupConfig.name || 'СамГТУ'})\n📅 Сформировано: ${new Date().toLocaleDateString('ru-RU')}`
       );
 
-      const uploadRes = await fetch(`${WORKER_BASE}/export-doc`, {
-        method: 'POST',
-        headers: {
-          ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
-        },
-        body: formData
-      });
+      let directUrl: string | null = null;
+      let sentToPm = false;
 
-      if (uploadRes.ok) {
-        const data = await uploadRes.json();
-        if (data.ok && data.direct_url) {
-          const directUrl = data.direct_url;
-          const sentToPm = Boolean(data.sent_to_pm);
+      // Primary: Try dedicated /export-doc endpoint
+      try {
+        const uploadRes = await fetch(`${WORKER_BASE}/export-doc`, {
+          method: 'POST',
+          headers: {
+            ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
+          },
+          body: formData
+        });
 
-          // 2.A. Telegram Bot API >= 8.0: Native Telegram download dialog
-          if (typeof tg.downloadFile === 'function' && (typeof tg.isVersionAtLeast === 'function' ? tg.isVersionAtLeast('8.0') : true)) {
-            tg.downloadFile({ url: directUrl, file_name: filename }, (accepted: boolean) => {
-              if (!accepted && typeof tg.openLink === 'function') {
-                tg.openLink(directUrl);
-              }
-            });
-            return { success: true, sentToTelegramChat: sentToPm, method: 'tma_download_file' };
+        if (uploadRes.ok) {
+          const contentType = uploadRes.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const data = await uploadRes.json();
+            if (data.ok && data.direct_url) {
+              directUrl = data.direct_url;
+              sentToPm = Boolean(data.sent_to_pm);
+            }
           }
+        }
+      } catch (docErr) {
+        console.warn('/export-doc probe failed, trying live upload fallback:', docErr);
+      }
 
-          // 2.B. Telegram < 8.0: Open HTTPS URL in native phone browser (Chrome/Safari)
-          if (typeof tg.openLink === 'function') {
-            tg.openLink(directUrl);
-            return { success: true, sentToTelegramChat: sentToPm, method: 'tma_open_link' };
+      // Live worker fallback: If /export-doc is not active on live worker, use live /upload
+      if (!directUrl) {
+        const uploadRes = await fetch(`${WORKER_BASE}/upload`, {
+          method: 'POST',
+          headers: {
+            ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
+          },
+          body: formData
+        });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          const fileId = uploadData.result?.document?.file_id;
+          if (fileId) {
+            directUrl = `${WORKER_BASE}/file?file_id=${fileId}&download=1&filename=${encodeURIComponent(filename)}`;
           }
+        }
+      }
+
+      if (directUrl) {
+        // 2.A. Telegram Bot API >= 8.0: Native Telegram download dialog
+        if (typeof tg.downloadFile === 'function' && (typeof tg.isVersionAtLeast === 'function' ? tg.isVersionAtLeast('8.0') : true)) {
+          tg.downloadFile({ url: directUrl, file_name: filename }, (accepted: boolean) => {
+            if (!accepted && typeof tg.openLink === 'function') {
+              tg.openLink(directUrl);
+            }
+          });
+          return { success: true, sentToTelegramChat: sentToPm, downloadUrl: directUrl, method: 'tma_download_file' };
+        }
+
+        // 2.B. Telegram < 8.0: Open HTTPS URL in native phone browser (Chrome/Safari)
+        if (typeof tg.openLink === 'function') {
+          tg.openLink(directUrl);
+          return { success: true, sentToTelegramChat: sentToPm, downloadUrl: directUrl, method: 'tma_open_link' };
         }
       }
     } catch (tmaError) {

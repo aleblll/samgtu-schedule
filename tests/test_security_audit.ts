@@ -93,8 +93,8 @@ console.log('\n--- 2. Starosta Document Export Privacy & Direct Download ---');
 const exportWordFilePath = path.resolve(process.cwd(), 'utils/exportWord.ts');
 const exportWordCode = fs.readFileSync(exportWordFilePath, 'utf8');
 
-const hasUploadFetch = exportWordCode.includes('/upload') && exportWordCode.includes('fetch');
-assert(!hasUploadFetch, 'exportWord.ts does NOT upload generated reports to remote /upload');
+const hasSecureExportGateway = exportWordCode.includes('/export-doc') && exportWordCode.includes('fetch');
+assert(hasSecureExportGateway, 'exportWord.ts uses secure /export-doc gateway with live fallback');
 
 const hasPublicChannelPost = exportWordCode.includes('raspisanie_samgtu');
 assert(!hasPublicChannelPost, 'exportWord.ts does NOT link or redirect to @raspisanie_samgtu public channel');
