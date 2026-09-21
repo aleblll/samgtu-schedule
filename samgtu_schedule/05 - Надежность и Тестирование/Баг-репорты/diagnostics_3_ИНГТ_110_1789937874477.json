@@ -1,0 +1,57 @@
+{
+  "system": {
+    "timestamp": "2026-09-21T00:57:50.955+04:00",
+    "telegramPlatform": "android",
+    "tgWebAppVersion": "9.6",
+    "isExpanded": true,
+    "viewportHeight": 693.6889,
+    "viewportStableHeight": 693.6889,
+    "userAgent": "Mozilla/5.0 (Linux; Android 16; K) Telegram-Android/12.10.3 (Samsung SM-A266B; Android 16; SDK 36; HIGH)",
+    "onlineStatus": true,
+    "currentGroupId": "ingt-310",
+    "selectedWeek": 1,
+    "localStorageUsageBytes": 21822,
+    "totalLogsCount": 4,
+    "errorLogsCount": 2
+  },
+  "recentLogs": [
+    {
+      "timestamp": "2026-09-20T21:22:39.192+04:00",
+      "level": "INFO",
+      "category": "SCHEDULE",
+      "message": "Current group switched to: ingt-310"
+    },
+    {
+      "timestamp": "2026-09-20T21:22:39.193+04:00",
+      "level": "INFO",
+      "category": "UI",
+      "message": "Telegram WebApp initialized",
+      "data": {
+        "platform": "android",
+        "version": "9.6"
+      }
+    },
+    {
+      "timestamp": "2026-09-20T21:22:57.212+04:00",
+      "level": "ERROR",
+      "category": "SYSTEM",
+      "message": "Script error.",
+      "data": {
+        "filename": "",
+        "lineno": 0,
+        "colno": 0
+      }
+    },
+    {
+      "timestamp": "2026-09-21T00:56:50.555+04:00",
+      "level": "ERROR",
+      "category": "SYSTEM",
+      "message": "Script error.",
+      "data": {
+        "filename": "",
+        "lineno": 0,
+        "colno": 0
+      }
+    }
+  ]
+}

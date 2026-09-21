@@ -4,7 +4,6 @@ import { STUDENTS_REGISTRY, useAttendance, BLOCKS, getSemesterWeek, getDayName, 
 import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, FACULTIES } from '../constants';
 import { Lesson, Student, GroupConfig } from '../types';
 import { toast } from 'sonner';
-import { exportAttendanceToWord } from '../utils/exportWord';
 
 interface AttendanceTrackerProps {
   isAuthenticated: boolean;
@@ -160,6 +159,7 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
       const faculty = FACULTIES.find(f => f.id === groupConfig.facultyId) || FACULTIES[0];
       
       toast.info('Формирование официального Word отчета...');
+      const { exportAttendanceToWord } = await import('../utils/exportWord');
       const result = await exportAttendanceToWord(records, students, groupConfig, faculty);
       if (result?.sentToTelegramChat) {
         toast.success('Ведомость Word отправлена вам в диалог с ботом и сохраняется на устройство!');

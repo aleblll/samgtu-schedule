@@ -7,19 +7,18 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "report:import": "tsx scripts/import_bugreport.ts"
   },
   "dependencies": {
     "@capacitor/core": "^6.2.0",
     "@capacitor/filesystem": "^6.0.4",
     "@capacitor/share": "^6.0.4",
     "docx": "^9.6.1",
-    "firebase": "^12.11.0",
     "lucide-react": "^1.7.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "sonner": "^2.0.7",
-    "xlsx": "^0.18.5"
+    "sonner": "^2.0.7"
   },
   "devDependencies": {
     "@capacitor/android": "^6.2.0",

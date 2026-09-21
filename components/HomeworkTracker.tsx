@@ -6,8 +6,6 @@ import {
 import { HomeworkItem, HomeworkAttachment } from '../types';
 import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, getGroupTag } from '../constants';
 import { getSamaraDate, getSamaraISODate, getSamaraFutureISODate } from '../attendance';
-import { db } from '../firebase';
-import { collection, doc, setDoc, deleteDoc, onSnapshot, query, where } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -338,12 +336,6 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
         console.log('Homework synced to cloud successfully');
       }
     });
-
-    try {
-      await setDoc(doc(db, 'homework', id), newHomework);
-    } catch (e) {
-      console.warn('Homework cloud sync save warning:', e);
-    }
   };
 
   const handleDeleteHomework = async (id: string) => {
@@ -382,10 +374,6 @@ const HomeworkTracker: React.FC<HomeworkTrackerProps> = ({
         console.log('Homework deletion synced to cloud successfully');
       }
     });
-
-    try {
-      await deleteDoc(doc(db, 'homework', id));
-    } catch (e) {}
   };
 
   const handleOpenAttachment = async (att: HomeworkAttachment) => {

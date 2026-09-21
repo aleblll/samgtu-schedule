@@ -165,6 +165,21 @@ export class InAppLogger {
 
     // 1. window.onerror
     window.addEventListener('error', (event: ErrorEvent) => {
+      const isMutedScriptError =
+        (!event.message || event.message === 'Script error.') &&
+        (!event.filename || event.filename === '') &&
+        (!event.lineno || event.lineno === 0);
+
+      if (isMutedScriptError) {
+        this.warn('SYSTEM', 'External/Injected script event (muted by browser CORS policy)', {
+          filename: event.filename || '<external/injected>',
+          lineno: event.lineno,
+          colno: event.colno,
+          note: 'Muted by browser security policy. Usually caused by Telegram WebView bridge injection or browser extension.'
+        });
+        return;
+      }
+
       this.error('SYSTEM', event.message || 'Uncaught window error', {
         filename: event.filename,
         lineno: event.lineno,

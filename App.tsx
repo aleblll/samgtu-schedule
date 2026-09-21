@@ -1,32 +1,46 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, FACULTIES, createEmptyWeek } from './constants';
 import { getSemesterWeek, getWeekDateRange, getDayISODate, useAttendance, getSamaraDate, getSamaraISODate } from './attendance';
-import AttendanceTracker from './components/AttendanceTracker';
-import HomeworkTracker from './components/HomeworkTracker';
-import SubjectTeachersModal from './components/SubjectTeachersModal';
 import SwipeableDays from './components/SwipeableDays';
 import BottomNav from './components/BottomNav';
-import GroupManager from './components/GroupManager';
-import AdminPanel from './components/AdminPanel';
 import TabErrorBoundary from './components/TabErrorBoundary';
-import { auth, logout } from './firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
 import { Toaster, toast } from 'sonner';
 import { UserRole, Lesson, GroupConfig, WeekData } from './types';
 import { TeacherAssignmentScope } from './components/EditLessonModal';
 import { fetchGroupCloudData, pushGroupCloudData, sanitizeTeachers, sanitizeOverrides, WORKER_BASE } from './utils/cloudSync';
 import { SEED_SCHEDULE_OVERRIDES, SEED_SUBJECT_TEACHERS, getSeedSubjectTeachers } from './defaultData';
-import { ScheduleImportModal } from './components/ScheduleImportModal';
 import { verifyPinCode } from './utils/auth';
-import BugReportModal from './components/BugReportModal';
-import DebugLogsModal from './components/DebugLogsModal';
-import MaintenanceScreen from './components/MaintenanceScreen';
 import { logger } from './utils/logger';
 import {
   LogIn, LogOut, Calendar, BookOpen, Bug, ClipboardCheck, Sun, Moon,
   GraduationCap, Users, RefreshCw, Shield, User as UserIcon, Key, UserCheck, ChevronDown,
   Search, Plus, X, UploadCloud, Terminal
 } from 'lucide-react';
+
+// Code-split heavy tabs and modals to keep the initial client bundle ultra-light for students
+const AttendanceTracker = React.lazy(() => import('./components/AttendanceTracker'));
+const HomeworkTracker = React.lazy(() => import('./components/HomeworkTracker'));
+const SubjectTeachersModal = React.lazy(() => import('./components/SubjectTeachersModal'));
+const GroupManager = React.lazy(() => import('./components/GroupManager'));
+const AdminPanel = React.lazy(() => import('./components/AdminPanel'));
+const ScheduleImportModal = React.lazy(() => import('./components/ScheduleImportModal').then(m => ({ default: m.ScheduleImportModal })));
+const BugReportModal = React.lazy(() => import('./components/BugReportModal'));
+const DebugLogsModal = React.lazy(() => import('./components/DebugLogsModal'));
+const MaintenanceScreen = React.lazy(() => import('./components/MaintenanceScreen'));
+
+interface UserProfile {
+  displayName?: string | null;
+  email?: string | null;
+}
+
+const TabFallback: React.FC = () => (
+  <div className="flex items-center justify-center p-12 min-h-[200px]">
+    <div className="flex flex-col items-center gap-2.5 text-slate-400">
+      <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+      <span className="text-xs font-medium">Загрузка модуля...</span>
+    </div>
+  </div>
+);
 
 declare global {
   interface Window {
@@ -44,7 +58,7 @@ const App: React.FC = () => {
     return (window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false);
   });
   const [activeTab, setActiveTab] = useState<'schedule' | 'homework' | 'attendance' | 'group' | 'admin' | 'profile'>('schedule');
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   
   // Default role is 'student' for unauthenticated users
   const [userRole, setUserRole] = useState<UserRole>(() => {
@@ -56,7 +70,7 @@ const App: React.FC = () => {
     return localStorage.getItem('starosta_group_id') || null;
   });
 
-  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [isAuthReady, setIsAuthReady] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [quickPin, setQuickPin] = useState('');
@@ -552,20 +566,6 @@ const App: React.FC = () => {
     };
   }, [currentGroupId, refreshTrigger]);
 
-  // Firebase auth listener
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setIsAuthReady(true);
-      if (currentUser) {
-        if (currentUser.email === 'alexeyberezin2@gmail.com') {
-          setUserRole('admin');
-        }
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
   const handleRefresh = async () => {
     setIsRefreshing(true);
     setRefreshTrigger(prev => prev + 1);
@@ -619,10 +619,10 @@ const App: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    await logout();
     setUserRole('student');
+    setUser(null);
     setStarostaGroupId(null);
-    localStorage.removeItem('starosta_group_id');
+    try { localStorage.removeItem('starosta_group_id'); } catch (e) {}
     toast.success('Вы перешли в режим Студента');
   };
 
@@ -955,27 +955,29 @@ const App: React.FC = () => {
 
   if (isMaintenanceMode && !isMaintenanceDismissed) {
     return (
-      <MaintenanceScreen
-        message={maintenanceMessage}
-        estimatedEndTime={maintenanceUntil}
-        onRetry={async () => {
-          await checkMaintenanceStatus();
-          if (!isMaintenanceMode) {
-            toast.success('Сервер доступен! Расписание обновлено.');
-          } else {
-            toast.info('Технические работы еще продолжаются.');
-          }
-        }}
-        onContinueOffline={() => {
-          sessionStorage.setItem('dismiss_maintenance', 'true');
-          setIsMaintenanceDismissed(true);
-          toast.info('Включен автономный режим просмотра расписания');
-        }}
-        onAdminBypass={() => {
-          sessionStorage.setItem('admin_maintenance_bypass', 'true');
-          setIsMaintenanceDismissed(true);
-        }}
-      />
+      <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white text-xs">Загрузка...</div>}>
+        <MaintenanceScreen
+          message={maintenanceMessage}
+          estimatedEndTime={maintenanceUntil}
+          onRetry={async () => {
+            await checkMaintenanceStatus();
+            if (!isMaintenanceMode) {
+              toast.success('Сервер доступен! Расписание обновлено.');
+            } else {
+              toast.info('Технические работы еще продолжаются.');
+            }
+          }}
+          onContinueOffline={() => {
+            sessionStorage.setItem('dismiss_maintenance', 'true');
+            setIsMaintenanceDismissed(true);
+            toast.info('Включен автономный режим просмотра расписания');
+          }}
+          onAdminBypass={() => {
+            sessionStorage.setItem('admin_maintenance_bypass', 'true');
+            setIsMaintenanceDismissed(true);
+          }}
+        />
+      </Suspense>
     );
   }
 
@@ -1189,57 +1191,65 @@ const App: React.FC = () => {
 
         {activeTab === 'homework' && (
           <TabErrorBoundary tabName="Домашние задания">
-            <HomeworkTracker
-              currentGroupId={currentGroupId}
-              userRole={effectiveRole}
-              refreshTrigger={refreshTrigger}
-            />
+            <Suspense fallback={<TabFallback />}>
+              <HomeworkTracker
+                currentGroupId={currentGroupId}
+                userRole={effectiveRole}
+                refreshTrigger={refreshTrigger}
+              />
+            </Suspense>
           </TabErrorBoundary>
         )}
 
         {activeTab === 'attendance' && (
           <TabErrorBoundary tabName="Посещаемость">
-            <AttendanceTracker
-              isAuthenticated={canEdit}
-              userRole={effectiveRole}
-              userEmail={user?.email || null}
-              currentGroupId={currentGroupId}
-              refreshTrigger={refreshTrigger}
-            />
+            <Suspense fallback={<TabFallback />}>
+              <AttendanceTracker
+                isAuthenticated={canEdit}
+                userRole={effectiveRole}
+                userEmail={user?.email || null}
+                currentGroupId={currentGroupId}
+                refreshTrigger={refreshTrigger}
+              />
+            </Suspense>
           </TabErrorBoundary>
         )}
 
         {activeTab === 'group' && (
           <TabErrorBoundary tabName="Управление группой">
-            <GroupManager
-              currentGroupId={currentGroupId}
-              userRole={effectiveRole}
-            />
+            <Suspense fallback={<TabFallback />}>
+              <GroupManager
+                currentGroupId={currentGroupId}
+                userRole={effectiveRole}
+              />
+            </Suspense>
           </TabErrorBoundary>
         )}
 
         {activeTab === 'admin' && (
           <TabErrorBoundary tabName="Панель администратора">
-            <AdminPanel
-              currentRole={effectiveRole}
-              currentGroupId={currentGroupId}
-              onRoleChange={(role, targetGroup) => {
-                setUserRole(role);
-                if (role === 'starosta' && targetGroup) {
-                  setStarostaGroupId(targetGroup);
-                  try { localStorage.setItem('starosta_group_id', targetGroup); } catch (e) {}
-                } else if (role !== 'starosta') {
-                  setStarostaGroupId(null);
-                  try { localStorage.removeItem('starosta_group_id'); } catch (e) {}
-                }
-                if (targetGroup) {
-                  setCurrentGroupId(targetGroup);
-                  try { localStorage.setItem('my_group_id', targetGroup); } catch (e) {}
-                  setBoundGroupId(targetGroup);
-                }
-              }}
-              userEmail={user?.email || null}
-            />
+            <Suspense fallback={<TabFallback />}>
+              <AdminPanel
+                currentRole={effectiveRole}
+                currentGroupId={currentGroupId}
+                onRoleChange={(role, targetGroup) => {
+                  setUserRole(role);
+                  if (role === 'starosta' && targetGroup) {
+                    setStarostaGroupId(targetGroup);
+                    try { localStorage.setItem('starosta_group_id', targetGroup); } catch (e) {}
+                  } else if (role !== 'starosta') {
+                    setStarostaGroupId(null);
+                    try { localStorage.removeItem('starosta_group_id'); } catch (e) {}
+                  }
+                  if (targetGroup) {
+                    setCurrentGroupId(targetGroup);
+                    try { localStorage.setItem('my_group_id', targetGroup); } catch (e) {}
+                    setBoundGroupId(targetGroup);
+                  }
+                }}
+                userEmail={user?.email || null}
+              />
+            </Suspense>
           </TabErrorBoundary>
         )}
 
@@ -1397,13 +1407,15 @@ const App: React.FC = () => {
 
       {/* Global Subject Teachers Modal */}
       {isSubjectTeachersModalOpen && (
-        <SubjectTeachersModal
-          isOpen={isSubjectTeachersModalOpen}
-          onClose={() => setIsSubjectTeachersModalOpen(false)}
-          currentGroupId={currentGroupId}
-          subjectTeachers={subjectTeachers}
-          onSave={handleSaveSubjectTeachers}
-        />
+        <Suspense fallback={null}>
+          <SubjectTeachersModal
+            isOpen={isSubjectTeachersModalOpen}
+            onClose={() => setIsSubjectTeachersModalOpen(false)}
+            currentGroupId={currentGroupId}
+            subjectTeachers={subjectTeachers}
+            onSave={handleSaveSubjectTeachers}
+          />
+        </Suspense>
       )}
 
       {/* Group Selection Modal (Faculty / Course / Group Hierarchy) */}
@@ -1674,27 +1686,39 @@ const App: React.FC = () => {
       )}
 
       {/* Schedule Import Modal */}
-      <ScheduleImportModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        currentGroupId={currentGroupId}
-        onApplySchedule={handleApplyImportedSchedule}
-      />
+      {isImportModalOpen && (
+        <Suspense fallback={null}>
+          <ScheduleImportModal
+            isOpen={isImportModalOpen}
+            onClose={() => setIsImportModalOpen(false)}
+            currentGroupId={currentGroupId}
+            onApplySchedule={handleApplyImportedSchedule}
+          />
+        </Suspense>
+      )}
     
       {/* Bug Report Modal */}
-      <BugReportModal
-        isOpen={isBugReportModalOpen}
-        onClose={() => setIsBugReportModalOpen(false)}
-        currentGroupId={currentGroupId}
-        currentGroupName={currentGroupConfig.name}
-        currentCourse={currentGroupConfig.course}
-      />
+      {isBugReportModalOpen && (
+        <Suspense fallback={null}>
+          <BugReportModal
+            isOpen={isBugReportModalOpen}
+            onClose={() => setIsBugReportModalOpen(false)}
+            currentGroupId={currentGroupId}
+            currentGroupName={currentGroupConfig.name}
+            currentCourse={currentGroupConfig.course}
+          />
+        </Suspense>
+      )}
 
       {/* In-App Mobile Diagnostics Console Modal */}
-      <DebugLogsModal
-        isOpen={isDebugLogsModalOpen}
-        onClose={() => setIsDebugLogsModalOpen(false)}
-      />
+      {isDebugLogsModalOpen && (
+        <Suspense fallback={null}>
+          <DebugLogsModal
+            isOpen={isDebugLogsModalOpen}
+            onClose={() => setIsDebugLogsModalOpen(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };
