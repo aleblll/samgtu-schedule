@@ -21,7 +21,7 @@ const expectedGroups = [
   'ingt-301', 'ingt-302', 'ingt-303', 'ingt-304', 'ingt-305',
   'ingt-306', 'ingt-307', 'ingt-308', 'ingt-309', 'ingt-310',
   'ingt-311', 'ingt-312', 'ingt-313', 'ingt-314',
-  'faid-310', 'ingt-209', 'htf-215'
+  'faid-310', 'ingt-209', 'htf-215', 'iait-308'
 ];
 
 for (const gid of expectedGroups) {

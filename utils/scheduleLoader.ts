@@ -110,21 +110,23 @@ export async function loadGroupSchedule(groupId: string): Promise<WeekData> {
     } catch (e) {}
   }
 
-  // 4. Fetch static JSON chunk
-  try {
-    const basePath = (import.meta as any).env?.BASE_URL || './';
-    const cleanBase = basePath.endsWith('/') ? basePath : `${basePath}/`;
-    const res = await fetch(`${cleanBase}schedules/${canonicalId}.json`);
-    if (res.ok) {
-      const data = await res.json() as WeekData;
-      registerScheduleAliases(canonicalId, data);
-      try {
-        localStorage.setItem(`cached_schedule_${canonicalId}`, JSON.stringify(data));
-      } catch (e) {}
-      return data;
+  // 4. Fetch static JSON chunk (in browser environments)
+  if (typeof window !== 'undefined') {
+    try {
+      const basePath = (import.meta as any).env?.BASE_URL || './';
+      const cleanBase = basePath.endsWith('/') ? basePath : `${basePath}/`;
+      const res = await fetch(`${cleanBase}schedules/${canonicalId}.json`);
+      if (res.ok) {
+        const data = await res.json() as WeekData;
+        registerScheduleAliases(canonicalId, data);
+        try {
+          localStorage.setItem(`cached_schedule_${canonicalId}`, JSON.stringify(data));
+        } catch (e) {}
+        return data;
+      }
+    } catch (err) {
+      console.warn(`[ScheduleLoader] Could not load chunk for ${canonicalId}:`, err);
     }
-  } catch (err) {
-    console.warn(`[ScheduleLoader] Could not load chunk for ${canonicalId}:`, err);
   }
 
   // Fallback: create empty 4-week structure

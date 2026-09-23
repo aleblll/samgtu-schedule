@@ -35,6 +35,7 @@ export const AVAILABLE_GROUPS: GroupConfig[] = [
   { id: 'faid-310', name: '3-ФАИД-110', facultyId: 'faid', degree: 'Бакалавриат', course: 3 },
   { id: 'ingt-209', name: '2-ИНГТ-109', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
   { id: 'htf-215', name: '2-ХТФ-115', facultyId: 'htf', degree: 'Бакалавриат', course: 2 },
+  { id: 'iait-308', name: '3-ИАИТ-108', facultyId: 'iait', degree: 'Бакалавриат', course: 3 },
   { id: 'faid-501', name: '5-ФАИД-101', facultyId: 'faid', degree: 'Специалитет', course: 5 },
 
   // ИНГТ
