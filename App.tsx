@@ -12,7 +12,6 @@ import { SEED_SCHEDULE_OVERRIDES, SEED_SUBJECT_TEACHERS, getSeedSubjectTeachers 
 import { verifyPinCode } from './utils/auth';
 import { logger } from './utils/logger';
 import { getCanonicalGroupKey, normalizeSamgtuGroupName } from './utils/samgtuParser';
-import { matchesSubgroup } from './utils/subgroup';
 import {
   LogIn, LogOut, Calendar, BookOpen, Bug, ClipboardCheck, Sun, Moon,
   GraduationCap, Users, RefreshCw, Shield, User as UserIcon, Key, UserCheck, ChevronDown,
@@ -470,29 +469,11 @@ const App: React.FC = () => {
     }
   });
 
-  // Subgroup Filter: 0 = All (default), 1 = 1st Subgroup, 2 = 2nd Subgroup
-  const [selectedSubgroup, setSelectedSubgroup] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem(`selected_subgroup_${currentGroupId}`) || localStorage.getItem('selected_subgroup');
-      if (saved === '1') return 1;
-      if (saved === '2') return 2;
-    } catch (e) {}
-    return 0;
-  });
-
-  const handleSubgroupChange = (sg: number) => {
-    setSelectedSubgroup(sg);
-    try {
-      localStorage.setItem(`selected_subgroup_${currentGroupId}`, String(sg));
-      localStorage.setItem('selected_subgroup', String(sg));
-    } catch (e) {}
-  };
-
   useEffect(() => {
     setSelectedWeek(currentWeek);
   }, [currentWeek]);
 
-  // Sync group selection and reload group-specific overrides, teachers and subgroup
+  // Sync group selection and reload group-specific overrides and teachers
   useEffect(() => {
     try {
       localStorage.setItem('selected_group_id', currentGroupId);
@@ -511,12 +492,6 @@ const App: React.FC = () => {
     } catch {
       setSubjectTeachers(sanitizeTeachers({ ...getSeedSubjectTeachers(currentGroupId) }, currentGroupId));
     }
-    try {
-      const savedSg = localStorage.getItem(`selected_subgroup_${currentGroupId}`) || localStorage.getItem('selected_subgroup');
-      if (savedSg === '1') setSelectedSubgroup(1);
-      else if (savedSg === '2') setSelectedSubgroup(2);
-      else setSelectedSubgroup(0);
-    } catch (e) {}
   }, [currentGroupId]);
 
   // Telegram WebApp auto-expand, ready and events
@@ -1021,18 +996,16 @@ const App: React.FC = () => {
           } as Lesson;
         });
 
-      const allLessons = [...standardLessons, ...customLessons]
-        .filter(lesson => matchesSubgroup(lesson, selectedSubgroup))
-        .sort((a, b) => 
-          (a.timeStart || '').localeCompare(b.timeStart || '')
-        );
+      const allLessons = [...standardLessons, ...customLessons].sort((a, b) => 
+        (a.timeStart || '').localeCompare(b.timeStart || '')
+      );
 
       return {
         ...day,
         lessons: allLessons
       };
     });
-  }, [currentGroupId, selectedWeek, scheduleOverrides, attendanceRecords, subjectTeachers, selectedSubgroup]);
+  }, [currentGroupId, selectedWeek, scheduleOverrides, attendanceRecords, subjectTeachers]);
 
   if (isMaintenanceMode && !isMaintenanceDismissed) {
     return (
@@ -1227,55 +1200,27 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* 4-Week Cycle Switcher and Subgroup Toggle Chips */}
+            {/* 4-Week Cycle Switcher - Grid of 4 equal buttons (Zero overflow!) */}
             {activeTab === 'schedule' && (
-              <div className="space-y-2 w-full">
-                <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
-                  {/* 4-Week Cycle Switcher */}
-                  <div className="grid grid-cols-4 gap-1.5 bg-slate-200/60 dark:bg-slate-800/90 border border-slate-200/60 dark:border-transparent p-1 rounded-2xl flex-1 min-w-[200px]">
-                    {[1, 2, 3, 4].map(w => (
-                      <button
-                        key={w}
-                        onClick={() => setSelectedWeek(w)}
-                        className={`py-1.5 text-center rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                          selectedWeek === w
-                            ? 'bg-indigo-600 text-white shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
-                        }`}
-                      >
-                        Нед. {w} {w === currentWeek && '★'}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Subgroup Toggle Chip: [Все] [1 п/г] [2 п/г] */}
-                  <div className="inline-flex items-center bg-slate-200/60 dark:bg-slate-800/90 border border-slate-200/60 dark:border-transparent p-1 rounded-2xl shrink-0 self-stretch sm:self-auto">
-                    {[
-                      { id: 0, label: 'Все' },
-                      { id: 1, label: '1 п/г' },
-                      { id: 2, label: '2 п/г' },
-                    ].map(sg => (
-                      <button
-                        key={sg.id}
-                        type="button"
-                        onClick={() => handleSubgroupChange(sg.id)}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                          selectedSubgroup === sg.id
-                            ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-xs'
-                            : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
-                        }`}
-                        title={sg.id === 0 ? 'Показывать пары всех подгрупп' : `Показывать пары только для ${sg.id}-й подгруппы`}
-                      >
-                        {sg.label}
-                      </button>
-                    ))}
-                  </div>
+              <div className="space-y-1.5 w-full">
+                <div className="grid grid-cols-4 gap-1.5 bg-slate-200/60 dark:bg-slate-800/90 border border-slate-200/60 dark:border-transparent p-1 rounded-2xl w-full">
+                  {[1, 2, 3, 4].map(w => (
+                    <button
+                      key={w}
+                      onClick={() => setSelectedWeek(w)}
+                      className={`py-1.5 text-center rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        selectedWeek === w
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                      }`}
+                    >
+                      Нед. {w} {w === currentWeek && '★'}
+                    </button>
+                  ))}
                 </div>
-
                 <div className="text-center text-[11px] font-medium text-slate-500 dark:text-slate-400">
                   Даты недели: <span className="text-indigo-600 dark:text-indigo-400 font-bold">{getWeekDateRange(selectedWeek)}</span>
                   {selectedWeek === currentWeek && <span className="text-amber-600 dark:text-amber-400 font-semibold ml-1.5">(Текущая)</span>}
-                  {selectedSubgroup > 0 && <span className="text-indigo-600 dark:text-indigo-400 font-bold ml-1.5">• {selectedSubgroup} подгруппа</span>}
                 </div>
               </div>
             )}
