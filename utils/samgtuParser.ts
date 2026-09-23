@@ -71,12 +71,31 @@ const FACULTY_TO_ID_MAP: Record<string, string> = {
   'ФАИД': 'faid'
 };
 
+const ID_TO_FACULTY_MAP: Record<string, string> = {
+  'ingt': 'ИНГТ',
+  'asa': 'АСА',
+  'iait': 'ИАИТ',
+  'itf': 'ИТФ',
+  'etf': 'ЭТФ',
+  'htf': 'ХТФ',
+  'tef': 'ТЭФ',
+  'fmmt': 'ФММТ',
+  'fpp': 'ФПП',
+  'iiego': 'ИИЭГО',
+  'faid': 'ФАИД'
+};
+
 /**
- * Normalizes SamGTU long group names like "3-ИНГТ-24ИНГТ-110" into "3-ИНГТ-110"
+ * Normalizes SamGTU long group names like "3-ИНГТ-24ИНГТ-110" or "Группа 24ИНГТ–110" into "3-ИНГТ-110"
  * and generates clean internal group ID "ingt-310".
  */
 export function normalizeSamgtuGroupName(rawName: string): { name: string; id: string } {
-  const cleaned = rawName.trim();
+  const cleaned = rawName
+    .replace(/^группа\s+/i, '')
+    .replace(/[\u2010\u2011\u2012\u2013\u2014]/g, '-')
+    .replace(/\s*[\(\[].*?[\)\]]/g, '')
+    .trim();
+
   // Match patterns like "3-ИНГТ-24ИНГТ-110" -> "3-ИНГТ-110"
   const complexMatch = cleaned.match(/^(\d+)-([А-ЯЁA-Z]+)-\d+[А-ЯЁA-Z]+-(\d+)$/i);
   if (complexMatch) {
@@ -97,11 +116,66 @@ export function normalizeSamgtuGroupName(rawName: string): { name: string; id: s
     const groupNum = stdMatch[3];
     const facId = FACULTY_TO_ID_MAP[faculty] || faculty.toLowerCase();
     const id = `${facId}-${course}${groupNum.slice(-2)}`;
-    return { name: cleaned, id };
+    return { name: `${course}-${faculty}-${groupNum}`, id };
   }
 
-  const id = cleaned.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  // Match official SamGTU portal patterns like "24ИНГТ-113" or "25ИНГТ-109"
+  const portalMatch = cleaned.match(/^(\d{2})([А-ЯЁA-Z]+)-(\d+)$/i);
+  if (portalMatch) {
+    const yearCode = parseInt(portalMatch[1], 10);
+    // 24 -> 3 курс, 25 -> 2 курс, 26 -> 1 курс
+    const course = yearCode === 24 ? 3 : yearCode === 25 ? 2 : yearCode === 26 ? 1 : yearCode === 23 ? 4 : 3;
+    const faculty = portalMatch[2].toUpperCase();
+    const groupNum = portalMatch[3];
+    const facId = FACULTY_TO_ID_MAP[faculty] || faculty.toLowerCase();
+    const id = `${facId}-${course}${groupNum.slice(-2)}`;
+    return { name: `${course}-${faculty}-${groupNum}`, id };
+  }
+
+  // Match built-in id format like "ingt-311" or "faid-310"
+  const builtinMatch = cleaned.match(/^([a-z]+)-([1-6])(\d{2})$/i);
+  if (builtinMatch) {
+    const facId = builtinMatch[1].toLowerCase();
+    const course = builtinMatch[2];
+    const num = builtinMatch[3];
+    const facName = ID_TO_FACULTY_MAP[facId] || facId.toUpperCase();
+    return { name: `${course}-${facName}-1${num}`, id: `${facId}-${course}${num}` };
+  }
+
+  const id = cleaned.toLowerCase().replace(/[^a-z0-9а-яё]/gi, '-');
   return { name: cleaned, id: id || 'custom-group' };
+}
+
+/**
+ * Returns a uniform canonical key for deduplication and dictionary matching.
+ * Maps "3-ИНГТ-111", "ingt-311", "3-ингт-111", "Группа 24ИНГТ–111" to the exact same canonical string.
+ */
+export function getCanonicalGroupKey(input: { id?: string; name?: string } | string): string {
+  if (!input) return '';
+  const nameStr = typeof input === 'string' ? input : (input.name || '');
+  const idStr = typeof input === 'string' ? input : (input.id || '');
+
+  // 1. Try normalizing name
+  if (nameStr) {
+    const norm = normalizeSamgtuGroupName(nameStr);
+    if (norm.id && norm.id !== 'custom-group') {
+      return norm.id;
+    }
+  }
+
+  // 2. Try normalizing id
+  if (idStr) {
+    const norm = normalizeSamgtuGroupName(idStr);
+    if (norm.id && norm.id !== 'custom-group') {
+      return norm.id;
+    }
+    // Clean id string: remove non-alphanumeric
+    const cleanId = idStr.toLowerCase().replace(/[^a-z0-9а-яё]/gi, '');
+    if (cleanId) return cleanId;
+  }
+
+  // 3. Fallback clean name
+  return nameStr.toLowerCase().replace(/[^a-z0-9а-яё]/gi, '');
 }
 
 /**

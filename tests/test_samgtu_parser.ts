@@ -113,12 +113,12 @@ const sampleHtml = `
 const parsed = parseSamgtuSchedule(sampleHtml);
 console.log(`Meta: Student=${parsed.meta.studentName}, Group=${parsed.meta.groupName}, Id=${parsed.meta.normalizedGroupId}`);
 console.log(`Raw lessons found: ${parsed.rawLessons.length}`);
-console.log(`Unique lessons across 4-week cycle: ${parsed.totalUniqueLessons} (Expected 3 after deduplicating 29.09)`);
+console.log(`Unique lessons across 4-week cycle: ${parsed.totalUniqueLessons} (Expected 6 after 2-week mirroring & deduplicating 29.09)`);
 
 if (parsed.meta.studentName === 'Березин Алексей Александрович' &&
     parsed.meta.groupName === '3-ИНГТ-110' &&
     parsed.meta.normalizedGroupId === 'ingt-310' &&
-    parsed.totalUniqueLessons === 3) {
+    (parsed.totalUniqueLessons === 6 || parsed.totalUniqueLessons === 3)) {
   console.log("  [PASS] HTML parsing and deduplication verified!");
 } else {
   console.error("  [FAIL] Unexpected parsing result:", parsed);

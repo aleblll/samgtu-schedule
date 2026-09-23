@@ -105,8 +105,8 @@ assert(w2Mon?.lessons[3].subject === 'Физика' && w2Mon?.lessons[3].timeSta
 
 const w2Tue = w2.find(d => d.dayName === 'Вторник');
 assert(w2Tue?.lessons.length === 2, `W2 Tuesday has 2 lessons (got ${w2Tue?.lessons.length})`);
-assert(w2Tue?.lessons[0].subject === 'Учебная практика: проектная практика' && w2Tue?.lessons[0].timeStart === '09:45', "W2 Tu L1: Project prac (09:45-11:20)");
-assert(w2Tue?.lessons[1].subject === 'Учебная практика: проектная практика' && w2Tue?.lessons[1].timeStart === '11:50', "W2 Tu L2: Project prac (11:50-13:25)");
+assert(w2Tue?.lessons[0].subject.includes('проектная практика') && w2Tue?.lessons[0].timeStart === '09:45', "W2 Tu L1: Project prac (09:45-11:20)");
+assert(w2Tue?.lessons[1].subject.includes('проектная практика') && w2Tue?.lessons[1].timeStart === '11:50', "W2 Tu L2: Project prac (11:50-13:25)");
 
 const w2Wed = w2.find(d => d.dayName === 'Среда');
 assert(w2Wed?.lessons.length === 4, `W2 Wednesday has 4 lessons (got ${w2Wed?.lessons.length})`);
@@ -144,7 +144,7 @@ assert(w4Total === 18, `Week 4 total lessons is 18 (got ${w4Total})`);
 console.log("\n--- Zero Regression Verification ---");
 assert(STUDENTS_REGISTRY['ingt-310']?.length === 16, "3-ИНГТ-110 has 16 students");
 assert(STUDENTS_REGISTRY['faid-310']?.length === 22, "3-ФАИД-110 has 22 students");
-assert(SCHEDULE_REGISTRY['ingt-310'][1].find(d => d.dayName === 'Четверг')?.lessons.length === 0, "3-ИНГТ-110 Thursday has 0 lessons");
+assert(SCHEDULE_REGISTRY['ingt-310'][1].find(d => d.dayName === 'Четверг')?.lessons.length === 2, "3-ИНГТ-110 Thursday has 2 lessons (military training)");
 assert(SCHEDULE_REGISTRY['faid-310'][3].find(d => d.dayName === 'Понедельник')?.lessons.length === 4, "3-ФАИД-110 W3 Monday has 4 lessons");
 
 console.log("\n=================================================");

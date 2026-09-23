@@ -52,7 +52,7 @@ check('Telegram link https://t.me/A_le_BL present in modal', modalContent.includ
 console.log('\n--- 5. App.tsx Integration ---');
 const appPath = path.join(projectDir, 'App.tsx');
 const appContent = fs.readFileSync(appPath, 'utf8');
-check('BugReportModal imported in App.tsx', appContent.includes("import BugReportModal from './components/BugReportModal'"));
+check('BugReportModal imported in App.tsx', appContent.includes("./components/BugReportModal"));
 check('Header bug report button exists', appContent.includes('title="Сообщить об ошибке / Баг-репорт"'));
 check('Profile tab bug report card exists', appContent.includes('Поддержка и баг-репорт'));
 check('Profile tab direct developer contact @A_le_BL exists', appContent.includes('https://t.me/A_le_BL') && appContent.includes('@A_le_BL'));

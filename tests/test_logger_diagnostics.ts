@@ -114,7 +114,7 @@ check('DebugLogsModal has HapticFeedback support', debugModalContent.includes('H
 console.log('\n--- 7. App.tsx Triggers & Console Integration ---');
 const appPath = path.resolve(__dirname, '..', 'App.tsx');
 const appContent = fs.readFileSync(appPath, 'utf8');
-check('App.tsx imports DebugLogsModal', appContent.includes("import DebugLogsModal from './components/DebugLogsModal'"));
+check('App.tsx imports DebugLogsModal', appContent.includes("./components/DebugLogsModal"));
 check('App.tsx mounts DebugLogsModal', appContent.includes('<DebugLogsModal'));
 check('5-tap gesture detection exists on header', appContent.includes('handleHeaderTitleTap') && appContent.includes('headerTapCountRef'));
 check('Profile tab has Logs & Diagnostics button', appContent.includes('Логи и диагностика') && appContent.includes('setIsDebugLogsModalOpen(true)'));

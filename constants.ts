@@ -1,4 +1,5 @@
 import { WeekData, Faculty, GroupConfig, Registry, DaySchedule } from './types';
+import { INGT3_SCHEDULES } from './schedules/ingt3_schedules';
 
 export const FACULTIES: Faculty[] = [
   { id: 'ingt', name: 'Институт нефтегазовых технологий', shortName: 'ИНГТ' },
@@ -15,14 +16,26 @@ export const FACULTIES: Faculty[] = [
 ];
 
 export const AVAILABLE_GROUPS: GroupConfig[] = [
-  // Основные группы с расписанием
+  // ИНГТ 3 курс (весь бакалаврский поток 101–114)
+  { id: 'ingt-301', name: '3-ИНГТ-101', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
+  { id: 'ingt-302', name: '3-ИНГТ-102', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
+  { id: 'ingt-303', name: '3-ИНГТ-103', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
+  { id: 'ingt-304', name: '3-ИНГТ-104', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
+  { id: 'ingt-305', name: '3-ИНГТ-105', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
+  { id: 'ingt-306', name: '3-ИНГТ-106', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
+  { id: 'ingt-307', name: '3-ИНГТ-107', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
+  { id: 'ingt-308', name: '3-ИНГТ-108', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
+  { id: 'ingt-309', name: '3-ИНГТ-109', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
   { id: 'ingt-310', name: '3-ИНГТ-110', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
   { id: 'ingt-311', name: '3-ИНГТ-111', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
+  { id: 'ingt-312', name: '3-ИНГТ-112', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
+  { id: 'ingt-313', name: '3-ИНГТ-113', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
+  { id: 'ingt-314', name: '3-ИНГТ-114', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
+
+  // Другие факультеты и курсы с расписанием
   { id: 'faid-310', name: '3-ФАИД-110', facultyId: 'faid', degree: 'Бакалавриат', course: 3 },
   { id: 'ingt-209', name: '2-ИНГТ-109', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
   { id: 'htf-215', name: '2-ХТФ-115', facultyId: 'htf', degree: 'Бакалавриат', course: 2 },
-  { id: 'ingt-301', name: '3-ИНГТ-101', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
-  { id: 'ingt-303', name: '3-ИНГТ-103', facultyId: 'ingt', degree: 'Бакалавриат', course: 3 },
   { id: 'faid-501', name: '5-ФАИД-101', facultyId: 'faid', degree: 'Специалитет', course: 5 },
 
   // ИНГТ
@@ -1512,31 +1525,31 @@ SCHEDULE_REGISTRY['ingt-311'] = {
 };
 
 
+// Merge official INGT 3rd year schedules (101–114)
+Object.assign(SCHEDULE_REGISTRY, INGT3_SCHEDULES);
+
 // Helper for Telegram tags
 export const getGroupTag = (groupName: string): string => {
   return groupName.replace(/-/g, '');
 };
 
-// Backwards compatibility and format aliases
+// Backwards compatibility and format aliases for all 14 INGT 3rd year groups
+for (let i = 101; i <= 114; i++) {
+  const numStr = String(i);
+  const code = `ingt-3${numStr.slice(-2)}`;
+  if (SCHEDULE_REGISTRY[code]) {
+    SCHEDULE_REGISTRY[`3-ингт-${i}`] = SCHEDULE_REGISTRY[code];
+    SCHEDULE_REGISTRY[`3-ingt-${i}`] = SCHEDULE_REGISTRY[code];
+    SCHEDULE_REGISTRY[`24ингт-${i}`] = SCHEDULE_REGISTRY[code];
+  }
+}
+
+// Additional legacy and other faculty aliases
 SCHEDULE_REGISTRY['ingt-1'] = SCHEDULE_REGISTRY['ingt-301'];
 SCHEDULE_REGISTRY['faid-110'] = SCHEDULE_REGISTRY['faid-310'];
 SCHEDULE_REGISTRY['3-фаид-110'] = SCHEDULE_REGISTRY['faid-310'];
 SCHEDULE_REGISTRY['3-faid-110'] = SCHEDULE_REGISTRY['faid-310'];
 SCHEDULE_REGISTRY['24фад-110'] = SCHEDULE_REGISTRY['faid-310'];
-
-SCHEDULE_REGISTRY['3-ингт-110'] = SCHEDULE_REGISTRY['ingt-310'];
-SCHEDULE_REGISTRY['3-ingt-110'] = SCHEDULE_REGISTRY['ingt-310'];
-SCHEDULE_REGISTRY['24ингт-110'] = SCHEDULE_REGISTRY['ingt-310'];
-
-SCHEDULE_REGISTRY['3-ингт-111'] = SCHEDULE_REGISTRY['ingt-311'];
-SCHEDULE_REGISTRY['3-ingt-111'] = SCHEDULE_REGISTRY['ingt-311'];
-SCHEDULE_REGISTRY['24ингт-111'] = SCHEDULE_REGISTRY['ingt-311'];
-
-SCHEDULE_REGISTRY['3-ингт-101'] = SCHEDULE_REGISTRY['ingt-301'];
-SCHEDULE_REGISTRY['3-ingt-101'] = SCHEDULE_REGISTRY['ingt-301'];
-
-SCHEDULE_REGISTRY['3-ингт-103'] = SCHEDULE_REGISTRY['ingt-303'];
-SCHEDULE_REGISTRY['3-ingt-103'] = SCHEDULE_REGISTRY['ingt-303'];
 
 SCHEDULE_REGISTRY['2-ingt-109'] = SCHEDULE_REGISTRY['ingt-209'];
 SCHEDULE_REGISTRY['ingt-109'] = SCHEDULE_REGISTRY['ingt-209'];
@@ -1545,6 +1558,7 @@ SCHEDULE_REGISTRY['2-ингт-109'] = SCHEDULE_REGISTRY['ingt-209'];
 SCHEDULE_REGISTRY['2-htf-115'] = SCHEDULE_REGISTRY['htf-215'];
 SCHEDULE_REGISTRY['htf-115'] = SCHEDULE_REGISTRY['htf-215'];
 SCHEDULE_REGISTRY['2-хтф-115'] = SCHEDULE_REGISTRY['htf-215'];
+
 // Инициализация всех групп в AVAILABLE_GROUPS для устранения undefined в ДЗ
 AVAILABLE_GROUPS.forEach(grp => {
   if (!SCHEDULE_REGISTRY[grp.id]) {

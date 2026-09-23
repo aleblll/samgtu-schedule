@@ -11,6 +11,7 @@ import { fetchGroupCloudData, pushGroupCloudData, sanitizeTeachers, sanitizeOver
 import { SEED_SCHEDULE_OVERRIDES, SEED_SUBJECT_TEACHERS, getSeedSubjectTeachers } from './defaultData';
 import { verifyPinCode } from './utils/auth';
 import { logger } from './utils/logger';
+import { getCanonicalGroupKey, normalizeSamgtuGroupName } from './utils/samgtuParser';
 import {
   LogIn, LogOut, Calendar, BookOpen, Bug, ClipboardCheck, Sun, Moon,
   GraduationCap, Users, RefreshCw, Shield, User as UserIcon, Key, UserCheck, ChevronDown,
@@ -84,11 +85,31 @@ const App: React.FC = () => {
     return !localStorage.getItem('my_group_id');
   });
 
-  // Multi-group & custom groups state
+  // Multi-group & custom groups state with self-healing deduplication
   const [customGroups, setCustomGroups] = useState<GroupConfig[]>(() => {
     try {
       const saved = localStorage.getItem('custom_groups');
-      return saved ? JSON.parse(saved) : [];
+      const parsed: GroupConfig[] = saved ? JSON.parse(saved) : [];
+      if (!Array.isArray(parsed) || parsed.length === 0) return [];
+
+      const builtInKeys = new Set(AVAILABLE_GROUPS.map(g => getCanonicalGroupKey(g)));
+      const seenCustomKeys = new Set<string>();
+      const sanitized: GroupConfig[] = [];
+
+      for (const cg of parsed) {
+        if (!cg || !cg.id || !cg.name) continue;
+        const key = getCanonicalGroupKey(cg);
+        // If it already exists in built-in AVAILABLE_GROUPS (e.g. 110, 111, 113), drop custom duplicate
+        if (builtInKeys.has(key)) continue;
+        if (seenCustomKeys.has(key)) continue;
+        seenCustomKeys.add(key);
+        sanitized.push(cg);
+      }
+
+      if (sanitized.length !== parsed.length) {
+        localStorage.setItem('custom_groups', JSON.stringify(sanitized));
+      }
+      return sanitized;
     } catch (e) {
       return [];
     }
@@ -96,8 +117,16 @@ const App: React.FC = () => {
 
   const allAvailableGroups = useMemo(() => {
     const map = new Map<string, GroupConfig>();
-    AVAILABLE_GROUPS.forEach(g => map.set(g.id, g));
-    customGroups.forEach(g => map.set(g.id, g));
+    AVAILABLE_GROUPS.forEach(g => {
+      const key = getCanonicalGroupKey(g);
+      map.set(key, g);
+    });
+    customGroups.forEach(g => {
+      const key = getCanonicalGroupKey(g);
+      if (!map.has(key)) {
+        map.set(key, g);
+      }
+    });
     return Array.from(map.values());
   }, [customGroups]);
 
@@ -249,8 +278,11 @@ const App: React.FC = () => {
     // Check if cleanName is a known group or matches any existing group in allAvailableGroups
     const cleanLower = cleanName.toLowerCase();
     const cleanNoDashes = cleanLower.replace(/[^a-z0-9а-яё]/gi, '');
+    const cleanKey = getCanonicalGroupKey(cleanName);
 
     const existingMatch = allAvailableGroups.find(g => {
+      const gKey = getCanonicalGroupKey(g);
+      if (gKey && cleanKey && gKey === cleanKey) return true;
       const gNameLower = g.name.toLowerCase();
       const gIdLower = g.id.toLowerCase();
       const gNoDashes = gNameLower.replace(/[^a-z0-9а-яё]/gi, '');
@@ -278,7 +310,8 @@ const App: React.FC = () => {
       return;
     }
 
-    const generatedId = cleanName.toLowerCase().replace(/[^a-z0-9а-яё]/gi, '-');
+    const norm = normalizeSamgtuGroupName(cleanName);
+    const generatedId = (norm.id && norm.id !== 'custom-group') ? norm.id : cleanName.toLowerCase().replace(/[^a-z0-9а-яё]/gi, '-');
 
     const newGroup: GroupConfig = {
       id: generatedId,
@@ -298,7 +331,13 @@ const App: React.FC = () => {
       };
     }
 
-    const updated = [...customGroups.filter(g => g.id !== generatedId && g.name.toLowerCase() !== cleanLower), newGroup];
+    const updated = [
+      ...customGroups.filter(g => {
+        const k = getCanonicalGroupKey(g);
+        return k !== cleanKey && k !== generatedId && g.id !== generatedId && g.name.toLowerCase() !== cleanLower;
+      }),
+      newGroup
+    ];
     setCustomGroups(updated);
     try {
       localStorage.setItem('custom_groups', JSON.stringify(updated));
@@ -315,9 +354,14 @@ const App: React.FC = () => {
       localStorage.setItem(`custom_schedule_${groupId}`, JSON.stringify(weekData));
     } catch (e) {}
 
-    // Ensure group exists in available groups
-    if (!allAvailableGroups.some(g => g.id === groupId)) {
-      const cleanName = (groupName || groupId).trim();
+    const cleanName = (groupName || groupId).trim();
+    const canonicalKey = getCanonicalGroupKey({ id: groupId, name: cleanName });
+
+    // Check if group already exists in allAvailableGroups (built-in or custom)
+    const existing = allAvailableGroups.find(g => getCanonicalGroupKey(g) === canonicalKey);
+    const targetGroupId = existing ? existing.id : groupId;
+
+    if (!existing) {
       const firstChar = cleanName.charAt(0);
       const detectedCourse = /^[1-6]$/.test(firstChar) ? parseInt(firstChar, 10) : 1;
       const facId = groupId.split('-')[0] || 'ingt';
@@ -328,21 +372,21 @@ const App: React.FC = () => {
         course: detectedCourse,
         degree: detectedCourse === 5 ? 'Специалитет' : 'Бакалавриат'
       };
-      const updated = [...customGroups.filter(g => g.id !== groupId), newGroup];
+      const updated = [...customGroups.filter(g => getCanonicalGroupKey(g) !== canonicalKey && g.id !== groupId), newGroup];
       setCustomGroups(updated);
       try {
         localStorage.setItem('custom_groups', JSON.stringify(updated));
       } catch (e) {}
     }
 
-    handleSelectGroup(groupId);
+    handleSelectGroup(targetGroupId);
     setIsGroupSelectionModalOpen(false);
-    toast.success(`Расписание для группы ${groupName || groupId} успешно импортировано!`);
+    toast.success(`Расписание для группы ${existing?.name || cleanName} успешно импортировано!`);
   };
 
   const filteredGroups = useMemo(() => {
     const q = groupSearchQuery.toLowerCase().trim();
-    return allAvailableGroups.filter(grp => {
+    const matched = allAvailableGroups.filter(grp => {
       // Global search across all faculties if user typed 2+ characters
       if (q.length >= 2) {
         const matchName = grp.name.toLowerCase().includes(q);
@@ -368,6 +412,16 @@ const App: React.FC = () => {
       }
       return true;
     });
+
+    // Secondary strict pass through uniqueMap by getCanonicalGroupKey to guarantee zero duplicates
+    const uniqueMap = new Map<string, GroupConfig>();
+    for (const g of matched) {
+      const key = getCanonicalGroupKey(g);
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, g);
+      }
+    }
+    return Array.from(uniqueMap.values());
   }, [allAvailableGroups, selectedFacultyFilter, selectedCourseFilter, groupSearchQuery]);
 
   const currentGroupConfig = useMemo(() => {

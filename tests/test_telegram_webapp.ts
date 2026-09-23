@@ -218,7 +218,9 @@ console.log('=================================================');
 
 if (passedTests === totalTests) {
   console.log('>>> VERDICT: ALL TELEGRAM WEBAPP & ERGONOMICS CHECKS PASSED <<<');
-  process.exit(0);
+  if (process.argv[1] && process.argv[1].includes('test_telegram_webapp')) {
+    process.exit(0);
+  }
 } else {
   console.error('>>> VERDICT: SOME CHECKS FAILED <<<');
   process.exit(1);
