@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Lesson } from '../types';
 import { MapPin, User, Users, Info, Edit3, ExternalLink, Link2 } from 'lucide-react';
 import EditLessonModal, { TeacherAssignmentScope } from './EditLessonModal';
+import { getLessonSubgroup } from '../utils/subgroup';
 
 interface ClassCardProps {
   lesson: Lesson;
@@ -20,6 +21,7 @@ const ClassCard: React.FC<ClassCardProps> = ({
 }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const canEdit = userRole.toLowerCase() === 'admin' || userRole.toLowerCase() === 'starosta';
+  const lessonSubgroup = getLessonSubgroup(lesson);
 
   // Determine badge color based on lesson type
   const getTypeColor = (type: string) => {
@@ -58,6 +60,16 @@ const ClassCard: React.FC<ClassCardProps> = ({
               {isCancelled && (
                 <span className="px-2 py-0.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wide bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">
                   Отменена
+                </span>
+              )}
+              {lessonSubgroup === 1 && (
+                <span className="px-2 py-0.5 rounded-lg text-[10px] uppercase font-bold tracking-wide bg-sky-100/90 text-sky-900 border border-sky-300/80 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/40">
+                  1 п/г
+                </span>
+              )}
+              {lessonSubgroup === 2 && (
+                <span className="px-2 py-0.5 rounded-lg text-[10px] uppercase font-bold tracking-wide bg-violet-100/90 text-violet-900 border border-violet-300/80 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800/40">
+                  2 п/г
                 </span>
               )}
               <span className={`px-2.5 py-0.5 rounded-lg text-[10px] uppercase font-bold tracking-wide ${getTypeColor(lesson.type)}`}>
