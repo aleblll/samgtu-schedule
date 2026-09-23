@@ -1,6 +1,9 @@
 import { normalizeSamgtuGroupName, getCanonicalGroupKey } from '../utils/samgtuParser';
 import { AVAILABLE_GROUPS, SCHEDULE_REGISTRY } from '../constants';
 import { GroupConfig } from '../types';
+import { preloadAllSchedulesSync } from '../utils/scheduleNodeLoader';
+
+preloadAllSchedulesSync();
 
 console.log('--- STARTING GROUP DEDUPLICATION & INGT-3 TESTS ---');
 

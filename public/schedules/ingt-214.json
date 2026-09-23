@@ -4,30 +4,30 @@
       "dayName": "Понедельник",
       "lessons": [
         {
-          "id": "ingt-209-w1-mo-1",
+          "id": "ingt-214-w1-mo-1",
           "timeStart": "11:50",
           "timeEnd": "13:25",
+          "subject": "Иностранный язык",
+          "type": "Практические занятия",
+          "location": "Корпус № 1, 10",
+          "teacher": ""
+        },
+        {
+          "id": "ingt-214-w1-mo-2",
+          "timeStart": "13:35",
+          "timeEnd": "15:10",
           "subject": "Физика",
           "type": "Практические занятия",
           "location": "Корпус № 1, 320",
           "teacher": ""
         },
         {
-          "id": "ingt-209-w1-mo-2",
-          "timeStart": "13:35",
-          "timeEnd": "15:10",
+          "id": "ingt-214-w1-mo-3",
+          "timeStart": "15:40",
+          "timeEnd": "17:15",
           "subject": "Защита информации",
           "type": "Практические занятия",
           "location": "Корпус № 8, 113",
-          "teacher": ""
-        },
-        {
-          "id": "ingt-209-w1-mo-3",
-          "timeStart": "15:40",
-          "timeEnd": "17:15",
-          "subject": "Математика",
-          "type": "Практические занятия",
-          "location": "Корпус № 11, 471",
           "teacher": ""
         }
       ]
@@ -36,7 +36,16 @@
       "dayName": "Вторник",
       "lessons": [
         {
-          "id": "ingt-209-w1-tu-1",
+          "id": "ingt-214-w1-tu-1",
+          "timeStart": "09:45",
+          "timeEnd": "11:20",
+          "subject": "Элективные курсы по физической культуре и спорту",
+          "type": "Практические занятия",
+          "location": "Спортивный комплекс",
+          "teacher": ""
+        },
+        {
+          "id": "ingt-214-w1-tu-2",
           "timeStart": "11:50",
           "timeEnd": "13:25",
           "subject": "Защита информации",
@@ -45,7 +54,7 @@
           "teacher": ""
         },
         {
-          "id": "ingt-209-w1-tu-2",
+          "id": "ingt-214-w1-tu-3",
           "timeStart": "13:35",
           "timeEnd": "15:10",
           "subject": "Математика",
@@ -59,16 +68,25 @@
       "dayName": "Среда",
       "lessons": [
         {
-          "id": "ingt-209-w1-we-1",
-          "timeStart": "11:50",
-          "timeEnd": "13:25",
+          "id": "ingt-214-w1-we-1",
+          "timeStart": "09:45",
+          "timeEnd": "11:20",
           "subject": "Элективные курсы по физической культуре и спорту",
           "type": "Практические занятия",
           "location": "Спортивный комплекс",
           "teacher": ""
         },
         {
-          "id": "ingt-209-w1-we-2",
+          "id": "ingt-214-w1-we-2",
+          "timeStart": "11:50",
+          "timeEnd": "13:25",
+          "subject": "Социология и право",
+          "type": "Практические занятия",
+          "location": "Корпус № 3, 206",
+          "teacher": ""
+        },
+        {
+          "id": "ingt-214-w1-we-3",
           "timeStart": "13:35",
           "timeEnd": "15:10",
           "subject": "Теория механизмов и машин",
@@ -77,7 +95,7 @@
           "teacher": ""
         },
         {
-          "id": "ingt-209-w1-we-3",
+          "id": "ingt-214-w1-we-4",
           "timeStart": "15:40",
           "timeEnd": "17:15",
           "subject": "Прикладная механика",
@@ -91,7 +109,7 @@
       "dayName": "Четверг",
       "lessons": [
         {
-          "id": "ingt-209-w1-th-1",
+          "id": "ingt-214-w1-th-1",
           "timeStart": "09:45",
           "timeEnd": "11:20",
           "subject": "Физика",
@@ -100,7 +118,7 @@
           "teacher": ""
         },
         {
-          "id": "ingt-209-w1-th-2",
+          "id": "ingt-214-w1-th-2",
           "timeStart": "11:50",
           "timeEnd": "13:25",
           "subject": "Основы нефтегазопромыслового дела",
@@ -109,18 +127,9 @@
           "teacher": ""
         },
         {
-          "id": "ingt-209-w1-th-3",
+          "id": "ingt-214-w1-th-3",
           "timeStart": "13:35",
           "timeEnd": "15:10",
-          "subject": "Социология и право",
-          "type": "Практические занятия",
-          "location": "Корпус № 9, 412",
-          "teacher": ""
-        },
-        {
-          "id": "ingt-209-w1-th-4",
-          "timeStart": "15:40",
-          "timeEnd": "17:15",
           "subject": "Иностранный язык",
           "type": "Практические занятия",
           "location": "Корпус № 1, 10",
@@ -132,21 +141,21 @@
       "dayName": "Пятница",
       "lessons": [
         {
-          "id": "ingt-209-w1-fr-1",
+          "id": "ingt-214-w1-fr-1",
           "timeStart": "15:40",
           "timeEnd": "17:15",
-          "subject": "Материаловедение и технологии конструкционных материалов",
-          "type": "Лабораторные работы",
-          "location": "62б корпус № 3",
+          "subject": "Математика",
+          "type": "Практические занятия",
+          "location": "Корпус № 11, 354",
           "teacher": ""
         },
         {
-          "id": "ingt-209-w1-fr-2",
+          "id": "ingt-214-w1-fr-2",
           "timeStart": "17:25",
           "timeEnd": "19:00",
-          "subject": "Материаловедение и технологии конструкционных материалов",
-          "type": "Лабораторные работы",
-          "location": "62б корпус № 3",
+          "subject": "Математика",
+          "type": "Практические занятия",
+          "location": "Корпус № 11, 354",
           "teacher": ""
         }
       ]
@@ -155,21 +164,21 @@
       "dayName": "Суббота",
       "lessons": [
         {
-          "id": "ingt-209-w1-sa-1",
-          "timeStart": "11:50",
-          "timeEnd": "13:25",
+          "id": "ingt-214-w1-sa-1",
+          "timeStart": "08:00",
+          "timeEnd": "09:35",
           "subject": "Иностранный язык",
           "type": "Практические занятия",
-          "location": "Корпус № 1, 10",
+          "location": "Корпус № 1, 4",
           "teacher": ""
         },
         {
-          "id": "ingt-209-w1-sa-2",
-          "timeStart": "13:35",
-          "timeEnd": "15:10",
+          "id": "ingt-214-w1-sa-2",
+          "timeStart": "09:45",
+          "timeEnd": "11:20",
           "subject": "Иностранный язык",
           "type": "Практические занятия",
-          "location": "Корпус № 1, 10",
+          "location": "Корпус № 1, 4",
           "teacher": ""
         }
       ]
@@ -180,7 +189,7 @@
       "dayName": "Понедельник",
       "lessons": [
         {
-          "id": "ingt-209-w2-mo-1",
+          "id": "ingt-214-w2-mo-1",
           "timeStart": "08:00",
           "timeEnd": "09:35",
           "subject": "Математика",
@@ -189,7 +198,7 @@
           "teacher": ""
         },
         {
-          "id": "ingt-209-w2-mo-2",
+          "id": "ingt-214-w2-mo-2",
           "timeStart": "09:45",
           "timeEnd": "11:20",
           "subject": "Материаловедение и технологии конструкционных материалов",
@@ -198,21 +207,21 @@
           "teacher": ""
         },
         {
-          "id": "ingt-209-w2-mo-3",
+          "id": "ingt-214-w2-mo-3",
           "timeStart": "11:50",
           "timeEnd": "13:25",
-          "subject": "Физика",
+          "subject": "Материаловедение и технологии конструкционных материалов",
           "type": "Лабораторные работы",
-          "location": "Корпус № 1, 320",
+          "location": "62б корпус № 3",
           "teacher": ""
         },
         {
-          "id": "ingt-209-w2-mo-4",
+          "id": "ingt-214-w2-mo-4",
           "timeStart": "13:35",
           "timeEnd": "15:10",
-          "subject": "Физика",
+          "subject": "Материаловедение и технологии конструкционных материалов",
           "type": "Лабораторные работы",
-          "location": "Корпус № 1, 320",
+          "location": "62б корпус № 3",
           "teacher": ""
         }
       ]
@@ -221,21 +230,21 @@
       "dayName": "Вторник",
       "lessons": [
         {
-          "id": "ingt-209-w2-tu-1",
-          "timeStart": "09:45",
-          "timeEnd": "11:20",
+          "id": "ingt-214-w2-tu-1",
+          "timeStart": "13:35",
+          "timeEnd": "15:10",
           "subject": "Учебная практика: проектная практика, практика",
           "type": "Практические занятия",
-          "location": "Корпус № 8, 401",
+          "location": "Корпус № 9, 207",
           "teacher": ""
         },
         {
-          "id": "ingt-209-w2-tu-2",
-          "timeStart": "11:50",
-          "timeEnd": "13:25",
+          "id": "ingt-214-w2-tu-2",
+          "timeStart": "15:40",
+          "timeEnd": "17:15",
           "subject": "Учебная практика: проектная практика, практика",
           "type": "Практические занятия",
-          "location": "Корпус № 8, 401",
+          "location": "Корпус № 9, 207",
           "teacher": ""
         }
       ]
@@ -244,39 +253,21 @@
       "dayName": "Среда",
       "lessons": [
         {
-          "id": "ingt-209-w2-we-1",
-          "timeStart": "11:50",
-          "timeEnd": "13:25",
-          "subject": "Элективные курсы по физической культуре и спорту",
-          "type": "Практические занятия",
-          "location": "Спортивный комплекс",
-          "teacher": ""
-        },
-        {
-          "id": "ingt-209-w2-we-2",
-          "timeStart": "13:35",
-          "timeEnd": "15:10",
+          "id": "ingt-214-w2-we-1",
+          "timeStart": "15:40",
+          "timeEnd": "17:15",
           "subject": "Теория механизмов и машин",
           "type": "Лабораторные работы",
           "location": "Корпус № 6, 20",
           "teacher": ""
         },
         {
-          "id": "ingt-209-w2-we-3",
-          "timeStart": "15:40",
-          "timeEnd": "17:15",
+          "id": "ingt-214-w2-we-2",
+          "timeStart": "17:25",
+          "timeEnd": "19:00",
           "subject": "Прикладная механика",
           "type": "Лабораторные работы",
           "location": "Корпус № 3, 15",
-          "teacher": ""
-        },
-        {
-          "id": "ingt-209-w2-we-4",
-          "timeStart": "17:25",
-          "timeEnd": "19:00",
-          "subject": "Иностранный язык",
-          "type": "Практические занятия",
-          "location": "Корпус № 1, 10",
           "teacher": ""
         }
       ]
@@ -285,27 +276,45 @@
       "dayName": "Четверг",
       "lessons": [
         {
-          "id": "ingt-209-w2-th-1",
-          "timeStart": "11:50",
-          "timeEnd": "13:25",
+          "id": "ingt-214-w2-th-1",
+          "timeStart": "09:45",
+          "timeEnd": "11:20",
           "subject": "Элективные курсы по физической культуре и спорту",
           "type": "Практические занятия",
           "location": "Спортивный комплекс",
           "teacher": ""
         },
         {
-          "id": "ingt-209-w2-th-2",
-          "timeStart": "13:35",
-          "timeEnd": "15:10",
-          "subject": "Теория механизмов и машин",
-          "type": "Практические занятия",
-          "location": "Корпус № 6, 20",
+          "id": "ingt-214-w2-th-2",
+          "timeStart": "11:50",
+          "timeEnd": "13:25",
+          "subject": "Физика",
+          "type": "Лабораторные работы",
+          "location": "Корпус № 1, 320",
           "teacher": ""
         },
         {
-          "id": "ingt-209-w2-th-3",
+          "id": "ingt-214-w2-th-3",
+          "timeStart": "13:35",
+          "timeEnd": "15:10",
+          "subject": "Физика",
+          "type": "Лабораторные работы",
+          "location": "Корпус № 1, 320",
+          "teacher": ""
+        },
+        {
+          "id": "ingt-214-w2-th-4",
           "timeStart": "15:40",
           "timeEnd": "17:15",
+          "subject": "Теория механизмов и машин",
+          "type": "Практические занятия",
+          "location": "Корпус № 6, 27",
+          "teacher": ""
+        },
+        {
+          "id": "ingt-214-w2-th-5",
+          "timeStart": "17:25",
+          "timeEnd": "19:00",
           "subject": "Прикладная механика",
           "type": "Практические занятия",
           "location": "Корпус № 6, 62",
@@ -317,7 +326,7 @@
       "dayName": "Пятница",
       "lessons": [
         {
-          "id": "ingt-209-w2-fr-1",
+          "id": "ingt-214-w2-fr-1",
           "timeStart": "09:45",
           "timeEnd": "11:20",
           "subject": "Прикладная механика",
@@ -326,7 +335,7 @@
           "teacher": ""
         },
         {
-          "id": "ingt-209-w2-fr-2",
+          "id": "ingt-214-w2-fr-2",
           "timeStart": "11:50",
           "timeEnd": "13:25",
           "subject": "Социология и право",
@@ -335,7 +344,7 @@
           "teacher": ""
         },
         {
-          "id": "ingt-209-w2-fr-3",
+          "id": "ingt-214-w2-fr-3",
           "timeStart": "13:35",
           "timeEnd": "15:10",
           "subject": "Основы нефтегазопромыслового дела",
@@ -349,21 +358,21 @@
       "dayName": "Суббота",
       "lessons": [
         {
-          "id": "ingt-209-w2-sa-1",
+          "id": "ingt-214-w2-sa-1",
           "timeStart": "11:50",
           "timeEnd": "13:25",
-          "subject": "Философия",
-          "type": "Практические занятия",
-          "location": "Корпус № 11, 471",
-          "teacher": ""
-        },
-        {
-          "id": "ingt-209-w2-sa-2",
-          "timeStart": "13:35",
-          "timeEnd": "15:10",
           "subject": "Математика",
           "type": "Практические занятия",
           "location": "Корпус № 11, 460",
+          "teacher": ""
+        },
+        {
+          "id": "ingt-214-w2-sa-2",
+          "timeStart": "13:35",
+          "timeEnd": "15:10",
+          "subject": "Философия",
+          "type": "Практические занятия",
+          "location": "Корпус № 11, 471",
           "teacher": ""
         }
       ]
@@ -374,30 +383,30 @@
       "dayName": "Понедельник",
       "lessons": [
         {
-          "id": "ingt-209-w3-mo-1",
+          "id": "ingt-214-w3-mo-1",
           "timeStart": "11:50",
           "timeEnd": "13:25",
+          "subject": "Иностранный язык",
+          "type": "Практические занятия",
+          "location": "Корпус № 1, 10",
+          "teacher": ""
+        },
+        {
+          "id": "ingt-214-w3-mo-2",
+          "timeStart": "13:35",
+          "timeEnd": "15:10",
           "subject": "Физика",
           "type": "Практические занятия",
           "location": "Корпус № 1, 320",
           "teacher": ""
         },
         {
-          "id": "ingt-209-w3-mo-2",
-          "timeStart": "13:35",
-          "timeEnd": "15:10",
+          "id": "ingt-214-w3-mo-3",
+          "timeStart": "15:40",
+          "timeEnd": "17:15",
           "subject": "Защита информации",
           "type": "Практические занятия",
           "location": "Корпус № 8, 113",
-          "teacher": ""
-        },
-        {
-          "id": "ingt-209-w3-mo-3",
-          "timeStart": "15:40",
-          "timeEnd": "17:15",
-          "subject": "Математика",
-          "type": "Практические занятия",
-          "location": "Корпус № 11, 471",
           "teacher": ""
         }
       ]
@@ -406,7 +415,16 @@
       "dayName": "Вторник",
       "lessons": [
         {
-          "id": "ingt-209-w3-tu-1",
+          "id": "ingt-214-w3-tu-1",
+          "timeStart": "09:45",
+          "timeEnd": "11:20",
+          "subject": "Элективные курсы по физической культуре и спорту",
+          "type": "Практические занятия",
+          "location": "Спортивный комплекс",
+          "teacher": ""
+        },
+        {
+          "id": "ingt-214-w3-tu-2",
           "timeStart": "11:50",
           "timeEnd": "13:25",
           "subject": "Защита информации",
@@ -415,7 +433,7 @@
           "teacher": ""
         },
         {
-          "id": "ingt-209-w3-tu-2",
+          "id": "ingt-214-w3-tu-3",
           "timeStart": "13:35",
           "timeEnd": "15:10",
           "subject": "Математика",
@@ -429,16 +447,25 @@
       "dayName": "Среда",
       "lessons": [
         {
-          "id": "ingt-209-w3-we-1",
-          "timeStart": "11:50",
-          "timeEnd": "13:25",
+          "id": "ingt-214-w3-we-1",
+          "timeStart": "09:45",
+          "timeEnd": "11:20",
           "subject": "Элективные курсы по физической культуре и спорту",
           "type": "Практические занятия",
           "location": "Спортивный комплекс",
           "teacher": ""
         },
         {
-          "id": "ingt-209-w3-we-2",
+          "id": "ingt-214-w3-we-2",
+          "timeStart": "11:50",
+          "timeEnd": "13:25",
+          "subject": "Социология и право",
+          "type": "Практические занятия",
+          "location": "Корпус № 3, 206",
+          "teacher": ""
+        },
+        {
+          "id": "ingt-214-w3-we-3",
           "timeStart": "13:35",
           "timeEnd": "15:10",
           "subject": "Теория механизмов и машин",
@@ -447,7 +474,7 @@
           "teacher": ""
         },
         {
-          "id": "ingt-209-w3-we-3",
+          "id": "ingt-214-w3-we-4",
           "timeStart": "15:40",
           "timeEnd": "17:15",
           "subject": "Прикладная механика",
@@ -461,7 +488,7 @@
       "dayName": "Четверг",
       "lessons": [
         {
-          "id": "ingt-209-w3-th-1",
+          "id": "ingt-214-w3-th-1",
           "timeStart": "09:45",
           "timeEnd": "11:20",
           "subject": "Физика",
@@ -470,7 +497,7 @@
           "teacher": ""
         },
         {
-          "id": "ingt-209-w3-th-2",
+          "id": "ingt-214-w3-th-2",
           "timeStart": "11:50",
           "timeEnd": "13:25",
           "subject": "Основы нефтегазопромыслового дела",
@@ -479,18 +506,9 @@
           "teacher": ""
         },
         {
-          "id": "ingt-209-w3-th-3",
+          "id": "ingt-214-w3-th-3",
           "timeStart": "13:35",
           "timeEnd": "15:10",
-          "subject": "Социология и право",
-          "type": "Практические занятия",
-          "location": "Корпус № 9, 412",
-          "teacher": ""
-        },
-        {
-          "id": "ingt-209-w3-th-4",
-          "timeStart": "15:40",
-          "timeEnd": "17:15",
           "subject": "Иностранный язык",
           "type": "Практические занятия",
           "location": "Корпус № 1, 10",
@@ -502,21 +520,21 @@
       "dayName": "Пятница",
       "lessons": [
         {
-          "id": "ingt-209-w3-fr-1",
+          "id": "ingt-214-w3-fr-1",
           "timeStart": "15:40",
           "timeEnd": "17:15",
-          "subject": "Материаловедение и технологии конструкционных материалов",
-          "type": "Лабораторные работы",
-          "location": "62б корпус № 3",
+          "subject": "Математика",
+          "type": "Практические занятия",
+          "location": "Корпус № 11, 354",
           "teacher": ""
         },
         {
-          "id": "ingt-209-w3-fr-2",
+          "id": "ingt-214-w3-fr-2",
           "timeStart": "17:25",
           "timeEnd": "19:00",
-          "subject": "Материаловедение и технологии конструкционных материалов",
-          "type": "Лабораторные работы",
-          "location": "62б корпус № 3",
+          "subject": "Математика",
+          "type": "Практические занятия",
+          "location": "Корпус № 11, 354",
           "teacher": ""
         }
       ]
@@ -525,21 +543,21 @@
       "dayName": "Суббота",
       "lessons": [
         {
-          "id": "ingt-209-w3-sa-1",
-          "timeStart": "11:50",
-          "timeEnd": "13:25",
+          "id": "ingt-214-w3-sa-1",
+          "timeStart": "08:00",
+          "timeEnd": "09:35",
           "subject": "Иностранный язык",
           "type": "Практические занятия",
-          "location": "Корпус № 1, 10",
+          "location": "Корпус № 1, 4",
           "teacher": ""
         },
         {
-          "id": "ingt-209-w3-sa-2",
-          "timeStart": "13:35",
-          "timeEnd": "15:10",
+          "id": "ingt-214-w3-sa-2",
+          "timeStart": "09:45",
+          "timeEnd": "11:20",
           "subject": "Иностранный язык",
           "type": "Практические занятия",
-          "location": "Корпус № 1, 10",
+          "location": "Корпус № 1, 4",
           "teacher": ""
         }
       ]
@@ -550,7 +568,7 @@
       "dayName": "Понедельник",
       "lessons": [
         {
-          "id": "ingt-209-w4-mo-1",
+          "id": "ingt-214-w4-mo-1",
           "timeStart": "08:00",
           "timeEnd": "09:35",
           "subject": "Математика",
@@ -559,7 +577,7 @@
           "teacher": ""
         },
         {
-          "id": "ingt-209-w4-mo-2",
+          "id": "ingt-214-w4-mo-2",
           "timeStart": "09:45",
           "timeEnd": "11:20",
           "subject": "Материаловедение и технологии конструкционных материалов",
@@ -568,21 +586,21 @@
           "teacher": ""
         },
         {
-          "id": "ingt-209-w4-mo-3",
+          "id": "ingt-214-w4-mo-3",
           "timeStart": "11:50",
           "timeEnd": "13:25",
-          "subject": "Основы нефтегазопромыслового дела",
+          "subject": "Материаловедение и технологии конструкционных материалов",
           "type": "Лабораторные работы",
-          "location": "8ц корпус № 1",
+          "location": "62б корпус № 3",
           "teacher": ""
         },
         {
-          "id": "ingt-209-w4-mo-4",
+          "id": "ingt-214-w4-mo-4",
           "timeStart": "13:35",
           "timeEnd": "15:10",
-          "subject": "Основы нефтегазопромыслового дела",
+          "subject": "Материаловедение и технологии конструкционных материалов",
           "type": "Лабораторные работы",
-          "location": "8ц корпус № 1",
+          "location": "62б корпус № 3",
           "teacher": ""
         }
       ]
@@ -591,21 +609,21 @@
       "dayName": "Вторник",
       "lessons": [
         {
-          "id": "ingt-209-w4-tu-1",
-          "timeStart": "09:45",
-          "timeEnd": "11:20",
+          "id": "ingt-214-w4-tu-1",
+          "timeStart": "13:35",
+          "timeEnd": "15:10",
           "subject": "Учебная практика: проектная практика, практика",
           "type": "Практические занятия",
-          "location": "Корпус № 8, 401",
+          "location": "Корпус № 9, 207",
           "teacher": ""
         },
         {
-          "id": "ingt-209-w4-tu-2",
-          "timeStart": "11:50",
-          "timeEnd": "13:25",
+          "id": "ingt-214-w4-tu-2",
+          "timeStart": "15:40",
+          "timeEnd": "17:15",
           "subject": "Учебная практика: проектная практика, практика",
           "type": "Практические занятия",
-          "location": "Корпус № 8, 401",
+          "location": "Корпус № 9, 207",
           "teacher": ""
         }
       ]
@@ -614,39 +632,21 @@
       "dayName": "Среда",
       "lessons": [
         {
-          "id": "ingt-209-w4-we-1",
-          "timeStart": "11:50",
-          "timeEnd": "13:25",
-          "subject": "Элективные курсы по физической культуре и спорту",
-          "type": "Практические занятия",
-          "location": "Спортивный комплекс",
-          "teacher": ""
-        },
-        {
-          "id": "ingt-209-w4-we-2",
-          "timeStart": "13:35",
-          "timeEnd": "15:10",
+          "id": "ingt-214-w4-we-1",
+          "timeStart": "15:40",
+          "timeEnd": "17:15",
           "subject": "Теория механизмов и машин",
           "type": "Лабораторные работы",
           "location": "Корпус № 6, 20",
           "teacher": ""
         },
         {
-          "id": "ingt-209-w4-we-3",
-          "timeStart": "15:40",
-          "timeEnd": "17:15",
+          "id": "ingt-214-w4-we-2",
+          "timeStart": "17:25",
+          "timeEnd": "19:00",
           "subject": "Прикладная механика",
           "type": "Лабораторные работы",
           "location": "Корпус № 3, 15",
-          "teacher": ""
-        },
-        {
-          "id": "ingt-209-w4-we-4",
-          "timeStart": "17:25",
-          "timeEnd": "19:00",
-          "subject": "Иностранный язык",
-          "type": "Практические занятия",
-          "location": "Корпус № 1, 10",
           "teacher": ""
         }
       ]
@@ -655,27 +655,45 @@
       "dayName": "Четверг",
       "lessons": [
         {
-          "id": "ingt-209-w4-th-1",
-          "timeStart": "11:50",
-          "timeEnd": "13:25",
+          "id": "ingt-214-w4-th-1",
+          "timeStart": "09:45",
+          "timeEnd": "11:20",
           "subject": "Элективные курсы по физической культуре и спорту",
           "type": "Практические занятия",
           "location": "Спортивный комплекс",
           "teacher": ""
         },
         {
-          "id": "ingt-209-w4-th-2",
-          "timeStart": "13:35",
-          "timeEnd": "15:10",
-          "subject": "Теория механизмов и машин",
-          "type": "Практические занятия",
-          "location": "Корпус № 6, 20",
+          "id": "ingt-214-w4-th-2",
+          "timeStart": "11:50",
+          "timeEnd": "13:25",
+          "subject": "Основы нефтегазопромыслового дела",
+          "type": "Лабораторные работы",
+          "location": "8ц корпус № 1",
           "teacher": ""
         },
         {
-          "id": "ingt-209-w4-th-3",
+          "id": "ingt-214-w4-th-3",
+          "timeStart": "13:35",
+          "timeEnd": "15:10",
+          "subject": "Основы нефтегазопромыслового дела",
+          "type": "Лабораторные работы",
+          "location": "8ц корпус № 1",
+          "teacher": ""
+        },
+        {
+          "id": "ingt-214-w4-th-4",
           "timeStart": "15:40",
           "timeEnd": "17:15",
+          "subject": "Теория механизмов и машин",
+          "type": "Практические занятия",
+          "location": "Корпус № 6, 27",
+          "teacher": ""
+        },
+        {
+          "id": "ingt-214-w4-th-5",
+          "timeStart": "17:25",
+          "timeEnd": "19:00",
           "subject": "Прикладная механика",
           "type": "Практические занятия",
           "location": "Корпус № 6, 62",
@@ -687,7 +705,7 @@
       "dayName": "Пятница",
       "lessons": [
         {
-          "id": "ingt-209-w4-fr-1",
+          "id": "ingt-214-w4-fr-1",
           "timeStart": "09:45",
           "timeEnd": "11:20",
           "subject": "Философия",
@@ -696,7 +714,7 @@
           "teacher": ""
         },
         {
-          "id": "ingt-209-w4-fr-2",
+          "id": "ingt-214-w4-fr-2",
           "timeStart": "11:50",
           "timeEnd": "13:25",
           "subject": "Социология и право",
@@ -705,7 +723,7 @@
           "teacher": ""
         },
         {
-          "id": "ingt-209-w4-fr-3",
+          "id": "ingt-214-w4-fr-3",
           "timeStart": "13:35",
           "timeEnd": "15:10",
           "subject": "Основы нефтегазопромыслового дела",
@@ -719,21 +737,21 @@
       "dayName": "Суббота",
       "lessons": [
         {
-          "id": "ingt-209-w4-sa-1",
+          "id": "ingt-214-w4-sa-1",
           "timeStart": "11:50",
           "timeEnd": "13:25",
-          "subject": "Философия",
-          "type": "Практические занятия",
-          "location": "Корпус № 11, 471",
-          "teacher": ""
-        },
-        {
-          "id": "ingt-209-w4-sa-2",
-          "timeStart": "13:35",
-          "timeEnd": "15:10",
           "subject": "Математика",
           "type": "Практические занятия",
           "location": "Корпус № 11, 460",
+          "teacher": ""
+        },
+        {
+          "id": "ingt-214-w4-sa-2",
+          "timeStart": "13:35",
+          "timeEnd": "15:10",
+          "subject": "Философия",
+          "type": "Практические занятия",
+          "location": "Корпус № 11, 471",
           "teacher": ""
         }
       ]

@@ -33,16 +33,43 @@ export const AVAILABLE_GROUPS: GroupConfig[] = [
 
   // Другие факультеты и курсы с расписанием
   { id: 'faid-310', name: '3-ФАИД-110', facultyId: 'faid', degree: 'Бакалавриат', course: 3 },
-  { id: 'ingt-209', name: '2-ИНГТ-109', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
   { id: 'htf-215', name: '2-ХТФ-115', facultyId: 'htf', degree: 'Бакалавриат', course: 2 },
   { id: 'iait-308', name: '3-ИАИТ-108', facultyId: 'iait', degree: 'Бакалавриат', course: 3 },
   { id: 'faid-501', name: '5-ФАИД-101', facultyId: 'faid', degree: 'Специалитет', course: 5 },
 
-  // ИНГТ
+  // ИНГТ 1 курс (весь поток 101–114)
   { id: 'ingt-101', name: '1-ИНГТ-101', facultyId: 'ingt', degree: 'Бакалавриат', course: 1 },
   { id: 'ingt-102', name: '1-ИНГТ-102', facultyId: 'ingt', degree: 'Бакалавриат', course: 1 },
+  { id: 'ingt-103', name: '1-ИНГТ-103', facultyId: 'ingt', degree: 'Бакалавриат', course: 1 },
+  { id: 'ingt-104', name: '1-ИНГТ-104', facultyId: 'ingt', degree: 'Бакалавриат', course: 1 },
+  { id: 'ingt-105', name: '1-ИНГТ-105', facultyId: 'ingt', degree: 'Бакалавриат', course: 1 },
+  { id: 'ingt-106', name: '1-ИНГТ-106', facultyId: 'ingt', degree: 'Бакалавриат', course: 1 },
+  { id: 'ingt-107', name: '1-ИНГТ-107', facultyId: 'ingt', degree: 'Бакалавриат', course: 1 },
+  { id: 'ingt-108', name: '1-ИНГТ-108', facultyId: 'ingt', degree: 'Бакалавриат', course: 1 },
+  { id: 'ingt-109', name: '1-ИНГТ-109', facultyId: 'ingt', degree: 'Бакалавриат', course: 1 },
+  { id: 'ingt-110', name: '1-ИНГТ-110', facultyId: 'ingt', degree: 'Бакалавриат', course: 1 },
+  { id: 'ingt-111', name: '1-ИНГТ-111', facultyId: 'ingt', degree: 'Бакалавриат', course: 1 },
+  { id: 'ingt-112', name: '1-ИНГТ-112', facultyId: 'ingt', degree: 'Бакалавриат', course: 1 },
+  { id: 'ingt-113', name: '1-ИНГТ-113', facultyId: 'ingt', degree: 'Бакалавриат', course: 1 },
+  { id: 'ingt-114', name: '1-ИНГТ-114', facultyId: 'ingt', degree: 'Бакалавриат', course: 1 },
+
+  // ИНГТ 2 курс (весь поток 101–114)
   { id: 'ingt-201', name: '2-ИНГТ-101', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
+  { id: 'ingt-202', name: '2-ИНГТ-102', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
+  { id: 'ingt-203', name: '2-ИНГТ-103', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
+  { id: 'ingt-204', name: '2-ИНГТ-104', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
   { id: 'ingt-205', name: '2-ИНГТ-105', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
+  { id: 'ingt-206', name: '2-ИНГТ-106', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
+  { id: 'ingt-207', name: '2-ИНГТ-107', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
+  { id: 'ingt-208', name: '2-ИНГТ-108', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
+  { id: 'ingt-209', name: '2-ИНГТ-109', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
+  { id: 'ingt-210', name: '2-ИНГТ-110', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
+  { id: 'ingt-211', name: '2-ИНГТ-111', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
+  { id: 'ingt-212', name: '2-ИНГТ-112', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
+  { id: 'ingt-213', name: '2-ИНГТ-113', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
+  { id: 'ingt-214', name: '2-ИНГТ-114', facultyId: 'ingt', degree: 'Бакалавриат', course: 2 },
+
+  // Старшие курсы ИНГТ
   { id: 'ingt-401', name: '4-ИНГТ-101', facultyId: 'ingt', degree: 'Бакалавриат', course: 4 },
   { id: 'ingt-501', name: '5-ИНГТ-101', facultyId: 'ingt', degree: 'Специалитет', course: 5 },
 

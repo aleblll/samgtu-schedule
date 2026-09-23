@@ -216,6 +216,8 @@ const App: React.FC = () => {
     return 'ingt-310';
   });
 
+  const [isScheduleLoading, setIsScheduleLoading] = useState<boolean>(() => !isScheduleLoaded(currentGroupId));
+
   // Effective Role: Starosta only has edit rights in their designated group.
   // When viewing other groups, they become a read-only 'student'.
   // Global admin PIN 2808 has full access across all groups.
@@ -242,9 +244,19 @@ const App: React.FC = () => {
     setIsGroupSelectionModalOpen(false);
     const grp = allAvailableGroups.find(g => g.id === groupId);
     toast.success(`Выбрана группа ${grp?.name || groupId}`);
-    loadGroupSchedule(groupId).then(() => {
+
+    if (!isScheduleLoaded(groupId)) {
+      setIsScheduleLoading(true);
+      loadGroupSchedule(groupId).then(() => {
+        setIsScheduleLoading(false);
+        setRefreshTrigger(prev => prev + 1);
+      }).catch(() => {
+        setIsScheduleLoading(false);
+      });
+    } else {
+      setIsScheduleLoading(false);
       setRefreshTrigger(prev => prev + 1);
-    });
+    }
   };
 
   const handleCreateCustomGroup = (e: React.FormEvent) => {
@@ -499,9 +511,15 @@ const App: React.FC = () => {
 
     // On-demand load group schedule chunk if not loaded yet
     if (!isScheduleLoaded(currentGroupId)) {
+      setIsScheduleLoading(true);
       loadGroupSchedule(currentGroupId).then(() => {
+        setIsScheduleLoading(false);
         setRefreshTrigger(prev => prev + 1);
+      }).catch(() => {
+        setIsScheduleLoading(false);
       });
+    } else {
+      setIsScheduleLoading(false);
     }
   }, [currentGroupId]);
 
@@ -1016,7 +1034,7 @@ const App: React.FC = () => {
         lessons: allLessons
       };
     });
-  }, [currentGroupId, selectedWeek, scheduleOverrides, attendanceRecords, subjectTeachers]);
+  }, [currentGroupId, selectedWeek, scheduleOverrides, attendanceRecords, subjectTeachers, refreshTrigger]);
 
   if (isMaintenanceMode && !isMaintenanceDismissed) {
     return (
@@ -1243,14 +1261,26 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 py-6 w-full max-w-full pb-28 sm:pb-24">
         {activeTab === 'schedule' && (
           <TabErrorBoundary tabName="Расписание">
-            <SwipeableDays 
-              key={currentGroupId}
-              days={currentSchedule} 
-              weekNumber={selectedWeek}
-              userRole={effectiveRole}
-              onUpdateLesson={handleUpdateLesson}
-              onResetLesson={handleResetLesson}
-            />
+            {isScheduleLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+                <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3" />
+                <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                  Загрузка расписания {currentGroupConfig.name}...
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Подключение к базе данных 4-недельного цикла
+                </span>
+              </div>
+            ) : (
+              <SwipeableDays 
+                key={`${currentGroupId}-w${selectedWeek}`}
+                days={currentSchedule} 
+                weekNumber={selectedWeek}
+                userRole={effectiveRole}
+                onUpdateLesson={handleUpdateLesson}
+                onResetLesson={handleResetLesson}
+              />
+            )}
           </TabErrorBoundary>
         )}
 

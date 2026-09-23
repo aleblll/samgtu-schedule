@@ -73,6 +73,27 @@ export function isScheduleLoaded(groupId: string): boolean {
   return Boolean(SCHEDULE_REGISTRY[canonicalId] && Array.isArray(SCHEDULE_REGISTRY[canonicalId][1]));
 }
 
+export function getCandidateUrls(canonicalId: string): string[] {
+  const urls: string[] = [];
+  if (typeof window !== 'undefined' && window.location) {
+    const origin = window.location.origin;
+    let path = window.location.pathname;
+    if (/\.[a-zA-Z0-9]+$/.test(path)) {
+      path = path.substring(0, path.lastIndexOf('/') + 1);
+    }
+    if (!path.endsWith('/')) {
+      path += '/';
+    }
+    urls.push(`${origin}${path}schedules/${canonicalId}.json`);
+    const basePath = (import.meta as any).env?.BASE_URL || './';
+    const cleanBase = basePath.endsWith('/') ? basePath : `${basePath}/`;
+    urls.push(`${cleanBase}schedules/${canonicalId}.json`);
+    urls.push(`/schedules/${canonicalId}.json`);
+    urls.push(`/samgtu-schedule/schedules/${canonicalId}.json`);
+  }
+  return [...new Set(urls)];
+}
+
 /**
  * Loads a group schedule on-demand using a multi-tier cache cascade:
  * 1. In-memory SCHEDULE_REGISTRY (0ms)
@@ -112,21 +133,23 @@ export async function loadGroupSchedule(groupId: string): Promise<WeekData> {
 
   // 4. Fetch static JSON chunk (in browser environments)
   if (typeof window !== 'undefined') {
-    try {
-      const basePath = (import.meta as any).env?.BASE_URL || './';
-      const cleanBase = basePath.endsWith('/') ? basePath : `${basePath}/`;
-      const res = await fetch(`${cleanBase}schedules/${canonicalId}.json`);
-      if (res.ok) {
-        const data = await res.json() as WeekData;
-        registerScheduleAliases(canonicalId, data);
-        try {
-          localStorage.setItem(`cached_schedule_${canonicalId}`, JSON.stringify(data));
-        } catch (e) {}
-        return data;
+    const candidateUrls = getCandidateUrls(canonicalId);
+    for (const url of candidateUrls) {
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json() as WeekData;
+          registerScheduleAliases(canonicalId, data);
+          try {
+            localStorage.setItem(`cached_schedule_${canonicalId}`, JSON.stringify(data));
+          } catch (e) {}
+          return data;
+        }
+      } catch (err) {
+        // Continue to next candidate URL
       }
-    } catch (err) {
-      console.warn(`[ScheduleLoader] Could not load chunk for ${canonicalId}:`, err);
     }
+    console.warn(`[ScheduleLoader] Could not load chunk for ${canonicalId} from candidates:`, candidateUrls);
   }
 
   // Fallback: create empty 4-week structure
