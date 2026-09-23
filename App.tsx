@@ -12,6 +12,7 @@ import { SEED_SCHEDULE_OVERRIDES, SEED_SUBJECT_TEACHERS, getSeedSubjectTeachers 
 import { verifyPinCode } from './utils/auth';
 import { logger } from './utils/logger';
 import { getCanonicalGroupKey, normalizeSamgtuGroupName } from './utils/samgtuParser';
+import { loadGroupSchedule, isScheduleLoaded } from './utils/scheduleLoader';
 import {
   LogIn, LogOut, Calendar, BookOpen, Bug, ClipboardCheck, Sun, Moon,
   GraduationCap, Users, RefreshCw, Shield, User as UserIcon, Key, UserCheck, ChevronDown,
@@ -241,6 +242,9 @@ const App: React.FC = () => {
     setIsGroupSelectionModalOpen(false);
     const grp = allAvailableGroups.find(g => g.id === groupId);
     toast.success(`Выбрана группа ${grp?.name || groupId}`);
+    loadGroupSchedule(groupId).then(() => {
+      setRefreshTrigger(prev => prev + 1);
+    });
   };
 
   const handleCreateCustomGroup = (e: React.FormEvent) => {
@@ -491,6 +495,13 @@ const App: React.FC = () => {
       setSubjectTeachers(savedSt ? sanitizeTeachers({ ...defaultTeachers, ...JSON.parse(savedSt) }, currentGroupId) : sanitizeTeachers({ ...defaultTeachers }, currentGroupId));
     } catch {
       setSubjectTeachers(sanitizeTeachers({ ...getSeedSubjectTeachers(currentGroupId) }, currentGroupId));
+    }
+
+    // On-demand load group schedule chunk if not loaded yet
+    if (!isScheduleLoaded(currentGroupId)) {
+      loadGroupSchedule(currentGroupId).then(() => {
+        setRefreshTrigger(prev => prev + 1);
+      });
     }
   }, [currentGroupId]);
 

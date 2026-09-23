@@ -1,4 +1,8 @@
+import { preloadAllSchedulesSync } from '../utils/scheduleNodeLoader';
+preloadAllSchedulesSync();
+
 console.log("Running all test suites sequentially...");
+await import('./test_ondemand_schedules');
 await import('./test_dates');
 await import('./test_attendance');
 await import('./test_schedule_sync');

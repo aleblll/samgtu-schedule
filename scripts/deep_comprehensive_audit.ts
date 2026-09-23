@@ -1,5 +1,7 @@
 import { AVAILABLE_GROUPS, SCHEDULE_REGISTRY, FACULTIES } from '../constants';
+import { preloadAllSchedulesSync } from '../utils/scheduleNodeLoader';
 import { getCanonicalGroupKey, normalizeSamgtuGroupName } from '../utils/samgtuParser';
+preloadAllSchedulesSync();
 import { sanitizeTeachers, sanitizeOverrides } from '../utils/cloudSync';
 import { verifyPinCode } from '../utils/auth';
 import * as fs from 'fs';
