@@ -29,15 +29,20 @@ android/build
 android/app/build
 android/capacitor-cordova-android-plugins/build
 android/capacitor-cordova-android-plugins/.gradle
+android/local.properties
+android/app/google-services.json
 *.apk
-*.png
-antigravity-mobile/
+*.keystore
+*.jks
+/screenshots/*.png
 
 # Environment variables and secrets
 .env
 .env.*
 *.env
 .env.local
+.dev.vars
+.wrangler/
 
 # Obsidian workspace state
 **/.obsidian/workspace*.json
