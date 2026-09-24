@@ -9,7 +9,7 @@
 | Компонент | Назначение | Расположение | Состояние |
 |---|---|---|---|
 | **Ядро и роутинг** | Инициализация Telegram WebApp SDK, темы, навигация, модальные окна | `App.tsx`, `index.tsx`, `index.css` | Стабильно |
-| **Реестр расписания** | On-Demand чанки расписаний (`public/schedules/*.json`), многоуровневый кэш (память -> localStorage -> сеть), предзагрузка по умолчанию 3-ИНГТ-110 | `constants.ts`, `utils/scheduleLoader.ts`, `public/schedules/` | Стабильно |
+| **Реестр расписания** | On-Demand чанки расписаний (`public/schedules/*.json`), версионированный SWR-кэш v1 с фоновым обновлением, безопасная очистка кэша без потери посещаемости | `constants.ts`, `utils/scheduleLoader.ts`, `utils/scheduleSchema.ts`, `public/schedules/` | Стабильно |
 | **Журнал посещаемости** | Учет присутствия/пропусков, расчет часов по блокам семестра, экспорт в Word | `attendance.ts`, `components/AttendanceTracker.tsx` | Стабильно |
 | **Трекер ДЗ** | Ведение заданий, дедлайны, фильтры, статус выполнения | `components/HomeworkTracker.tsx` | Стабильно |
 | **Карточка пары & модалка** | Отображение занятия, статусы отмены, смена аудиторий и преподавателей | `components/ClassCard.tsx`, `components/EditLessonModal.tsx` | Стабильно |
