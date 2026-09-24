@@ -39,14 +39,14 @@ jobs:
       - name: Run linter
         run: npm run lint
 
-      - name: Run tests
-        run: npm run test
-
       - name: Build production bundle
         run: npm run build
 
       - name: Verify build artifact integrity
         run: npm run check:dist
+
+      - name: Run tests
+        run: npm run test
 
       - name: Upload artifact for GitHub Pages
         uses: actions/upload-pages-artifact@v3
