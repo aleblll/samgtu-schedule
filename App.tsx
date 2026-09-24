@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, Suspense } from 'react';
+import { ThemePref, getThemePref, setThemePref, syncTelegramTheme } from './utils/theme';
 import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, FACULTIES, createEmptyWeek } from './constants';
 import { getSemesterWeek, getWeekDateRange, getDayISODate, useAttendance, getSamaraDate, getSamaraISODate } from './attendance';
 import SwipeableDays from './components/SwipeableDays';
@@ -51,14 +52,18 @@ declare global {
 }
 
 const App: React.FC = () => {
-  const [darkMode, setDarkMode] = useState<boolean>(() => {
-    const saved = localStorage.getItem('app_theme');
-    if (saved) return saved === 'dark';
+  const [pref, setPref] = useState<ThemePref>(() => getThemePref());
+  const [tgScheme, setTgScheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp?.colorScheme) {
-      return window.Telegram.WebApp.colorScheme === 'dark';
+      return window.Telegram.WebApp.colorScheme;
     }
-    return (window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false);
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+      return 'dark';
+    }
+    return 'light';
   });
+
+  const darkMode = pref === 'auto' ? tgScheme === 'dark' : pref === 'dark';
   const [activeTab, setActiveTab] = useState<'schedule' | 'homework' | 'attendance' | 'group' | 'admin' | 'profile'>('schedule');
   const [user, setUser] = useState<UserProfile | null>(null);
   
@@ -527,32 +532,26 @@ const App: React.FC = () => {
   // Note: SDK initialization (window.Telegram.WebApp.ready(), window.Telegram.WebApp.expand(),
   // disableVerticalSwipes) is executed before render() in index.tsx via initTelegram().
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+    const tg = typeof window !== 'undefined' ? window.Telegram?.WebApp : undefined;
+    if (tg) {
       try {
         logger.info('UI', 'Telegram WebApp initialized', {
-          platform: window.Telegram.WebApp.platform,
-          version: window.Telegram.WebApp.version
+          platform: tg.platform,
+          version: tg.version
         });
       } catch (e) {
         logger.warn('UI', 'Failed to initialize Telegram WebApp SDK', e);
       }
 
-      const handleThemeChange = () => {
-        try {
-          if (!localStorage.getItem('app_theme') && window.Telegram?.WebApp?.colorScheme) {
-            setDarkMode(window.Telegram.WebApp.colorScheme === 'dark');
-          }
-        } catch (e) {}
+      const h = () => {
+        if (tg.colorScheme) {
+          setTgScheme(tg.colorScheme);
+        }
       };
 
-      try {
-        window.Telegram.WebApp.onEvent?.('themeChanged', handleThemeChange);
-      } catch (e) {}
-
+      tg.onEvent?.('themeChanged', h);
       return () => {
-        try {
-          window.Telegram?.WebApp?.offEvent?.('themeChanged', handleThemeChange);
-        } catch (e) {}
+        tg.offEvent?.('themeChanged', h);
       };
     }
   }, []);
@@ -564,23 +563,10 @@ const App: React.FC = () => {
     } catch (e) {}
   }, [userRole]);
 
-  // Theme preference persistence and Telegram UI sync
-  useEffect(() => {
-    try {
-      localStorage.setItem('app_theme', darkMode ? 'dark' : 'light');
-    } catch (e) {}
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      try {
-        window.Telegram.WebApp.setHeaderColor?.(darkMode ? '#0f172a' : '#ffffff');
-        window.Telegram.WebApp.setBackgroundColor?.(darkMode ? '#020617' : '#eaeff5');
-      } catch (e) {}
-    }
+  // Theme class application and Telegram UI synchronization without FOUC
+  useLayoutEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+    syncTelegramTheme(darkMode);
   }, [darkMode]);
 
   // Load custom imported schedule from localStorage if present
@@ -1177,7 +1163,11 @@ const App: React.FC = () => {
               </button>
 
               <button
-                onClick={() => setDarkMode(!darkMode)}
+                onClick={() => {
+                  const nextPref: ThemePref = darkMode ? 'light' : 'dark';
+                  setPref(nextPref);
+                  setThemePref(nextPref);
+                }}
                 className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 title="Переключить тему"
               >
