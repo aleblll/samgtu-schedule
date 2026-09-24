@@ -249,6 +249,58 @@ export interface AttendanceRecord {
   updatedBy?: string;
 }
 
+/**
+ * Merges local and remote attendance records without data loss.
+ * - Key: `${r.date}_${r.lessonId}`
+ * - On key collision, the record with the later updatedAt (Date.parse(r.updatedAt)) wins.
+ * - Records existing only locally or only in the cloud are never lost.
+ */
+export function mergeAttendance(
+  local: AttendanceRecord[] = [],
+  remote: AttendanceRecord[] = []
+): AttendanceRecord[] {
+  const map = new Map<string, AttendanceRecord>();
+
+  const getRecordTime = (r: AttendanceRecord): number => {
+    if (r.updatedAt) {
+      if (typeof r.updatedAt === 'number') return r.updatedAt;
+      if (r.updatedAt instanceof Date) return r.updatedAt.getTime();
+      const parsed = Date.parse(String(r.updatedAt));
+      if (!isNaN(parsed)) return parsed;
+    }
+    if (r.timestamp && !isNaN(r.timestamp)) return r.timestamp;
+    return 0;
+  };
+
+  if (Array.isArray(local)) {
+    for (const r of local) {
+      if (!r || !r.date || !r.lessonId) continue;
+      const key = `${r.date}_${r.lessonId}`;
+      const existing = map.get(key);
+      if (!existing || getRecordTime(r) > getRecordTime(existing)) {
+        map.set(key, r);
+      }
+    }
+  }
+
+  if (Array.isArray(remote)) {
+    for (const r of remote) {
+      if (!r || !r.date || !r.lessonId) continue;
+      const key = `${r.date}_${r.lessonId}`;
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, r);
+      } else {
+        if (getRecordTime(r) > getRecordTime(existing)) {
+          map.set(key, r);
+        }
+      }
+    }
+  }
+
+  return Array.from(map.values());
+}
+
 export const useAttendance = (isAuthenticated: boolean, currentGroupId: string | null, refreshTrigger: number = 0) => {
   const [records, setRecords] = useState<AttendanceRecord[]>(() => {
     const defaultList = currentGroupId === 'ingt-310' ? SEED_ATTENDANCE : [];
@@ -281,57 +333,104 @@ export const useAttendance = (isAuthenticated: boolean, currentGroupId: string |
     } catch (e) {}
   }, [currentGroupId, refreshTrigger]);
 
-  // 2. Real-time Cloud Sync with REST & Firestore (Syncs across all classmates' devices)
+  // 2. Real-time Cloud Sync with REST & safe merge (Syncs across all classmates' devices)
   useEffect(() => {
     if (!currentGroupId) return;
 
     let isMounted = true;
 
-    const setupSubscription = async () => {
-      // 1. Universal REST Cloud sync
+    const getLocalRecords = (): AttendanceRecord[] => {
+      let fromStorage: AttendanceRecord[] = [];
+      try {
+        const saved = localStorage.getItem(`attendance_${currentGroupId}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) fromStorage = parsed;
+        }
+      } catch (e) {}
+      const fromRef = recordsRef.current || [];
+      if (fromStorage.length === 0) return fromRef;
+      if (fromRef.length === 0) return fromStorage;
+      return mergeAttendance(fromRef, fromStorage);
+    };
+
+    const syncWithCloud = async () => {
+      const isDirty = localStorage.getItem(`attendance_dirty_${currentGroupId}`) === 'true';
       const cloud = await fetchGroupCloudData(true, currentGroupId);
-      if (!isMounted) return; // Prevent leak if unmounted during await
+      if (!isMounted) return;
+
+      const local = getLocalRecords();
 
       if (cloud && Array.isArray(cloud.attendance)) {
-        const localSaved = localStorage.getItem(`attendance_${currentGroupId}`);
-        let localCount = 0;
+        const merged = mergeAttendance(local, cloud.attendance);
+        setRecords(merged);
+        recordsRef.current = merged;
         try {
-          localCount = localSaved ? JSON.parse(localSaved).length : 0;
+          localStorage.setItem(`attendance_${currentGroupId}`, JSON.stringify(merged));
         } catch (e) {}
 
-        if (cloud.attendance.length > 0) {
-          setRecords(cloud.attendance);
+        if (isDirty) {
           try {
-            localStorage.setItem(`attendance_${currentGroupId}`, JSON.stringify(cloud.attendance));
+            const ok = await pushGroupCloudData({ attendance: merged }, currentGroupId);
+            if (ok && isMounted) {
+              localStorage.removeItem(`attendance_dirty_${currentGroupId}`);
+            }
           } catch (e) {}
-        } else if (localCount > 0) {
+        } else if (cloud.attendance.length === 0 && merged.length > 0) {
           // Auto-heal: cloud was wiped or empty, but local has records -> restore cloud!
           try {
-            const localRecords = JSON.parse(localSaved!);
-            pushGroupCloudData({ attendance: localRecords }, currentGroupId);
-          } catch (e) {}
+            const ok = await pushGroupCloudData({ attendance: merged }, currentGroupId);
+            if (!ok && isMounted) {
+              localStorage.setItem(`attendance_dirty_${currentGroupId}`, 'true');
+            }
+          } catch (e) {
+            if (isMounted) {
+              localStorage.setItem(`attendance_dirty_${currentGroupId}`, 'true');
+            }
+          }
         }
+      } else if (isDirty) {
+        // Cloud fetch failed or offline, but we have unsynced changes -> retry push
+        try {
+          if (local.length > 0) {
+            const ok = await pushGroupCloudData({ attendance: local }, currentGroupId);
+            if (ok && isMounted) {
+              localStorage.removeItem(`attendance_dirty_${currentGroupId}`);
+            }
+          }
+        } catch (e) {}
       }
+    };
+
+    const setupSubscription = async () => {
+      await syncWithCloud();
     };
 
     setupSubscription();
 
     const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible' && isMounted) {
-        const c = await fetchGroupCloudData(true, currentGroupId);
-        if (isMounted && c && Array.isArray(c.attendance) && c.attendance.length > 0) {
-          setRecords(c.attendance);
-          try {
-            localStorage.setItem(`attendance_${currentGroupId}`, JSON.stringify(c.attendance));
-          } catch (e) {}
-        }
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible' && isMounted) {
+        await syncWithCloud();
       }
     };
-    window.addEventListener('visibilitychange', handleVisibilityChange);
+
+    const handleOnline = async () => {
+      if (isMounted) {
+        await syncWithCloud();
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('online', handleOnline);
+    }
 
     return () => {
       isMounted = false;
-      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('online', handleOnline);
+      }
     };
   }, [currentGroupId, refreshTrigger]);
 
@@ -387,7 +486,16 @@ export const useAttendance = (isAuthenticated: boolean, currentGroupId: string |
     } catch (e) {}
 
     // 4. Push the GUARANTEED valid array to REST Cloud immediately (syncs to all classmates)
-    pushGroupCloudData({ attendance: updatedRecords }, groupId);
+    try {
+      const ok = await pushGroupCloudData({ attendance: updatedRecords }, groupId);
+      if (!ok) {
+        localStorage.setItem(`attendance_dirty_${groupId}`, 'true');
+      } else {
+        localStorage.removeItem(`attendance_dirty_${groupId}`);
+      }
+    } catch (e) {
+      localStorage.setItem(`attendance_dirty_${groupId}`, 'true');
+    }
   };
 
   const markAttendance = async (
