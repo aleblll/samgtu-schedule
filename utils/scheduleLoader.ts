@@ -1,6 +1,16 @@
 import { WeekData, DaySchedule } from '../types';
 import { SCHEDULE_REGISTRY, createEmptyWeek } from '../constants';
 import { getCanonicalGroupKey } from './samgtuParser';
+import {
+  LoadResult,
+  LoadFailReason,
+  parseWeekData,
+  hasAnyLessons,
+  validateWeekData
+} from './scheduleSchema';
+
+export type { LoadResult, LoadFailReason };
+export { parseWeekData, hasAnyLessons, validateWeekData };
 
 /**
  * Tracks canonical IDs that were explicitly and successfully loaded from network/cache.
@@ -20,24 +30,6 @@ export function markScheduleLoaded(groupId: string): void {
  */
 export function clearLoadedChunks(): void {
   LOADED_CHUNKS.clear();
-}
-
-/**
- * Checks whether a WeekData structure contains at least one real lesson.
- */
-export function hasAnyLessons(data: WeekData | undefined): boolean {
-  if (!data) return false;
-  for (let w = 1; w <= 4; w++) {
-    const days = data[w];
-    if (Array.isArray(days)) {
-      for (const day of days) {
-        if (day && Array.isArray(day.lessons) && day.lessons.length > 0) {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
 }
 
 /**
@@ -197,19 +189,50 @@ export function getCandidateUrls(canonicalId: string): string[] {
   return [...new Set(urls)];
 }
 
+function createLoadSuccess(data: WeekData): LoadResult {
+  return Object.assign({ ...data }, {
+    ok: true as const,
+    data
+  });
+}
+
+function createLoadFailure(reason: LoadFailReason): LoadResult {
+  const empty = {
+    1: createEmptyWeek(),
+    2: createEmptyWeek(),
+    3: createEmptyWeek(),
+    4: createEmptyWeek()
+  };
+  return Object.assign(empty, {
+    ok: false as const,
+    reason
+  });
+}
+
 /**
  * Loads a group schedule on-demand using a multi-tier cache cascade:
  * 1. In-memory SCHEDULE_REGISTRY (0ms, verified by isScheduleLoaded)
  * 2. User custom imported schedule in localStorage
  * 3. Client cached schedule in localStorage (offline support)
  * 4. Static JSON chunk from schedules/<canonicalId>.json
+ *
+ * Returns structured LoadResult:
+ * - { ok: true, data: WeekData } on success
+ * - { ok: false, reason: 'not_found' | 'network' | 'invalid' | 'empty' | 'timeout' } on failure
  */
-export async function loadGroupSchedule(groupId: string): Promise<WeekData> {
+export async function loadGroupSchedule(
+  groupId: string,
+  options?: { timeoutMs?: number }
+): Promise<LoadResult> {
   const canonicalId = getCanonicalScheduleId(groupId);
 
   // 1. In-memory check: genuine schedule present
   if (isScheduleLoaded(canonicalId)) {
-    return SCHEDULE_REGISTRY[canonicalId];
+    const memData = SCHEDULE_REGISTRY[canonicalId];
+    const parsed = parseWeekData(memData);
+    if (parsed && hasAnyLessons(parsed)) {
+      return createLoadSuccess(parsed);
+    }
   }
 
   // 2. Custom imported schedule check (localStorage)
@@ -217,11 +240,12 @@ export async function loadGroupSchedule(groupId: string): Promise<WeekData> {
     try {
       const customSaved = localStorage.getItem(`custom_schedule_${canonicalId}`);
       if (customSaved) {
-        const parsed = JSON.parse(customSaved);
-        if (hasAnyLessons(parsed)) {
+        const rawJson = JSON.parse(customSaved);
+        const parsed = parseWeekData(rawJson);
+        if (parsed && hasAnyLessons(parsed)) {
           registerScheduleAliases(canonicalId, parsed);
           markScheduleLoaded(canonicalId);
-          return parsed;
+          return createLoadSuccess(parsed);
         }
       }
     } catch (e) {}
@@ -230,44 +254,102 @@ export async function loadGroupSchedule(groupId: string): Promise<WeekData> {
     try {
       const cached = localStorage.getItem(`cached_schedule_${canonicalId}`);
       if (cached) {
-        const parsed = JSON.parse(cached);
-        if (hasAnyLessons(parsed)) {
+        const rawJson = JSON.parse(cached);
+        const parsed = parseWeekData(rawJson);
+        if (parsed && hasAnyLessons(parsed)) {
           registerScheduleAliases(canonicalId, parsed);
           markScheduleLoaded(canonicalId);
-          return parsed;
+          return createLoadSuccess(parsed);
         }
       }
     } catch (e) {}
   }
 
-  // 4. Fetch static JSON chunk (in browser environments)
-  if (typeof window !== 'undefined') {
+  // 4. Fetch static JSON chunk
+  let failureReason: LoadFailReason = 'not_found';
+
+  if (typeof fetch === 'function') {
     const candidateUrls = getCandidateUrls(canonicalId);
+    let hadNetworkError = false;
+    let hadInvalidJson = false;
+    let hadTimeout = false;
+    let had404 = false;
+
     for (const url of candidateUrls) {
       try {
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json() as WeekData;
-          registerScheduleAliases(canonicalId, data);
-          markScheduleLoaded(canonicalId);
-          try {
-            localStorage.setItem(`cached_schedule_${canonicalId}`, JSON.stringify(data));
-          } catch (e) {}
-          return data;
+        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timeoutMs = options?.timeoutMs ?? 8000;
+        let timeoutId: any;
+        if (controller) {
+          timeoutId = setTimeout(() => controller.abort(), timeoutMs);
         }
-      } catch (err) {
-        // Continue to next candidate URL
+
+        let res: Response;
+        try {
+          res = await fetch(url, controller ? { signal: controller.signal } : undefined);
+        } finally {
+          if (timeoutId) clearTimeout(timeoutId);
+        }
+
+        if (res.status === 404) {
+          had404 = true;
+          continue;
+        }
+
+        if (res.ok) {
+          let rawData: unknown;
+          try {
+            rawData = await res.json();
+          } catch {
+            hadInvalidJson = true;
+            continue;
+          }
+
+          const parsed = parseWeekData(rawData);
+          if (!parsed) {
+            hadInvalidJson = true;
+            continue;
+          }
+
+          if (!hasAnyLessons(parsed)) {
+            // Structurally valid, but 0 lessons in all 4 weeks
+            return createLoadFailure('empty');
+          }
+
+          // Successful, valid, non-empty schedule
+          registerScheduleAliases(canonicalId, parsed);
+          markScheduleLoaded(canonicalId);
+          if (typeof window !== 'undefined' && window.localStorage) {
+            try {
+              localStorage.setItem(`cached_schedule_${canonicalId}`, JSON.stringify(parsed));
+            } catch (e) {}
+          }
+          return createLoadSuccess(parsed);
+        }
+      } catch (err: any) {
+        if (err?.name === 'AbortError') {
+          hadTimeout = true;
+        } else {
+          hadNetworkError = true;
+        }
       }
     }
-    console.warn(`[ScheduleLoader] Could not load chunk for ${canonicalId} from candidates:`, candidateUrls);
+
+    if (hadTimeout) {
+      failureReason = 'timeout';
+    } else if (hadInvalidJson) {
+      failureReason = 'invalid';
+    } else if (hadNetworkError) {
+      failureReason = 'network';
+    } else if (had404) {
+      failureReason = 'not_found';
+    } else {
+      failureReason = 'not_found';
+    }
+
+    console.warn(`[ScheduleLoader] Could not load chunk for ${canonicalId} (reason: ${failureReason}) from candidates:`, candidateUrls);
   }
 
-  // Fallback: return ephemeral empty 4-week structure WITHOUT saving into memory (SCHEDULE_REGISTRY)
-  // or marking as loaded. This ensures isScheduleLoaded remains false and enables retry on subsequent attempts.
-  return {
-    1: createEmptyWeek(),
-    2: createEmptyWeek(),
-    3: createEmptyWeek(),
-    4: createEmptyWeek()
-  };
+  // Fallback failure result: does NOT poison SCHEDULE_REGISTRY, allowing retries
+  return createLoadFailure(failureReason);
 }
