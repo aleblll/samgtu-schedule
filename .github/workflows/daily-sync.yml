@@ -10,6 +10,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: daily-sync
+  cancel-in-progress: true
+
 jobs:
   sync-schedule:
     runs-on: ubuntu-latest
@@ -21,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
@@ -30,7 +34,7 @@ jobs:
       - name: Run Nightly Schedule Sync & Audit
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID || '-1002345678901' }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
           AUTO_APPLY: 'true'
         run: npx tsx scripts/nightly_sync.ts --apply
 
@@ -38,11 +42,11 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          if [ -n "$(git status --porcelain constants.ts)" ]; then
-            git add constants.ts
+          git add constants.ts public/schedules/
+          if [ -n "$(git status --porcelain constants.ts public/schedules/)" ]; then
             git commit -m "chore(schedule): automated nightly sync with official SamGTU API [skip ci]"
             git push
             echo "Changes pushed to repository."
           else
-            echo "No schedule changes detected in constants.ts."
+            echo "No schedule changes detected in constants.ts or public/schedules/."
           fi
