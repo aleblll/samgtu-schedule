@@ -11,13 +11,11 @@
     ],
     "skipLibCheck": true,
     "types": [
-      "node",
-      "react",
-      "react-dom",
       "vite/client"
     ],
     "moduleResolution": "bundler",
     "isolatedModules": true,
+    "noFallthroughCasesInSwitch": true,
     "moduleDetection": "force",
     "allowJs": true,
     "jsx": "react-jsx",
@@ -29,10 +27,14 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
+  "include": [
+    "*.ts",
+    "*.tsx",
+    "components",
+    "utils"
+  ],
   "exclude": [
     "node_modules",
-    "dist",
-    "tma-planner",
-    "vpn-deploy"
+    "dist"
   ]
 }
