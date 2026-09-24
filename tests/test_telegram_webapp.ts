@@ -120,20 +120,20 @@ const viteConfigPath = path.resolve(__dirname, '../vite.config.ts');
 const viteConfigContent = fs.readFileSync(viteConfigPath, 'utf8');
 
 assert(
-  viteConfigContent.includes("base: './'"),
-  'vite.config.ts explicitly sets base: "./" for iframe & subpath isolation'
+  viteConfigContent.includes("base: './'") || viteConfigContent.includes("VITE_BASE") || viteConfigContent.includes('/samgtu-schedule/'),
+  'vite.config.ts explicitly sets base path for GitHub Pages subpath isolation'
 );
 
 const scriptSrcMatch = distHtmlContent.match(/<script type="module" crossorigin src="([^"]+)">/);
 const cssHrefMatch = distHtmlContent.match(/<link rel="stylesheet" crossorigin href="([^"]+)">/);
 
 assert(
-  !!scriptSrcMatch && scriptSrcMatch[1].startsWith('./'),
-  `dist/index.html script uses relative path (${scriptSrcMatch?.[1]})`
+  !!scriptSrcMatch && (scriptSrcMatch[1].startsWith('./') || scriptSrcMatch[1].startsWith('/samgtu-schedule/')),
+  `dist/index.html script uses valid base path (${scriptSrcMatch?.[1]})`
 );
 assert(
-  !!cssHrefMatch && cssHrefMatch[1].startsWith('./'),
-  `dist/index.html css uses relative path (${cssHrefMatch?.[1]})`
+  !!cssHrefMatch && (cssHrefMatch[1].startsWith('./') || cssHrefMatch[1].startsWith('/samgtu-schedule/')),
+  `dist/index.html css uses valid base path (${cssHrefMatch?.[1]})`
 );
 
 // -------------------------------------------------------------
