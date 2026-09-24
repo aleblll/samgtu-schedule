@@ -528,7 +528,7 @@ const App: React.FC = () => {
     }
   }, [currentGroupId]);
 
-  // Telegram WebApp theme listener and logging
+  // Telegram WebApp theme listener, safe area insets and logging
   // Note: SDK initialization (window.Telegram.WebApp.ready(), window.Telegram.WebApp.expand(),
   // disableVerticalSwipes) is executed before render() in index.tsx via initTelegram().
   useEffect(() => {
@@ -550,8 +550,29 @@ const App: React.FC = () => {
       };
 
       tg.onEvent?.('themeChanged', h);
+
+      const updateInsets = () => {
+        if (tg.safeAreaInset) {
+          document.documentElement.style.setProperty('--tg-safe-area-inset-bottom', `${tg.safeAreaInset.bottom}px`);
+        }
+        if (tg.contentSafeAreaInset) {
+          document.documentElement.style.setProperty('--tg-content-safe-area-inset-top', `${tg.contentSafeAreaInset.top}px`);
+        }
+      };
+
+      const hasSafeArea = tg.isVersionAtLeast?.('8.0');
+      if (hasSafeArea) {
+        updateInsets();
+        tg.onEvent?.('safeAreaChanged', updateInsets);
+        tg.onEvent?.('contentSafeAreaChanged', updateInsets);
+      }
+
       return () => {
         tg.offEvent?.('themeChanged', h);
+        if (hasSafeArea) {
+          tg.offEvent?.('safeAreaChanged', updateInsets);
+          tg.offEvent?.('contentSafeAreaChanged', updateInsets);
+        }
       };
     }
   }, []);

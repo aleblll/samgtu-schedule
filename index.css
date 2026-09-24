@@ -7,12 +7,15 @@
 }
 
 @utility pt-safe {
-  padding-top: max(var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px), env(safe-area-inset-top, 0px));
+  padding-top: calc(env(safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, var(--tg-safe-area-inset-top, 0px)));
 }
 
 @utility pb-safe {
-  padding-bottom: max(0.75rem, var(--tg-safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tg-safe-area-inset-bottom, 0px));
 }
+
+.pt-safe { padding-top: calc(env(safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px)); }
+.pb-safe { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tg-safe-area-inset-bottom, 0px)); }
 
 @utility mb-safe {
   margin-bottom: max(var(--tg-safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px));
