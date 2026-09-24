@@ -523,13 +523,12 @@ const App: React.FC = () => {
     }
   }, [currentGroupId]);
 
-  // Telegram WebApp auto-expand, ready and events
+  // Telegram WebApp theme listener and logging
+  // Note: SDK initialization (window.Telegram.WebApp.ready(), window.Telegram.WebApp.expand(),
+  // disableVerticalSwipes) is executed before render() in index.tsx via initTelegram().
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       try {
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
-        window.Telegram.WebApp.enableClosingConfirmation?.();
         logger.info('UI', 'Telegram WebApp initialized', {
           platform: window.Telegram.WebApp.platform,
           version: window.Telegram.WebApp.version
