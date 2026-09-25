@@ -13,7 +13,8 @@ import { SEED_SCHEDULE_OVERRIDES, SEED_SUBJECT_TEACHERS, getSeedSubjectTeachers 
 import { verifyPinCode } from './utils/auth';
 import { logger } from './utils/logger';
 import { getCanonicalGroupKey, normalizeSamgtuGroupName } from './utils/samgtuParser';
-import { loadGroupSchedule, isScheduleLoaded } from './utils/scheduleLoader';
+import ScheduleState from './components/ScheduleState';
+import { loadGroupSchedule, isScheduleLoaded, LoadFailReason } from './utils/scheduleLoader';
 import {
   LogIn, LogOut, Calendar, BookOpen, Bug, ClipboardCheck, Sun, Moon,
   GraduationCap, Users, RefreshCw, Shield, User as UserIcon, Key, UserCheck, ChevronDown,
@@ -222,6 +223,7 @@ const App: React.FC = () => {
   });
 
   const [isScheduleLoading, setIsScheduleLoading] = useState<boolean>(() => !isScheduleLoaded(currentGroupId));
+  const [scheduleLoadError, setScheduleLoadError] = useState<LoadFailReason | null>(null);
 
   // Effective Role: Starosta only has edit rights in their designated group.
   // When viewing other groups, they become a read-only 'student'.
@@ -252,16 +254,41 @@ const App: React.FC = () => {
 
     if (!isScheduleLoaded(groupId)) {
       setIsScheduleLoading(true);
-      loadGroupSchedule(groupId).then(() => {
+      setScheduleLoadError(null);
+      loadGroupSchedule(groupId).then((result) => {
         setIsScheduleLoading(false);
+        if (result.ok === false) {
+          setScheduleLoadError(result.reason);
+        } else {
+          setScheduleLoadError(null);
+        }
         setRefreshTrigger(prev => prev + 1);
       }).catch(() => {
         setIsScheduleLoading(false);
+        setScheduleLoadError('network');
       });
     } else {
       setIsScheduleLoading(false);
+      setScheduleLoadError(null);
       setRefreshTrigger(prev => prev + 1);
     }
+  };
+
+  const handleRetryScheduleLoad = () => {
+    setIsScheduleLoading(true);
+    setScheduleLoadError(null);
+    loadGroupSchedule(currentGroupId).then((result) => {
+      setIsScheduleLoading(false);
+      if (result.ok === false) {
+        setScheduleLoadError(result.reason);
+      } else {
+        setScheduleLoadError(null);
+      }
+      setRefreshTrigger(prev => prev + 1);
+    }).catch(() => {
+      setIsScheduleLoading(false);
+      setScheduleLoadError('network');
+    });
   };
 
   const handleCreateCustomGroup = (e: React.FormEvent) => {
@@ -517,14 +544,22 @@ const App: React.FC = () => {
     // On-demand load group schedule chunk if not loaded yet
     if (!isScheduleLoaded(currentGroupId)) {
       setIsScheduleLoading(true);
-      loadGroupSchedule(currentGroupId).then(() => {
+      setScheduleLoadError(null);
+      loadGroupSchedule(currentGroupId).then((result) => {
         setIsScheduleLoading(false);
+        if (result.ok === false) {
+          setScheduleLoadError(result.reason);
+        } else {
+          setScheduleLoadError(null);
+        }
         setRefreshTrigger(prev => prev + 1);
       }).catch(() => {
         setIsScheduleLoading(false);
+        setScheduleLoadError('network');
       });
     } else {
       setIsScheduleLoading(false);
+      setScheduleLoadError(null);
     }
   }, [currentGroupId]);
 
@@ -1288,15 +1323,23 @@ const App: React.FC = () => {
         {activeTab === 'schedule' && (
           <TabErrorBoundary tabName="Расписание">
             {isScheduleLoading ? (
-              <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-                <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3" />
-                <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                  Загрузка расписания {currentGroupConfig.name}...
-                </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Подключение к базе данных 4-недельного цикла
-                </span>
-              </div>
+              <ScheduleState
+                status="loading"
+                groupName={currentGroupConfig.name}
+              />
+            ) : scheduleLoadError && (currentSchedule.length === 0 || !currentSchedule.some(d => d.lessons && d.lessons.length > 0)) ? (
+              <ScheduleState
+                status="error"
+                groupName={currentGroupConfig.name}
+                errorReason={scheduleLoadError}
+                onRetry={handleRetryScheduleLoad}
+              />
+            ) : currentSchedule.length === 0 ? (
+              <ScheduleState
+                status="empty"
+                groupName={currentGroupConfig.name}
+                onRetry={handleRetryScheduleLoad}
+              />
             ) : (
               <SwipeableDays 
                 key={`${currentGroupId}-w${selectedWeek}`}
