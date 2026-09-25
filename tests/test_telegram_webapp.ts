@@ -286,6 +286,54 @@ assert(
   'App.tsx renders ScheduleState for loading and error states'
 );
 
+// -------------------------------------------------------------
+// 6. Cloud Polling, Race Protection & Battery Optimization (A3-U5)
+// -------------------------------------------------------------
+console.log('\n--- 6. Cloud Polling, Race Protection & Battery Optimization (A3-U5) ---');
+
+assert(
+  !appTsxContent.includes('}, [currentGroupId, refreshTrigger]);'),
+  'App.tsx polling effect does not depend on refreshTrigger'
+);
+
+assert(
+  appTsxContent.includes('abortActiveRequest') && appTsxContent.includes('new AbortController()'),
+  'App.tsx aborts in-flight request via AbortController on unmount/group change'
+);
+
+assert(
+  appTsxContent.includes('document.hidden') && appTsxContent.includes('document.visibilityState'),
+  'App.tsx suspends polling timer when document is hidden (battery saving)'
+);
+
+assert(
+  appTsxContent.includes('lastVisibilitySyncRef') && appTsxContent.includes('5000'),
+  'App.tsx deduplicates visibilitychange and focus events with 5-second throttle'
+);
+
+assert(
+  appTsxContent.includes('getNextDelay') && appTsxContent.includes('jitter'),
+  'App.tsx implements exponential backoff and randomized jitter for cloud polling'
+);
+
+assert(
+  appTsxContent.includes('sanitizeTeachers(cloud.subjectTeachers, currentGroupId)'),
+  'App.tsx handleRefresh passes currentGroupId to sanitizeTeachers and persists to localStorage'
+);
+
+const cloudSyncPath = path.resolve(__dirname, '../utils/cloudSync.ts');
+const cloudSyncContent = fs.readFileSync(cloudSyncPath, 'utf8');
+
+assert(
+  cloudSyncContent.includes('signal?: AbortSignal'),
+  'utils/cloudSync.ts supports AbortSignal propagation in fetchJson / fetchGroupCloudData'
+);
+
+assert(
+  cloudSyncContent.includes('serverTimestamp = d.updatedAt ? Number(d.updatedAt) : now;'),
+  'utils/cloudSync.ts parses and returns serverTimestamp in lastUpdated'
+);
+
 console.log('\n=================================================');
 console.log(`  SUMMARY: ${passedTests} / ${totalTests} TESTS PASSED`);
 console.log('=================================================');
