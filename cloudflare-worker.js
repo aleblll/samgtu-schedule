@@ -60,6 +60,14 @@ export function sanitizeAttendanceRecord(rec, fallbackGroupId = '') {
   };
 }
 
+export function sanitizeStudent(student) {
+  if (!student || typeof student !== 'object') return null;
+  const id = Number(student.id);
+  const name = String(student.name || '').trim().slice(0, 100);
+  if (!id || !name) return null;
+  return { id, name };
+}
+
 export function sanitizeScheduleOverride(ov) {
   if (!ov || typeof ov !== 'object') return null;
   const res = {};
@@ -119,10 +127,14 @@ export function sanitizeSyncPayload(type, rawData) {
       res.byGroup = {};
       for (const [gid, grp] of Object.entries(rawData.byGroup)) {
         if (grp && typeof grp === 'object') {
-          res.byGroup[gid] = {
+          const cleanGroup = {
             records: Array.isArray(grp.records) ? grp.records.map(r => sanitizeAttendanceRecord(r, gid)).filter(Boolean) : [],
             updatedAt: Number(grp.updatedAt) || now
           };
+          if (Array.isArray(grp.students)) {
+            cleanGroup.students = grp.students.map(s => sanitizeStudent(s)).filter(Boolean);
+          }
+          res.byGroup[gid] = cleanGroup;
         }
       }
     }

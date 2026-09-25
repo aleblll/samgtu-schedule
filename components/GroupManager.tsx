@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Student } from '../types';
 import { STUDENTS_REGISTRY } from '../attendance';
 import { AVAILABLE_GROUPS } from '../constants';
-import { UserPlus, Trash2, Edit2, Check, X, Users, AlertCircle } from 'lucide-react';
+import { UserPlus, Trash2, Edit2, Check, X, Users, AlertCircle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { fetchGroupCloudData, pushGroupCloudData } from '../utils/cloudSync';
 
 interface GroupManagerProps {
   currentGroupId: string | null;
@@ -11,6 +12,7 @@ interface GroupManagerProps {
 }
 
 const GroupManager: React.FC<GroupManagerProps> = ({ currentGroupId, userRole }) => {
+  const [isSyncing, setIsSyncing] = useState(false);
   const groupConfig = useMemo(() => {
     return AVAILABLE_GROUPS.find(g => g.id === currentGroupId);
   }, [currentGroupId]);
@@ -45,14 +47,37 @@ const GroupManager: React.FC<GroupManagerProps> = ({ currentGroupId, userRole })
       return;
     }
     const local = localStorage.getItem(`students_${currentGroupId}`);
+    let initialStudents: Student[] = [];
     if (local) {
       try {
         const parsed = JSON.parse(local);
-        setStudents(getHealedStudents(currentGroupId, parsed));
-        return;
+        initialStudents = getHealedStudents(currentGroupId, parsed);
+        setStudents(initialStudents);
       } catch (e) {}
+    } else {
+      initialStudents = STUDENTS_REGISTRY[currentGroupId] || [];
+      setStudents(initialStudents);
     }
-    setStudents(STUDENTS_REGISTRY[currentGroupId] || []);
+
+    // Background cloud sync
+    let isCancelled = false;
+    fetchGroupCloudData(false, currentGroupId).then(cloudData => {
+      if (isCancelled || !cloudData) return;
+      if (Array.isArray(cloudData.students) && cloudData.students.length > 0) {
+        const cloudStudents = getHealedStudents(currentGroupId, cloudData.students);
+        setStudents(cloudStudents);
+        try {
+          localStorage.setItem(`students_${currentGroupId}`, JSON.stringify(cloudStudents));
+        } catch (e) {}
+      } else if (initialStudents.length > 0) {
+        // Auto-heal: push local students to cloud if cloud has no roster yet
+        pushGroupCloudData({ students: initialStudents }, currentGroupId).catch(console.warn);
+      }
+    }).catch(console.warn);
+
+    return () => {
+      isCancelled = true;
+    };
   }, [currentGroupId]);
 
   const [newStudentName, setNewStudentName] = useState('');
@@ -77,6 +102,30 @@ const GroupManager: React.FC<GroupManagerProps> = ({ currentGroupId, userRole })
       } catch (e) {
         console.warn('Failed to persist students to storage:', e);
       }
+      setIsSyncing(true);
+      pushGroupCloudData({ students: updated }, currentGroupId)
+        .then(ok => {
+          if (!ok) console.warn('Cloud roster sync returned false');
+        })
+        .catch(e => console.warn('Cloud roster sync failed:', e))
+        .finally(() => setIsSyncing(false));
+    }
+  };
+
+  const handleManualSync = async () => {
+    if (!currentGroupId) return;
+    setIsSyncing(true);
+    try {
+      const ok = await pushGroupCloudData({ students }, currentGroupId);
+      if (ok) {
+        toast.success('Состав группы синхронизирован с облаком');
+      } else {
+        toast.error('Не удалось синхронизировать с облаком');
+      }
+    } catch {
+      toast.error('Ошибка связи с облаком');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -132,12 +181,25 @@ const GroupManager: React.FC<GroupManagerProps> = ({ currentGroupId, userRole })
           </div>
         </div>
 
-        {!canEdit && (
-          <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>Режим просмотра</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {canEdit && (
+            <button
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border border-indigo-200 dark:border-indigo-800 rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
+              title="Синхронизировать список с облаком"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? 'Синхронизация...' : 'В облако'}</span>
+            </button>
+          )}
+          {!canEdit && (
+            <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-xl border border-amber-200 dark:border-amber-800">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>Режим просмотра</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Add Student Form (Starosta / Admin) */}

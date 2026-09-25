@@ -630,6 +630,22 @@ const App: React.FC = () => {
             localStorage.setItem(`subject_teachers_${currentGroupId}`, JSON.stringify(cleanSt));
           } catch (e) {}
         }
+
+        if (cloud.students !== undefined && Array.isArray(cloud.students) && cloud.students.length > 0) {
+          try {
+            localStorage.setItem(`students_${currentGroupId}`, JSON.stringify(cloud.students));
+          } catch (e) {}
+        } else {
+          try {
+            const localRaw = localStorage.getItem(`students_${currentGroupId}`);
+            if (localRaw) {
+              const localParsed = JSON.parse(localRaw);
+              if (Array.isArray(localParsed) && localParsed.length > 0) {
+                pushGroupCloudData({ students: localParsed }, currentGroupId).catch(console.warn);
+              }
+            }
+          } catch (e) {}
+        }
       }
     };
 
