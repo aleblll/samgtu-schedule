@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ClipboardCheck, Download, FileText, Table as TableIcon } from 'lucide-react';
 import { STUDENTS_REGISTRY, useAttendance, BLOCKS, getSemesterWeek, getDayName, getSamaraISODate } from '../attendance';
 import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, FACULTIES } from '../constants';
 import { Lesson, Student, GroupConfig } from '../types';
 import { toast } from 'sonner';
+import { fetchGroupCloudData } from '../utils/cloudSync';
 
 interface AttendanceTrackerProps {
   isAuthenticated: boolean;
@@ -32,28 +33,64 @@ const AttendanceTracker: React.FC<AttendanceTrackerProps> = ({
   const normalizedRole = userRole.toLowerCase();
   const canEdit = normalizedRole === 'admin' || normalizedRole === 'starosta';
 
-  const students: Student[] = React.useMemo(() => {
-    if (!currentGroupId) return [];
+  const getHealedStudents = (groupId: string, parsed: Student[]): Student[] => {
+    if (!Array.isArray(parsed)) return STUDENTS_REGISTRY[groupId] || [];
+    if (groupId === 'ingt-310') {
+      // If cached array still contains removed student Pronin or wrong count, heal with official registry
+      if (parsed.length !== 16 || parsed.some(s => s.name?.includes('Пронин'))) {
+        try {
+          localStorage.setItem(`students_ingt-310`, JSON.stringify(STUDENTS_REGISTRY['ingt-310']));
+        } catch (e) {}
+        return STUDENTS_REGISTRY['ingt-310'];
+      }
+    } else if (groupId === 'faid-310' || groupId === 'faid-110') {
+      if (parsed.length !== 22) {
+        try {
+          localStorage.setItem(`students_${groupId}`, JSON.stringify(STUDENTS_REGISTRY['faid-310']));
+        } catch (e) {}
+        return STUDENTS_REGISTRY['faid-310'];
+      }
+    }
+    return parsed;
+  };
+
+  const loadInitialStudents = (groupId: string): Student[] => {
+    if (!groupId) return [];
     try {
-      const saved = localStorage.getItem(`students_${currentGroupId}`);
+      const saved = localStorage.getItem(`students_${groupId}`);
       if (saved) {
         const parsed: Student[] = JSON.parse(saved);
-        if (currentGroupId === 'ingt-310') {
-          // If cached array still contains removed student Pronin or wrong count, heal with official registry
-          if (parsed.length !== 16 || parsed.some(s => s.name.includes('Пронин'))) {
-            localStorage.setItem(`students_ingt-310`, JSON.stringify(STUDENTS_REGISTRY['ingt-310']));
-            return STUDENTS_REGISTRY['ingt-310'];
-          }
-        } else if (currentGroupId === 'faid-310' || currentGroupId === 'faid-110') {
-          if (parsed.length !== 22) {
-            localStorage.setItem(`students_${currentGroupId}`, JSON.stringify(STUDENTS_REGISTRY['faid-310']));
-            return STUDENTS_REGISTRY['faid-310'];
-          }
-        }
-        return parsed;
+        return getHealedStudents(groupId, parsed);
       }
     } catch (e) {}
-    return STUDENTS_REGISTRY[currentGroupId] || [];
+    return STUDENTS_REGISTRY[groupId] || [];
+  };
+
+  const [students, setStudents] = useState<Student[]>(() => loadInitialStudents(currentGroupId));
+
+  useEffect(() => {
+    if (!currentGroupId) {
+      setStudents([]);
+      return;
+    }
+
+    setStudents(loadInitialStudents(currentGroupId));
+
+    let isCancelled = false;
+    fetchGroupCloudData(false, currentGroupId).then(cloudData => {
+      if (isCancelled || !cloudData) return;
+      if (Array.isArray(cloudData.students) && cloudData.students.length > 0) {
+        const cloudStudents = getHealedStudents(currentGroupId, cloudData.students);
+        setStudents(cloudStudents);
+        try {
+          localStorage.setItem(`students_${currentGroupId}`, JSON.stringify(cloudStudents));
+        } catch (e) {}
+      }
+    }).catch(console.warn);
+
+    return () => {
+      isCancelled = true;
+    };
   }, [currentGroupId, refreshTrigger]);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
