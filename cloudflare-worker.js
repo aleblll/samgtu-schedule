@@ -48,15 +48,26 @@ export function sanitizeHomeworkItem(item, fallbackGroupId = '') {
 
 export function sanitizeAttendanceRecord(rec, fallbackGroupId = '') {
   if (!rec || typeof rec !== 'object') return null;
-  const status = String(rec.status || '').toLowerCase();
-  const validStatus = ['present', 'absent', 'excused', 'illness', ''].includes(status) ? status : '';
+  const groupId = String(rec.groupId || fallbackGroupId || '').slice(0, 50);
+  const date = String(rec.date || '').slice(0, 20);
+  const lessonId = String(rec.lessonId || '').slice(0, 80);
+  const generatedDocId = (groupId && date && lessonId) ? `${groupId}_${date}_${lessonId}` : '';
+  const docId = String(rec.docId || generatedDocId || '').slice(0, 120);
+
   return {
-    studentId: typeof rec.studentId === 'number' ? rec.studentId : String(rec.studentId || '').slice(0, 50),
-    lessonId: String(rec.lessonId || '').slice(0, 80),
-    status: validStatus,
-    date: String(rec.date || '').slice(0, 20),
-    groupId: String(rec.groupId || fallbackGroupId || '').slice(0, 50),
-    updatedAt: Number(rec.updatedAt) || Date.now()
+    docId,
+    groupId,
+    date,
+    lessonId,
+    absentStudentIds: Array.isArray(rec.absentStudentIds)
+      ? rec.absentStudentIds.map(Number).filter(n => Number.isInteger(n) && n > 0)
+      : [],
+    excusedStudentIds: Array.isArray(rec.excusedStudentIds)
+      ? rec.excusedStudentIds.map(Number).filter(n => Number.isInteger(n) && n > 0)
+      : [],
+    isCancelled: Boolean(rec.isCancelled),
+    updatedAt: typeof rec.updatedAt === 'number' ? rec.updatedAt : String(rec.updatedAt || '').slice(0, 50),
+    updatedBy: String(rec.updatedBy || '').slice(0, 50)
   };
 }
 

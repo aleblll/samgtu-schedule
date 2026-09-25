@@ -63,12 +63,15 @@ async function runSanitizationTests() {
   // --- 2. Attendance Record Sanitization ---
   console.log('\n--- 2. Attendance DTO Validation ---');
   const maliciousAtt = {
-    studentId: 15,
-    lessonId: '310-w1-mo-1',
-    status: 'present',
-    date: '2026-09-20',
+    docId: 'ingt-310_2026-09-20_310-w1-mo-1',
     groupId: 'ingt-310',
+    date: '2026-09-20',
+    lessonId: '310-w1-mo-1',
+    absentStudentIds: [1, 2, 'bad' as any, 0, -5, 3],
+    excusedStudentIds: [4, 'evil' as any, 5],
+    isCancelled: true,
     updatedAt: 1726800000000,
+    updatedBy: 'starosta',
     // Injected fields
     isSuperuser: true,
     bypassPayment: true,
@@ -76,14 +79,50 @@ async function runSanitizationTests() {
   };
 
   const cleanAtt = sanitizeAttendanceRecord(maliciousAtt);
-  check('Valid attendance status preserved', cleanAtt !== null && cleanAtt.status === 'present' && cleanAtt.studentId === 15);
+  check('Valid attendance fields preserved',
+    cleanAtt !== null &&
+    cleanAtt.docId === 'ingt-310_2026-09-20_310-w1-mo-1' &&
+    cleanAtt.groupId === 'ingt-310' &&
+    cleanAtt.date === '2026-09-20' &&
+    cleanAtt.lessonId === '310-w1-mo-1' &&
+    cleanAtt.isCancelled === true &&
+    cleanAtt.updatedAt === 1726800000000 &&
+    cleanAtt.updatedBy === 'starosta'
+  );
+  check('Absent student IDs sanitized to positive integers',
+    Array.isArray(cleanAtt?.absentStudentIds) &&
+    JSON.stringify(cleanAtt.absentStudentIds) === JSON.stringify([1, 2, 3])
+  );
+  check('Excused student IDs sanitized to positive integers',
+    Array.isArray(cleanAtt?.excusedStudentIds) &&
+    JSON.stringify(cleanAtt.excusedStudentIds) === JSON.stringify([4, 5])
+  );
   check('Injected "isSuperuser" stripped from attendance', (cleanAtt as any).isSuperuser === undefined);
   check('Injected "bypassPayment" stripped from attendance', (cleanAtt as any).bypassPayment === undefined);
   check('Injected "fakeGrade" stripped from attendance', (cleanAtt as any).fakeGrade === undefined);
 
-  // Invalid status test
-  const invalidStatusAtt = sanitizeAttendanceRecord({ ...maliciousAtt, status: 'HACKED_STATUS' });
-  check('Invalid status sanitized to empty string', invalidStatusAtt !== null && invalidStatusAtt.status === '');
+  // Auto-generation of docId test when omitted
+  const autoDocAtt = sanitizeAttendanceRecord({
+    groupId: 'ingt-310',
+    date: '2026-09-20',
+    lessonId: '310-w1-mo-2',
+    absentStudentIds: [1],
+    excusedStudentIds: []
+  });
+  check('docId auto-generated from groupId_date_lessonId when omitted',
+    autoDocAtt !== null && autoDocAtt.docId === 'ingt-310_2026-09-20_310-w1-mo-2'
+  );
+
+  // String updatedAt preservation test
+  const stringUpdatedAtt = sanitizeAttendanceRecord({
+    groupId: 'ingt-310',
+    date: '2026-09-20',
+    lessonId: '310-w1-mo-2',
+    updatedAt: '2026-09-20T12:00:00.000Z'
+  });
+  check('String updatedAt preserved correctly',
+    stringUpdatedAtt !== null && stringUpdatedAtt.updatedAt === '2026-09-20T12:00:00.000Z'
+  );
 
   // --- 3. Schedule Override Sanitization ---
   console.log('\n--- 3. Schedule Override DTO Validation ---');
@@ -175,6 +214,9 @@ async function runSanitizationTests() {
   check('Forwarded body stripped of topHack', forwardedBody && forwardedBody.topHack === undefined);
   check('Forwarded body stripped of hackField in group', forwardedBody && forwardedBody.byGroup['ingt-310'].hackField === undefined);
   check('Forwarded attendance record stripped of isSuperuser', forwardedBody && forwardedBody.byGroup['ingt-310'].records[0].isSuperuser === undefined);
+  check('Forwarded attendance record preserved absentStudentIds', forwardedBody && JSON.stringify(forwardedBody.byGroup['ingt-310'].records[0].absentStudentIds) === JSON.stringify([1, 2, 3]));
+  check('Forwarded attendance record preserved excusedStudentIds', forwardedBody && JSON.stringify(forwardedBody.byGroup['ingt-310'].records[0].excusedStudentIds) === JSON.stringify([4, 5]));
+  check('Forwarded attendance record preserved isCancelled', forwardedBody && forwardedBody.byGroup['ingt-310'].records[0].isCancelled === true);
 
   // Restore fetch
   globalThis.fetch = originalFetch;
