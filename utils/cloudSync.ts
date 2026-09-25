@@ -163,9 +163,14 @@ export const getLocalBackup = (groupId = 'ingt-310'): GroupCloudData => {
 };
 
 // Safe fetch with cache-busting and timeout
-const fetchJson = async (url: string, timeoutMs = 6000) => {
+const fetchJson = async (url: string, timeoutMs = 6000, signal?: AbortSignal) => {
+  if (signal?.aborted) return null;
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
+  const onExternalAbort = () => controller.abort();
+  if (signal) {
+    signal.addEventListener('abort', onExternalAbort, { once: true });
+  }
   try {
     const cacheBuster = url.includes('?') ? `&_t=${Date.now()}` : `?_t=${Date.now()}`;
     const res = await fetch(url + cacheBuster, {
@@ -195,6 +200,11 @@ const fetchJson = async (url: string, timeoutMs = 6000) => {
   } catch (e) {
     clearTimeout(id);
     return null;
+  } finally {
+    clearTimeout(id);
+    if (signal) {
+      signal.removeEventListener('abort', onExternalAbort);
+    }
   }
 };
 
@@ -248,10 +258,12 @@ const parseCloudPayload = (raw: any): any => {
   return raw;
 };
 
-const fetchWithFallback = async (primaryUrl: string, fallbackUrl: string) => {
-  const p = await fetchJson(primaryUrl, 3500);
+const fetchWithFallback = async (primaryUrl: string, fallbackUrl: string, signal?: AbortSignal) => {
+  if (signal?.aborted) return null;
+  const p = await fetchJson(primaryUrl, 3500, signal);
   if (p !== null) return p;
-  return await fetchJson(fallbackUrl, 3500);
+  if (signal?.aborted) return null;
+  return await fetchJson(fallbackUrl, 3500, signal);
 };
 
 const safePut = async (primaryUrl: string, fallbackUrl: string, body: any) => {
@@ -260,7 +272,8 @@ const safePut = async (primaryUrl: string, fallbackUrl: string, body: any) => {
   return await putJson(fallbackUrl, body);
 };
 
-export const fetchGroupCloudData = async (force: boolean = false, groupId = 'ingt-310'): Promise<GroupCloudData | null> => {
+export const fetchGroupCloudData = async (force: boolean = false, groupId = 'ingt-310', signal?: AbortSignal): Promise<GroupCloudData | null> => {
+  if (signal?.aborted) return null;
   const now = Date.now();
   if (!force && lastFetchedDataMap[groupId] && now - (lastFetchTimeMap[groupId] || 0) < 4000) {
     return lastFetchedDataMap[groupId];
@@ -271,18 +284,24 @@ export const fetchGroupCloudData = async (force: boolean = false, groupId = 'ing
   try {
     // Fetch all 3 dedicated endpoints in parallel with fallback
     const [schedRes, hwRes, attRes] = await Promise.allSettled([
-      fetchWithFallback(ENDPOINTS.schedule, FALLBACK_BINS.schedule),
-      fetchWithFallback(ENDPOINTS.homework, FALLBACK_BINS.homework),
-      fetchWithFallback(ENDPOINTS.attendance, FALLBACK_BINS.attendance)
+      fetchWithFallback(ENDPOINTS.schedule, FALLBACK_BINS.schedule, signal),
+      fetchWithFallback(ENDPOINTS.homework, FALLBACK_BINS.homework, signal),
+      fetchWithFallback(ENDPOINTS.attendance, FALLBACK_BINS.attendance, signal)
     ]);
+
+    if (signal?.aborted) return null;
 
     let cloudScheduleOverrides: Record<string, Partial<Lesson>> = localBackup.scheduleOverrides || {};
     let cloudSubjectTeachers: Record<string, string> = localBackup.subjectTeachers || {};
+    let serverTimestamp = (schedRes.status === 'fulfilled' && schedRes.value) || (hwRes.status === 'fulfilled' && hwRes.value) || (attRes.status === 'fulfilled' && attRes.value) ? now : 0;
+
     if (schedRes.status === 'fulfilled' && schedRes.value) {
       const d = parseCloudPayload(schedRes.value);
       if (d && typeof d === 'object') {
+        serverTimestamp = d.updatedAt ? Number(d.updatedAt) : now;
         if (d.byGroup && d.byGroup[groupId]) {
           const gData = d.byGroup[groupId];
+          if (gData.updatedAt) serverTimestamp = Number(gData.updatedAt);
           if (gData.overrides !== undefined) cloudScheduleOverrides = gData.overrides;
           if (gData.teachers !== undefined) cloudSubjectTeachers = gData.teachers;
         } else if (groupId === 'ingt-310') {
@@ -390,13 +409,14 @@ export const fetchGroupCloudData = async (force: boolean = false, groupId = 'ing
       subjectTeachers: cloudSubjectTeachers,
       attendance: cloudAttendance,
       students: cloudStudents,
-      lastUpdated: now
+      lastUpdated: serverTimestamp
     };
 
     lastFetchedDataMap[groupId] = result;
     lastFetchTimeMap[groupId] = now;
     return result;
   } catch (e) {
+    if (signal?.aborted) return null;
     console.warn('Cloud sync parallel fetch error:', e);
     return lastFetchedDataMap[groupId] || localBackup;
   }

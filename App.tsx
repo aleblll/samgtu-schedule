@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, Suspense, useRef } from 'react';
 import { ThemePref, getThemePref, setThemePref, syncTelegramTheme } from './utils/theme';
 import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, FACULTIES, createEmptyWeek } from './constants';
 import { getSemesterWeek, getWeekDateRange, getDayISODate, useAttendance, getSamaraDate, getSamaraISODate } from './attendance';
@@ -189,6 +189,7 @@ const App: React.FC = () => {
 
   const headerTapCountRef = React.useRef<number>(0);
   const lastHeaderTapTimeRef = React.useRef<number>(0);
+  const lastVisibilitySyncRef = useRef<number>(0);
 
   const handleHeaderTitleTap = () => {
     const now = Date.now();
@@ -638,73 +639,146 @@ const App: React.FC = () => {
   // Real-time Cloud Sync for Subject Teachers and Schedule Overrides (via universal REST cloud)
   useEffect(() => {
     let isMounted = true;
+    let pollTimer: ReturnType<typeof setTimeout> | null = null;
+    let consecutiveFailures = 0;
+    let activeController: AbortController | null = null;
+
+    const abortActiveRequest = () => {
+      if (activeController) {
+        activeController.abort();
+        activeController = null;
+      }
+    };
+
+    const getNextDelay = (failures: number): number => {
+      // Exponential backoff: 15s -> 30s -> 60s max
+      const base = Math.min(60000, 15000 * Math.pow(2, failures));
+      // Jitter ±3 seconds (±3000ms)
+      const jitter = (Math.random() * 6000) - 3000;
+      return Math.max(5000, Math.min(60000, Math.round(base + jitter)));
+    };
+
+    const scheduleNextPoll = () => {
+      if (pollTimer) {
+        clearTimeout(pollTimer);
+        pollTimer = null;
+      }
+      if (!isMounted || document.hidden) return;
+
+      const delay = getNextDelay(consecutiveFailures);
+      pollTimer = setTimeout(async () => {
+        if (!isMounted || document.hidden) return;
+        await loadCloud(false);
+      }, delay);
+    };
 
     const loadCloud = async (force: boolean = false) => {
-      const cloud = await fetchGroupCloudData(force, currentGroupId);
-      if (cloud && isMounted) {
-        if ((cloud as any).schedule !== undefined) {
-          SCHEDULE_REGISTRY[currentGroupId] = (cloud as any).schedule;
-        }
+      if (!isMounted) return;
+      abortActiveRequest();
 
-        const lastLocalEdit = Number(localStorage.getItem(`last_local_edit_${currentGroupId}`) || 0);
-        const isRecentLocalEdit = Date.now() - lastLocalEdit < 30000;
-        const cloudTimestamp = (cloud as any).lastUpdated ? new Date((cloud as any).lastUpdated).getTime() : 0;
-        const shouldSkipOverrides = isRecentLocalEdit && cloudTimestamp <= lastLocalEdit;
+      const controller = new AbortController();
+      activeController = controller;
 
-        if (cloud.scheduleOverrides !== undefined && !shouldSkipOverrides) {
-          const cleanOv = sanitizeOverrides(cloud.scheduleOverrides);
-          setScheduleOverrides(cleanOv);
-          try {
-            localStorage.setItem(`schedule_overrides_${currentGroupId}`, JSON.stringify(cleanOv));
-          } catch (e) {}
-        }
-        if (cloud.subjectTeachers !== undefined && !shouldSkipOverrides) {
-          const cleanSt = sanitizeTeachers(cloud.subjectTeachers, currentGroupId);
-          setSubjectTeachers(cleanSt);
-          try {
-            localStorage.setItem(`subject_teachers_${currentGroupId}`, JSON.stringify(cleanSt));
-          } catch (e) {}
-        }
+      try {
+        const cloud = await fetchGroupCloudData(force, currentGroupId, controller.signal);
+        if (controller.signal.aborted || !isMounted) return;
 
-        if (cloud.students !== undefined && Array.isArray(cloud.students) && cloud.students.length > 0) {
-          try {
-            localStorage.setItem(`students_${currentGroupId}`, JSON.stringify(cloud.students));
-          } catch (e) {}
+        const isNetworkFailure = !cloud || (cloud as any).lastUpdated === 0;
+        if (isNetworkFailure) {
+          consecutiveFailures++;
         } else {
-          try {
-            const localRaw = localStorage.getItem(`students_${currentGroupId}`);
-            if (localRaw) {
-              const localParsed = JSON.parse(localRaw);
-              if (Array.isArray(localParsed) && localParsed.length > 0) {
-                pushGroupCloudData({ students: localParsed }, currentGroupId).catch(console.warn);
+          consecutiveFailures = 0;
+          lastVisibilitySyncRef.current = Date.now();
+
+          if ((cloud as any).schedule !== undefined) {
+            SCHEDULE_REGISTRY[currentGroupId] = (cloud as any).schedule;
+          }
+
+          const lastLocalEdit = Number(localStorage.getItem(`last_local_edit_${currentGroupId}`) || 0);
+          const isRecentLocalEdit = Date.now() - lastLocalEdit < 30000;
+          const cloudTimestamp = (cloud as any).lastUpdated ? new Date((cloud as any).lastUpdated).getTime() : 0;
+          const shouldSkipOverrides = isRecentLocalEdit && cloudTimestamp <= lastLocalEdit;
+
+          if (cloud.scheduleOverrides !== undefined && !shouldSkipOverrides) {
+            const cleanOv = sanitizeOverrides(cloud.scheduleOverrides);
+            setScheduleOverrides(cleanOv);
+            try {
+              localStorage.setItem(`schedule_overrides_${currentGroupId}`, JSON.stringify(cleanOv));
+            } catch (e) {}
+          }
+          if (cloud.subjectTeachers !== undefined && !shouldSkipOverrides) {
+            const cleanSt = sanitizeTeachers(cloud.subjectTeachers, currentGroupId);
+            setSubjectTeachers(cleanSt);
+            try {
+              localStorage.setItem(`subject_teachers_${currentGroupId}`, JSON.stringify(cleanSt));
+            } catch (e) {}
+          }
+
+          if (cloud.students !== undefined && Array.isArray(cloud.students) && cloud.students.length > 0) {
+            try {
+              localStorage.setItem(`students_${currentGroupId}`, JSON.stringify(cloud.students));
+            } catch (e) {}
+          } else {
+            try {
+              const localRaw = localStorage.getItem(`students_${currentGroupId}`);
+              if (localRaw) {
+                const localParsed = JSON.parse(localRaw);
+                if (Array.isArray(localParsed) && localParsed.length > 0) {
+                  pushGroupCloudData({ students: localParsed }, currentGroupId).catch(console.warn);
+                }
               }
-            }
-          } catch (e) {}
+            } catch (e) {}
+          }
+        }
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          consecutiveFailures++;
+        }
+      } finally {
+        if (isMounted && !document.hidden) {
+          scheduleNextPoll();
         }
       }
     };
 
+    lastVisibilitySyncRef.current = Date.now();
     loadCloud(true);
 
-    const timer = setInterval(() => {
-      loadCloud(false);
-    }, 15000); // 15s real-time cloud sync across devices
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        loadCloud(true);
+    const handleVisibilityOrFocus = () => {
+      if (document.hidden || document.visibilityState !== 'visible') {
+        if (pollTimer) {
+          clearTimeout(pollTimer);
+          pollTimer = null;
+        }
+        return;
       }
+
+      const now = Date.now();
+      if (now - lastVisibilitySyncRef.current < 5000) {
+        if (!pollTimer) {
+          scheduleNextPoll();
+        }
+        return;
+      }
+
+      lastVisibilitySyncRef.current = now;
+      loadCloud(true);
     };
-    window.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleVisibilityChange);
+
+    window.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    window.addEventListener('focus', handleVisibilityOrFocus);
 
     return () => {
       isMounted = false;
-      clearInterval(timer);
-      window.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleVisibilityChange);
+      abortActiveRequest();
+      if (pollTimer) {
+        clearTimeout(pollTimer);
+        pollTimer = null;
+      }
+      window.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
     };
-  }, [currentGroupId, refreshTrigger]);
+  }, [currentGroupId]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -715,12 +789,19 @@ const App: React.FC = () => {
         if (cloud.scheduleOverrides !== undefined) {
           const cleanOv = sanitizeOverrides(cloud.scheduleOverrides);
           setScheduleOverrides(cleanOv);
+          try {
+            localStorage.setItem(`schedule_overrides_${currentGroupId}`, JSON.stringify(cleanOv));
+          } catch (e) {}
         }
         if (cloud.subjectTeachers !== undefined) {
-          const cleanSt = sanitizeTeachers(cloud.subjectTeachers);
+          const cleanSt = sanitizeTeachers(cloud.subjectTeachers, currentGroupId);
           setSubjectTeachers(cleanSt);
+          try {
+            localStorage.setItem(`subject_teachers_${currentGroupId}`, JSON.stringify(cleanSt));
+          } catch (e) {}
         }
       }
+      lastVisibilitySyncRef.current = Date.now();
     } catch (e) {}
     toast.success('Данные обновлены');
     setTimeout(() => setIsRefreshing(false), 500);
