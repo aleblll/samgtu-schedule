@@ -3,7 +3,9 @@ import { DaySchedule, Lesson } from '../types';
 import DayColumn from './DayColumn';
 import ScheduleState from './ScheduleState';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
-import { getDayCalendarDate, getSamaraDate, getSemesterWeek, getDayName } from '../attendance';
+import { getDayCalendarDate, getSemesterWeek, getDayName } from '../attendance';
+import { getSamaraDate } from '../utils/samaraDate';
+import { useNow } from '../utils/useNow';
 import { TeacherAssignmentScope } from './EditLessonModal';
 
 interface SwipeableDaysProps {
@@ -21,7 +23,8 @@ const SwipeableDays: React.FC<SwipeableDaysProps> = ({
   onUpdateLesson,
   onResetLesson,
 }) => {
-  const samaraToday = useMemo(() => getSamaraDate(), []);
+  const liveNow = useNow(60000);
+  const samaraToday = useMemo(() => getSamaraDate(liveNow), [liveNow]);
   const currentSemesterWeek = useMemo(() => getSemesterWeek(samaraToday), [samaraToday]);
   const todayDayName = useMemo(() => getDayName(samaraToday), [samaraToday]);
 

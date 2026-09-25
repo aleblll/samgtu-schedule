@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useLayoutEffect, useMemo, Suspense, useRef } from 'react';
 import { ThemePref, getThemePref, setThemePref, syncTelegramTheme } from './utils/theme';
 import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS, FACULTIES, createEmptyWeek } from './constants';
-import { getSemesterWeek, getWeekDateRange, getDayISODate, useAttendance, getSamaraDate, getSamaraISODate } from './attendance';
+import { getSemesterWeek, getWeekDateRange, getDayISODate, useAttendance, getSamaraISODate } from './attendance';
+import { getSamaraDate } from './utils/samaraDate';
+import { useNow } from './utils/useNow';
 import SwipeableDays from './components/SwipeableDays';
 import BottomNav from './components/BottomNav';
 import TabErrorBoundary from './components/TabErrorBoundary';
@@ -18,7 +20,7 @@ import { loadGroupSchedule, isScheduleLoaded, LoadFailReason } from './utils/sch
 import {
   LogIn, LogOut, Calendar, BookOpen, Bug, ClipboardCheck, Sun, Moon,
   GraduationCap, Users, RefreshCw, Shield, User as UserIcon, Key, UserCheck, ChevronDown,
-  Search, Plus, X, UploadCloud, Terminal
+  Search, Plus, X, UploadCloud, Terminal, RotateCcw, Database
 } from 'lucide-react';
 
 // Code-split heavy tabs and modals to keep the initial client bundle ultra-light for students
@@ -489,7 +491,8 @@ const App: React.FC = () => {
   );
 
   // Calculate current week automatically based on Samara time (UTC+4) starting Aug 31, 2026
-  const samaraNow = useMemo(() => getSamaraDate(), [refreshTrigger]);
+  const liveNow = useNow(60000);
+  const samaraNow = useMemo(() => getSamaraDate(liveNow), [liveNow]);
   const currentWeek = useMemo(() => getSemesterWeek(samaraNow, currentGroupId), [samaraNow, currentGroupId]);
   const [selectedWeek, setSelectedWeek] = useState<number>(currentWeek);
 
@@ -845,6 +848,31 @@ const App: React.FC = () => {
     setStarostaGroupId(null);
     try { localStorage.removeItem('starosta_group_id'); } catch (e) {}
     toast.success('Вы перешли в режим Студента');
+  };
+
+  const handleClearScheduleCache = async () => {
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('sched_cache_v1:')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+
+      if (typeof window !== 'undefined' && 'caches' in window) {
+        const cacheKeys = await window.caches.keys();
+        await Promise.all(cacheKeys.map(k => window.caches.delete(k)));
+      }
+
+      toast.success('Кэш расписания очищен. Перезагрузка...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 400);
+    } catch (e) {
+      toast.error('Не удалось очистить кэш расписания');
+    }
   };
 
   // Schedule Customization Handlers (Editing Teacher, Room, Notes, Attachments, Cancellations)
@@ -1542,7 +1570,30 @@ const App: React.FC = () => {
               </button>
             </div>
 
-                        {/* Bug Report & Support Card */}
+            {/* Schedule Cache Clearance Card */}
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <Database className="w-4 h-4 text-amber-500" />
+                  <span>Кэш расписания</span>
+                </div>
+                <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200/60 dark:border-amber-900/40">
+                  Офлайн-хранилище
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Очищает сохраненные копии расписания групп и запрашивает свежие данные из сети. Ваши личные заметки, пароли и посещаемость не будут затронуты.
+              </p>
+              <button
+                onClick={handleClearScheduleCache}
+                className="w-full py-2.5 px-4 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-xs rounded-xl transition-all shadow-sm min-h-[44px] flex items-center justify-center gap-2"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
+                Очистить кэш расписания и обновить
+              </button>
+            </div>
+
+            {/* Bug Report & Support Card */}
             <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">

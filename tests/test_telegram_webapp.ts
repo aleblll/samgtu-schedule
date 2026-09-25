@@ -334,6 +334,57 @@ assert(
   'utils/cloudSync.ts parses and returns serverTimestamp in lastUpdated'
 );
 
+// -------------------------------------------------------------
+// 7. Live Time Ticker & Safe Cache Clearance (A3-U6, A3-U7)
+// -------------------------------------------------------------
+console.log('\n--- 7. Live Time Ticker & Safe Cache Clearance (A3-U6, A3-U7) ---');
+
+const useNowPath = path.resolve(__dirname, '../utils/useNow.ts');
+assert(fs.existsSync(useNowPath), 'utils/useNow.ts file exists');
+
+const useNowContent = fs.readFileSync(useNowPath, 'utf8');
+assert(
+  useNowContent.includes('export function useNow(intervalMs: number = 60000): Date'),
+  'useNow hook exports correct signature with default 60000ms interval'
+);
+assert(
+  useNowContent.includes('visibilitychange') && useNowContent.includes('focus'),
+  'useNow hook registers visibilitychange and focus event listeners'
+);
+
+// Re-read appTsxContent to capture recent edits
+const updatedAppTsx = fs.readFileSync(appTsxPath, 'utf8');
+assert(
+  updatedAppTsx.includes('const liveNow = useNow(60000);') &&
+  updatedAppTsx.includes('const samaraNow = useMemo(() => getSamaraDate(liveNow), [liveNow]);'),
+  'App.tsx consumes useNow and computes live samaraNow'
+);
+
+const updatedSwipeableDays = fs.readFileSync(swipeableDaysPath, 'utf8');
+assert(
+  updatedSwipeableDays.includes('const liveNow = useNow(60000);') &&
+  updatedSwipeableDays.includes('const samaraToday = useMemo(() => getSamaraDate(liveNow), [liveNow]);'),
+  'SwipeableDays.tsx consumes useNow and computes live samaraToday'
+);
+
+assert(
+  updatedAppTsx.includes('handleClearScheduleCache'),
+  'App.tsx implements handleClearScheduleCache handler'
+);
+assert(
+  updatedAppTsx.includes("key.startsWith('sched_cache_v1:')") &&
+  !updatedAppTsx.includes('localStorage.clear()'),
+  'handleClearScheduleCache isolates and purges ONLY sched_cache_v1 keys, preserving credentials/notes'
+);
+assert(
+  updatedAppTsx.includes('caches.delete') && updatedAppTsx.includes('window.location.reload'),
+  'handleClearScheduleCache clears web caches and reloads the window'
+);
+assert(
+  updatedAppTsx.includes('Кэш расписания') && updatedAppTsx.includes('Офлайн-хранилище') && updatedAppTsx.includes('Очистить кэш расписания и обновить'),
+  'Profile tab renders Schedule Cache card with offline storage badge and reload button'
+);
+
 console.log('\n=================================================');
 console.log(`  SUMMARY: ${passedTests} / ${totalTests} TESTS PASSED`);
 console.log('=================================================');
