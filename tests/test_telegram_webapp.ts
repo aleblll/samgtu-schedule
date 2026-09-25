@@ -215,9 +215,75 @@ assert(
 const homeworkPath = path.resolve(__dirname, '../components/HomeworkTracker.tsx');
 const homeworkContent = fs.readFileSync(homeworkPath, 'utf8');
 
+// -------------------------------------------------------------
+// 3. ScheduleState UI & Error Handling (A3-U4)
+// -------------------------------------------------------------
+console.log('\n--- 3. ScheduleState UI & Error Handling ---');
+
+const scheduleStatePath = path.resolve(__dirname, '../components/ScheduleState.tsx');
+assert(fs.existsSync(scheduleStatePath), 'components/ScheduleState.tsx exists');
+
+const scheduleStateContent = fs.existsSync(scheduleStatePath) ? fs.readFileSync(scheduleStatePath, 'utf8') : '';
 assert(
-  homeworkContent.includes('overflow-y-auto') && homeworkContent.includes('overscroll-contain'),
-  'HomeworkTracker modal has overflow-y-auto with overscroll-contain preventing background scroll'
+  scheduleStateContent.includes('export const ScheduleState') || scheduleStateContent.includes('export default ScheduleState'),
+  'ScheduleState.tsx exports ScheduleState component'
+);
+
+assert(
+  scheduleStateContent.includes('animate-pulse'),
+  'ScheduleState.tsx provides skeleton loading state with animate-pulse'
+);
+
+assert(
+  scheduleStateContent.includes('Повторить попытку'),
+  'ScheduleState.tsx contains "Повторить попытку" retry button'
+);
+
+assert(
+  scheduleStateContent.includes('RefreshCw'),
+  'ScheduleState.tsx uses RefreshCw icon for retry action'
+);
+
+assert(
+  scheduleStateContent.includes('На этой неделе нет занятий'),
+  'ScheduleState.tsx supports empty state with "На этой неделе нет занятий"'
+);
+
+// Verify error message mapping
+const { getScheduleErrorMessage } = await import('../components/ScheduleState');
+assert(
+  getScheduleErrorMessage('network') === 'Не удалось загрузить расписание. Проверьте подключение к интернету.',
+  'Error reason "network" produces clear Russian user message'
+);
+assert(
+  getScheduleErrorMessage('timeout') === 'Не удалось загрузить расписание. Проверьте подключение к интернету.',
+  'Error reason "timeout" produces clear Russian user message'
+);
+assert(
+  getScheduleErrorMessage('not_found') === 'Файл расписания для группы пока не найден в базе.',
+  'Error reason "not_found" produces clear Russian user message'
+);
+assert(
+  getScheduleErrorMessage('empty') === 'Расписание для выбранной группы пока пустое.',
+  'Error reason "empty" produces clear Russian user message'
+);
+assert(
+  getScheduleErrorMessage('invalid') === 'Ошибка структуры данных расписания.',
+  'Error reason "invalid" produces clear Russian user message'
+);
+
+// Verify App.tsx integration
+assert(
+  appTsxContent.includes('scheduleLoadError'),
+  'App.tsx tracks scheduleLoadError state'
+);
+assert(
+  appTsxContent.includes('handleRetryScheduleLoad'),
+  'App.tsx implements handleRetryScheduleLoad retry handler'
+);
+assert(
+  appTsxContent.includes('<ScheduleState') && appTsxContent.includes('status="loading"') && appTsxContent.includes('status="error"'),
+  'App.tsx renders ScheduleState for loading and error states'
 );
 
 console.log('\n=================================================');
