@@ -8,19 +8,19 @@
 
 | Компонент | Назначение | Расположение | Состояние |
 |---|---|---|---|
-| **Ядро и роутинг** | Инициализация Telegram WebApp SDK, темы, навигация, модальные окна | `App.tsx`, `index.tsx`, `index.css` | Стабильно |
+| **Ядро и роутинг** | Инициализация Telegram WebApp SDK, темы без FOUC, Safe Areas TMA 8.0+, живой тайм-тикер useNow, навигация | `App.tsx`, `index.tsx`, `index.css`, `utils/useNow.ts` | Стабильно |
 | **Реестр расписания** | On-Demand чанки расписаний (`public/schedules/*.json`), версионированный SWR-кэш v1 с фоновым обновлением, безопасная очистка кэша без потери посещаемости | `constants.ts`, `utils/scheduleLoader.ts`, `utils/scheduleSchema.ts`, `public/schedules/` | Стабильно |
-| **Журнал посещаемости** | Учет присутствия/пропусков, расчет часов по блокам семестра, экспорт в Word | `attendance.ts`, `components/AttendanceTracker.tsx` | Стабильно |
+| **Журнал посещаемости** | Учет присутствия/пропусков, расчет часов по блокам семестра, экспорт в Word, 152-ФЗ абстракция RosterProvider | `attendance.ts`, `components/AttendanceTracker.tsx`, `utils/rosterProvider.ts` | Стабильно |
 | **Трекер ДЗ** | Ведение заданий, дедлайны, фильтры, статус выполнения | `components/HomeworkTracker.tsx` | Стабильно |
 | **Карточка пары & модалка** | Отображение занятия, статусы отмены, смена аудиторий и преподавателей | `components/ClassCard.tsx`, `components/EditLessonModal.tsx` | Стабильно |
-| **Облачный бэкенд** | Cloudflare Worker: проксирование, CORS, санитизация DTO, rate-limiting | `cloudflare-worker.js` | Стабильно |
-| **Облачная синхронизация** | Клиентский слой синхронизации с ExtendsClass через Worker | `utils/cloudSync.ts` | Стабильно |
+| **Облачный бэкенд** | Cloudflare Worker: проксирование, CORS, санитизация DTO (AttendanceRecord), rate-limiting | `cloudflare-worker.js` | Стабильно |
+| **Облачная синхронизация** | Клиентский слой синхронизации: энергоэффективный опрос (backoff, throttle, AbortController, фоновое засыпание) | `utils/cloudSync.ts`, `App.tsx` | Стабильно |
 | **Безопасность и Auth** | Web Crypto SHA-256 валидация PIN-кодов старост и админа | `utils/auth.ts` | Стабильно |
 | **Телеметрия сбоев** | Сбор метаданных крашей, дедупликация и отправка алертов в Telegram | `utils/telemetry.ts`, `components/ErrorBoundary.tsx` | Стабильно |
 | **Логирование & Баг-репорты** | Внутриклиентский буфер логов (150 записей), отправка отчетов разработчику | `utils/logger.ts`, `components/BugReportModal.tsx` | Стабильно |
 | **Ночная автосверка** | Парсинг официального API СамГТУ, Circuit Breaker, Telegram-дифф | `scripts/nightly_sync.ts`, `.github/workflows/daily-sync.yml` | Стабильно |
 | **Дедупликация групп** | Канонический ключ группы, самоисцеление localStorage, строгая фильтрация | `utils/samgtuParser.ts`, `App.tsx` | Стабильно |
-| **Тестовый комплекс** | Набор автоматических тестов регрессии, авторизации, DTO, расписаний (3339+ проверок) | `tests/` (18 тест-сьютов) | Активно (100% PASS) |
+| **Тестовый комплекс** | Набор автоматических тестов регрессии, авторизации, DTO, расписаний (3375+ проверок) | `tests/` (19 тест-сьютов) | Активно (100% PASS) |
 | **База знаний Obsidian** | Интерактивная база знаний, ADR, схемы, графы связей и потоки данных | `samgtu_schedule/` (34 заметки) | Стабильно |
 | **Дорожная карта** | Стратегический план развития (фазы 0-4, MoSCoW матрица) | `samgtu_schedule/06 - Дорожная Карта и Развитие/` | Активно |
 
