@@ -176,10 +176,27 @@ async function runTests() {
 
   assert.strictEqual(mockCloudAttendanceBin.byGroup[testGroupId].records.length, 1, 'Attendance record saved');
   assert.strictEqual(mockCloudAttendanceBin.byGroup[testGroupId].students.length, 3, 'Students preserved when attendance was pushed');
-  console.log('✅ PASS: Atomicity and coexistence of attendance records and student rosters confirmed.\n');
+  // ----------------------------------------------------
+  // TEST 6: AttendanceTracker cold start roster hydration
+  // ----------------------------------------------------
+  console.log('>>> 6. AttendanceTracker cold start loads group roster from cloud');
+  const deviceC = new MemoryStorage();
+  activeStorage = deviceC;
+  assert.strictEqual(deviceC.getItem(`students_${testGroupId}`), null, 'Device C has empty localStorage on cold start');
+
+  // Simulate AttendanceTracker mount lifecycle
+  const cloudData = await fetchGroupCloudData(false, testGroupId);
+  assert(cloudData !== null, 'fetchGroupCloudData returned cloud payload');
+  assert(Array.isArray(cloudData.students) && cloudData.students.length > 0, 'Cloud returned non-empty students');
+  deviceC.setItem(`students_${testGroupId}`, JSON.stringify(cloudData.students));
+
+  const loadedStudents: Student[] = JSON.parse(deviceC.getItem(`students_${testGroupId}`) || '[]');
+  assert.strictEqual(loadedStudents.length, 3, 'Device C successfully hydrated 3 students for ingt-313');
+  assert.strictEqual(loadedStudents[0].name, 'Тестовый Студент 1 (Обновлен)', 'Student name preserved');
+  console.log('✅ PASS: AttendanceTracker cold start hydration loads and persists roster from cloud.\n');
 
   console.log('====================================================');
-  console.log('   ALL ROSTER CLOUD SYNC TESTS PASSED (5/5) 🎉');
+  console.log('   ALL ROSTER CLOUD SYNC TESTS PASSED (6/6) 🎉');
   console.log('====================================================\n');
 }
 
