@@ -27,7 +27,13 @@ export const GROUP_STAROSTA_PIN_HASHES: Record<string, { groupId: string; groupN
   'a97c7c97d46f3bc3d76e4d089fee6e8385afe2b39ca237d9a5a2adcbcb21b96f': { groupId: 'ingt-209', groupName: '2-ИНГТ-109' },
 
   // 2-ХТФ-115
-  '18c04fe2803cb372ce29bd5439253d099b5983ff49a5f601b22f70e17ca61518': { groupId: 'htf-215', groupName: '2-ХТФ-115' }
+  '18c04fe2803cb372ce29bd5439253d099b5983ff49a5f601b22f70e17ca61518': { groupId: 'htf-215', groupName: '2-ХТФ-115' },
+
+  // 2-ИНГТ-110
+  'ad7c7a0858acb02d95333eef71bc14c20b598eab861767eab5fb87a91f4f8c47': { groupId: 'ingt-210', groupName: '2-ИНГТ-110' },
+
+  // 3-ИНГТ-113
+  '48290cf691c41cbc99b2396d2e5313ccfba91987b384e6d8f08b951fa5045e83': { groupId: 'ingt-313', groupName: '3-ИНГТ-113' }
 };
 
 /**

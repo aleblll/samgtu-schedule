@@ -185,6 +185,13 @@ assert(starostaAuth !== null && starostaAuth.role === 'starosta' && starostaAuth
 const starosta311Auth = await verifyPinCode('572916');
 assert(starosta311Auth !== null && starosta311Auth.role === 'starosta' && starosta311Auth.targetGroupId === 'ingt-311', 'Starosta PIN (572916) authenticates 3-ИНГТ-111');
 
+// 5.3b Starosta PIN 2-ИНГТ-110 & 3-ИНГТ-113 verification
+const starosta210Auth = await verifyPinCode('618342');
+assert(starosta210Auth !== null && starosta210Auth.role === 'starosta' && starosta210Auth.targetGroupId === 'ingt-210', 'Starosta PIN (618342) authenticates 2-ИНГТ-110');
+
+const starosta313Auth = await verifyPinCode('482915');
+assert(starosta313Auth !== null && starosta313Auth.role === 'starosta' && starosta313Auth.targetGroupId === 'ingt-313', 'Starosta PIN (482915) authenticates 3-ИНГТ-113');
+
 // 5.4 Reject arbitrary PIN
 const bruteForcePin = await verifyPinCode('123456');
 assert(bruteForcePin === null, 'Unauthorized PIN "123456" rejected (returns null)');
@@ -194,6 +201,8 @@ const authFileContent = fs.readFileSync(path.resolve(process.cwd(), 'utils/auth.
 assert(!authFileContent.includes("'94726108'"), 'Plaintext admin PIN 94726108 NOT stored in utils/auth.ts');
 assert(!authFileContent.includes("'839124'"), 'Plaintext starosta PIN 839124 NOT stored in utils/auth.ts');
 assert(!authFileContent.includes("'572916'"), 'Plaintext starosta PIN 572916 NOT stored in utils/auth.ts');
+assert(!authFileContent.includes("'618342'"), 'Plaintext starosta PIN 618342 NOT stored in utils/auth.ts');
+assert(!authFileContent.includes("'482915'"), 'Plaintext starosta PIN 482915 NOT stored in utils/auth.ts');
 assert(authFileContent.includes(ADMIN_PIN_HASH), 'Admin hash stored as cryptographic SHA-256');
 
 // ------------------------------------------------------------
