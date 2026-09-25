@@ -13,6 +13,33 @@ export interface ExportWordResult {
   method: 'capacitor' | 'tma_download_file' | 'tma_open_link' | 'web_share' | 'browser_blob';
 }
 
+/**
+ * Generates an official SamGTU Dean's Office attendance report in Microsoft Word (.docx) format
+ * and delivers the resulting document using a robust 4-tier fallback cascade:
+ *
+ * - **Tier 1: Capacitor Filesystem & Share (Native APK/iOS)**
+ *   When running in a Capacitor hybrid container, writes base64 data to Directory.Cache and
+ *   Directory.Documents, then invokes the native OS share sheet via @capacitor/share.
+ *
+ * - **Tier 2: TMA Cloud Gateway (/export-doc -> Telegram Bot API)**
+ *   When running inside Telegram Mini Apps (Android WebView / iOS / Desktop):
+ *   1) Securely extracts user ID from `tg.initDataUnsafe.user.id` (strictly validating positive integer).
+ *   2) Sends the document to the Cloudflare Worker `/export-doc` endpoint.
+ *   3) If `chat_id` is supplied, the worker dispatches the .docx file directly to the user's private Telegram chat.
+ *   4) Opens the file via native Telegram download dialog (`tg.downloadFile` for Bot API 8.0+) or fallback browser tab (`tg.openLink`).
+ *
+ * - **Tier 3: Mobile Web Share API (Mobile Safari / Chrome)**
+ *   If running in mobile browsers with `navigator.canShare({ files })` support, opens the system share dialog.
+ *
+ * - **Tier 4: HTML5 Blob Anchor Download (Desktop Web Fallback)**
+ *   Generates an object URL (`URL.createObjectURL`) and triggers an invisible `<a download>` click with automatic DOM cleanup.
+ *
+ * @param records Student attendance records for the semester
+ * @param students List of students in the group (names and identifiers)
+ * @param groupConfig Configuration and naming metadata of the target group
+ * @param faculty Faculty / Institute descriptor
+ * @returns Metadata object detailing execution result and delivery method
+ */
 export const exportAttendanceToWord = async (
   records: AttendanceRecord[],
   students: Student[],
@@ -210,7 +237,7 @@ export const exportAttendanceToWord = async (
   const filename = `Пропуски_${groupConfig.name || '3-ИНГТ-110'}.docx`;
   const blob = await Packer.toBlob(doc);
 
-  // Try native Capacitor mobile save & share first
+  // Tier 1: Capacitor Native Mobile Filesystem & Share (Android APK / iOS)
   if (Capacitor.isNativePlatform()) {
     try {
       const base64Data = await new Promise<string>((resolve, reject) => {
@@ -250,21 +277,34 @@ export const exportAttendanceToWord = async (
         return { success: true, sentToTelegramChat: false, method: 'capacitor' };
       }
     } catch (nativeError) {
-      console.warn('Native share failed, falling back to TMA / browser download:', nativeError);
+      console.warn('Tier 1 (Capacitor) failed, falling back to Tier 2 (TMA):', nativeError);
     }
   }
 
-  // 2. Telegram Mini App (Level 2: TMA Android WebView / iOS / Desktop)
+  // Tier 2: Telegram Mini App Cloud Gateway (TMA Android WebView / iOS / Desktop)
   const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null;
   const isTMA = Boolean(tg && (tg.initData || tg.initDataUnsafe?.user));
 
   if (isTMA) {
     try {
-      const userId = tg.initDataUnsafe?.user?.id;
+      // Safe extraction and validation of Telegram user ID (strictly positive integer > 0)
+      let userId: number | null = null;
+      try {
+        const rawId = tg.initDataUnsafe?.user?.id;
+        if (typeof rawId === 'number' && Number.isFinite(rawId) && rawId > 0) {
+          userId = rawId;
+        } else if (typeof rawId === 'string' && /^\d+$/.test(rawId)) {
+          const parsed = Number(rawId);
+          if (parsed > 0) userId = parsed;
+        }
+      } catch (idErr) {
+        console.warn('[exportWord] Error safely extracting user id from TMA:', idErr);
+      }
+
       const formData = new FormData();
       formData.append('document', blob, filename);
       formData.append('filename', filename);
-      if (userId) {
+      if (userId !== null && userId > 0) {
         formData.append('chat_id', String(userId));
       }
       formData.append(
@@ -301,19 +341,23 @@ export const exportAttendanceToWord = async (
 
       // Live worker fallback: If /export-doc is not active on live worker, use live /upload
       if (!directUrl) {
-        const uploadRes = await fetch(`${WORKER_BASE}/upload`, {
-          method: 'POST',
-          headers: {
-            ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
-          },
-          body: formData
-        });
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
-          const fileId = uploadData.result?.document?.file_id;
-          if (fileId) {
-            directUrl = `${WORKER_BASE}/file?file_id=${fileId}&download=1&filename=${encodeURIComponent(filename)}`;
+        try {
+          const uploadRes = await fetch(`${WORKER_BASE}/upload`, {
+            method: 'POST',
+            headers: {
+              ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
+            },
+            body: formData
+          });
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            const fileId = uploadData.result?.document?.file_id;
+            if (fileId) {
+              directUrl = `${WORKER_BASE}/file?file_id=${fileId}&download=1&filename=${encodeURIComponent(filename)}`;
+            }
           }
+        } catch (uploadErr) {
+          console.warn('/upload fallback failed:', uploadErr);
         }
       }
 
@@ -335,11 +379,11 @@ export const exportAttendanceToWord = async (
         }
       }
     } catch (tmaError) {
-      console.warn('TMA cloud gateway export failed, trying Web Share fallback:', tmaError);
+      console.warn('Tier 2 (TMA) cloud gateway failed, falling back to Tier 3 (Web Share):', tmaError);
     }
   }
 
-  // 3. Try Mobile Web Share API (Level 3) - Native save/share on Mobile Browsers
+  // Tier 3: Mobile Web Share API (Safari / Chrome Mobile)
   if (typeof navigator !== 'undefined' && typeof File !== 'undefined' && typeof navigator.canShare === 'function') {
     try {
       const file = new File([blob], filename, {
@@ -358,22 +402,28 @@ export const exportAttendanceToWord = async (
       if (shareError?.name === 'AbortError') {
         return { success: true, sentToTelegramChat: false, method: 'web_share' };
       }
-      console.warn('Web Share API failed, falling back to anchor download:', shareError);
+      console.warn('Tier 3 (Web Share) failed, falling back to Tier 4 (Blob Anchor):', shareError);
     }
   }
 
-  // 4. Fallback: Standard HTML5 Blob Anchor Download (Desktop / Web)
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.href = url;
-  a.download = filename;
-  a.click();
-  setTimeout(() => {
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-  }, 3000);
+  // Tier 4: HTML5 Blob Anchor Download (Desktop / Web Fallback)
+  if (typeof window !== 'undefined' && typeof document !== 'undefined' && typeof window.URL?.createObjectURL === 'function') {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.href = url;
+    a.download = filename;
+    a.click();
+    setTimeout(() => {
+      try {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } catch (e) {}
+    }, 3000);
+
+    return { success: true, sentToTelegramChat: false, method: 'browser_blob' };
+  }
 
   return { success: true, sentToTelegramChat: false, method: 'browser_blob' };
 };
