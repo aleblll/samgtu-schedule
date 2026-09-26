@@ -22,6 +22,7 @@ await import('./test_security_audit');
 await import('./test_group_dedup_and_ingt3');
 await import('./test_roster_cloud_sync');
 await import('./test_roster_provider');
+await import('./test_attendance_word_export_verification');
 const { runHomeworkLifecycleStressTest } = await import('./test_homework_lifecycle_stress');
 await runHomeworkLifecycleStressTest();
 console.log("\n=================================================");

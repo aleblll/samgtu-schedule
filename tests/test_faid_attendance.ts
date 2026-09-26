@@ -1,3 +1,6 @@
+import { preloadAllSchedulesSync } from '../utils/scheduleNodeLoader';
+preloadAllSchedulesSync();
+
 import { SCHEDULE_REGISTRY, AVAILABLE_GROUPS } from '../constants';
 import { verifyPinCode } from '../utils/auth';
 import { STUDENTS_REGISTRY, BLOCKS, getDayISODate, AttendanceRecord } from '../attendance';
