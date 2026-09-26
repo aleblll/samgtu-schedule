@@ -42,17 +42,19 @@ const BottomNav: React.FC<BottomNavProps> = ({
           <span className="text-[10px] leading-none">ДЗ</span>
         </button>
 
-        <button
-          onClick={() => onTabChange('attendance')}
-          className={`flex flex-col items-center justify-center min-h-[48px] py-1 px-2 rounded-xl transition-all ${
-            currentTab === 'attendance'
-              ? 'text-indigo-600 dark:text-indigo-400 font-bold scale-105'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
-          }`}
-        >
-          <ClipboardCheck className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px] leading-none">Посещение</span>
-        </button>
+        {(userRole === 'admin' || userRole === 'starosta') && (
+          <button
+            onClick={() => onTabChange('attendance')}
+            className={`flex flex-col items-center justify-center min-h-[48px] py-1 px-2 rounded-xl transition-all ${
+              currentTab === 'attendance'
+                ? 'text-indigo-600 dark:text-indigo-400 font-bold scale-105'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
+            }`}
+          >
+            <ClipboardCheck className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] leading-none">Посещение</span>
+          </button>
+        )}
 
         {(userRole === 'admin' || userRole === 'starosta') && (
           <button

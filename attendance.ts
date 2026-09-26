@@ -257,7 +257,8 @@ export interface AttendanceRecord {
  */
 export function mergeAttendance(
   local: AttendanceRecord[] = [],
-  remote: AttendanceRecord[] = []
+  remote: AttendanceRecord[] = [],
+  targetGroupId?: string
 ): AttendanceRecord[] {
   const map = new Map<string, AttendanceRecord>();
 
@@ -272,9 +273,25 @@ export function mergeAttendance(
     return 0;
   };
 
+  const isMatchingGroup = (r: AttendanceRecord): boolean => {
+    if (!targetGroupId) return true;
+    if (r.groupId && r.groupId !== targetGroupId) return false;
+    if (r.lessonId) {
+      const canonicalTarget = targetGroupId.toLowerCase();
+      const rawGid = canonicalTarget.replace('ingt-', '').replace('faid-', '');
+      if (r.lessonId.startsWith('ingt-') || r.lessonId.startsWith('faid-') || /^\d{3}-/.test(r.lessonId)) {
+        if (!r.lessonId.startsWith(canonicalTarget) && !r.lessonId.startsWith(rawGid)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
   if (Array.isArray(local)) {
     for (const r of local) {
       if (!r || !r.date || !r.lessonId) continue;
+      if (!isMatchingGroup(r)) continue;
       const key = `${r.date}_${r.lessonId}`;
       const existing = map.get(key);
       if (!existing || getRecordTime(r) > getRecordTime(existing)) {
@@ -286,6 +303,7 @@ export function mergeAttendance(
   if (Array.isArray(remote)) {
     for (const r of remote) {
       if (!r || !r.date || !r.lessonId) continue;
+      if (!isMatchingGroup(r)) continue;
       const key = `${r.date}_${r.lessonId}`;
       const existing = map.get(key);
       if (!existing) {
@@ -302,15 +320,35 @@ export function mergeAttendance(
 }
 
 export const useAttendance = (isAuthenticated: boolean, currentGroupId: string | null, refreshTrigger: number = 0) => {
+  const sanitizeGroupRecords = (recs: AttendanceRecord[], gid: string): AttendanceRecord[] => {
+    if (!Array.isArray(recs)) return [];
+    const canonicalTarget = gid.toLowerCase();
+    const rawGid = canonicalTarget.replace('ingt-', '').replace('faid-', '');
+    return recs.filter(r => {
+      if (!r || !r.lessonId) return false;
+      if (r.groupId && r.groupId !== gid) return false;
+      if (r.lessonId.startsWith('ingt-') || r.lessonId.startsWith('faid-') || /^\d{3}-/.test(r.lessonId)) {
+        if (!r.lessonId.startsWith(canonicalTarget) && !r.lessonId.startsWith(rawGid)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  };
+
   const [records, setRecords] = useState<AttendanceRecord[]>(() => {
     const defaultList = currentGroupId === 'ingt-310' ? SEED_ATTENDANCE : [];
     if (!currentGroupId) return defaultList;
     try {
       const saved = localStorage.getItem(`attendance_${currentGroupId}`);
       const parsed: AttendanceRecord[] = saved ? JSON.parse(saved) : [];
+      const sanitized = sanitizeGroupRecords(parsed, currentGroupId);
+      if (sanitized.length !== parsed.length) {
+        localStorage.setItem(`attendance_${currentGroupId}`, JSON.stringify(sanitized));
+      }
       const map = new Map<string, AttendanceRecord>();
       defaultList.forEach(r => map.set(r.docId || `${r.groupId}_${r.date}_${r.lessonId}`, r));
-      parsed.forEach(r => map.set(r.docId || `${r.groupId}_${r.date}_${r.lessonId}`, r));
+      sanitized.forEach(r => map.set(r.docId || `${r.groupId}_${r.date}_${r.lessonId}`, r));
       return Array.from(map.values());
     } catch (e) {
       return defaultList;
@@ -328,7 +366,12 @@ export const useAttendance = (isAuthenticated: boolean, currentGroupId: string |
     try {
       const saved = localStorage.getItem(`attendance_${currentGroupId}`);
       if (saved) {
-        setRecords(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        const sanitized = sanitizeGroupRecords(parsed, currentGroupId);
+        setRecords(sanitized);
+        if (sanitized.length !== parsed.length) {
+          localStorage.setItem(`attendance_${currentGroupId}`, JSON.stringify(sanitized));
+        }
       }
     } catch (e) {}
   }, [currentGroupId, refreshTrigger]);
@@ -345,13 +388,13 @@ export const useAttendance = (isAuthenticated: boolean, currentGroupId: string |
         const saved = localStorage.getItem(`attendance_${currentGroupId}`);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) fromStorage = parsed;
+          if (Array.isArray(parsed)) fromStorage = sanitizeGroupRecords(parsed, currentGroupId);
         }
       } catch (e) {}
       const fromRef = recordsRef.current || [];
       if (fromStorage.length === 0) return fromRef;
       if (fromRef.length === 0) return fromStorage;
-      return mergeAttendance(fromRef, fromStorage);
+      return mergeAttendance(fromRef, fromStorage, currentGroupId);
     };
 
     const syncWithCloud = async () => {
@@ -362,7 +405,7 @@ export const useAttendance = (isAuthenticated: boolean, currentGroupId: string |
       const local = getLocalRecords();
 
       if (cloud && Array.isArray(cloud.attendance)) {
-        const merged = mergeAttendance(local, cloud.attendance);
+        const merged = mergeAttendance(local, cloud.attendance, currentGroupId);
         setRecords(merged);
         recordsRef.current = merged;
         try {

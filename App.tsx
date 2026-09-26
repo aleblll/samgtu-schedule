@@ -1282,26 +1282,30 @@ const App: React.FC = () => {
               >
                 <BookOpen className="w-3.5 h-3.5" /> ДЗ
               </button>
-              <button
-                onClick={() => setActiveTab('attendance')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  activeTab === 'attendance'
-                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
-              >
-                <ClipboardCheck className="w-3.5 h-3.5" /> Посещение
-              </button>
-              <button
-                onClick={() => setActiveTab('group')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  activeTab === 'group'
-                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm'
-                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
-              >
-                <Users className="w-3.5 h-3.5" /> Группа
-              </button>
+              {(effectiveRole === 'admin' || effectiveRole === 'starosta') && (
+                <button
+                  onClick={() => setActiveTab('attendance')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    activeTab === 'attendance'
+                      ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <ClipboardCheck className="w-3.5 h-3.5" /> Посещение
+                </button>
+              )}
+              {(effectiveRole === 'admin' || effectiveRole === 'starosta') && (
+                <button
+                  onClick={() => setActiveTab('group')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    activeTab === 'group'
+                      ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5" /> Группа
+                </button>
+              )}
               {effectiveRole === 'admin' && (
                 <button
                   onClick={() => setActiveTab('admin')}
@@ -1477,13 +1481,33 @@ const App: React.FC = () => {
         {activeTab === 'attendance' && (
           <TabErrorBoundary tabName="Посещаемость">
             <Suspense fallback={<TabFallback />}>
-              <AttendanceTracker
-                isAuthenticated={canEdit}
-                userRole={effectiveRole}
-                userEmail={user?.email || null}
-                currentGroupId={currentGroupId}
-                refreshTrigger={refreshTrigger}
-              />
+              {canEdit ? (
+                <AttendanceTracker
+                  isAuthenticated={canEdit}
+                  userRole={effectiveRole}
+                  userEmail={user?.email || null}
+                  currentGroupId={currentGroupId}
+                  refreshTrigger={refreshTrigger}
+                />
+              ) : (
+                <div className="max-w-md mx-auto p-6 sm:p-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 text-center space-y-4 shadow-xs my-8">
+                  <div className="w-12 h-12 mx-auto bg-amber-50 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center text-amber-600 dark:text-amber-400">
+                    <Key className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Доступ только для старосты
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    Журнал посещаемости и ведомости деканата защищены по стандарту 152-ФЗ. Для доступа введите PIN-код старосты в разделе «Вход».
+                  </p>
+                  <button
+                    onClick={() => setActiveTab('profile')}
+                    className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition-colors"
+                  >
+                    Перейти ко входу
+                  </button>
+                </div>
+              )}
             </Suspense>
           </TabErrorBoundary>
         )}
