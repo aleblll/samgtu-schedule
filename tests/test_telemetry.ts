@@ -209,7 +209,7 @@ async function runTelemetryTests() {
       group: 'ingt-310'
     })
   });
-  const validRes = await worker.fetch(validReq, { TELEGRAM_BOT_TOKEN: '' });
+  const validRes = await worker.fetch(validReq, { TEST_MODE: 'true' });
   const validJson = await validRes.json();
   check('Valid request returns 200 OK with { ok: true }', validRes.status === 200 && validJson.ok === true);
 
@@ -223,7 +223,7 @@ async function runTelemetryTests() {
       group: 'ingt-310'
     })
   });
-  const dupRes = await worker.fetch(dupReq, { TELEGRAM_BOT_TOKEN: '' });
+  const dupRes = await worker.fetch(dupReq, { TEST_MODE: 'true' });
   const dupJson = await dupRes.json();
   check('Duplicate request returns throttled: true with duplicate_error reason', dupJson.ok === true && dupJson.throttled === true && dupJson.reason === 'duplicate_error');
 

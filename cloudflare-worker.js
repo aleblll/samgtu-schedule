@@ -277,8 +277,9 @@ export default {
     }
 
     const url = new URL(request.url);
+    const isTestMode = Boolean(env && (env.TEST_MODE === 'true' || env.TEST_MODE === true || env.TELEGRAM_BOT_TOKEN === 'mock' || env.TELEGRAM_BOT_TOKEN === 'test'));
     const FALLBACK_BOT_TOKEN = ["8825340055", "AAGn_-hHvJsP5Ny_ZTNGCGNfRZSUG4gHW3k"].join(":");
-    const BOT_TOKEN = (env && env.TELEGRAM_BOT_TOKEN) ? env.TELEGRAM_BOT_TOKEN : FALLBACK_BOT_TOKEN;
+    const BOT_TOKEN = isTestMode ? "" : ((env && env.TELEGRAM_BOT_TOKEN) ? env.TELEGRAM_BOT_TOKEN : FALLBACK_BOT_TOKEN);
     const CHANNEL_ID = (env && env.TELEGRAM_CHANNEL_ID) ? env.TELEGRAM_CHANNEL_ID : "@raspisanie_samgtu";
 
     const APP_SECRET = (env && (env.APP_SECRET || env.X_APP_KEY)) ? (env.APP_SECRET || env.X_APP_KEY) : null;
