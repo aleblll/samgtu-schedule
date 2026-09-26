@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Bug, Upload, Image as ImageIcon, Trash2, Send, ExternalLink, MessageSquare, Loader2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { WORKER_BASE } from '../utils/cloudSync';
+import { sendTelegramDocumentDirect } from '../utils/telegramFallback';
 import { getGroupTag } from '../constants';
 import { logger, getSystemDiagnostics } from '../utils/logger';
 
@@ -337,20 +338,37 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
         formData.append('caption', caption);
         formData.append('diagnostics', JSON.stringify(diagnostics));
 
-        const res = await fetch(`${WORKER_BASE}/upload`, {
-          method: 'POST',
-          headers: {
-            ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
-          },
-          body: formData
-        });
+        let uploadSucceeded = false;
+        try {
+          const res = await fetch(`${WORKER_BASE}/upload`, {
+            method: 'POST',
+            headers: {
+              ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
+            },
+            body: formData
+          });
 
-        if (res.status === 429) {
-          throw new Error('Слишком много запросов. Пожалуйста, подождите 15-30 секунд перед повторной отправкой.');
+          if (res.status === 429) {
+            throw new Error('Слишком много запросов. Пожалуйста, подождите 15-30 секунд перед повторной отправкой.');
+          }
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.ok) {
+              uploadSucceeded = true;
+            }
+          }
+        } catch (workerErr: any) {
+          if (workerErr.message?.includes('Слишком много запросов')) throw workerErr;
+          console.warn('[BugReport] Worker upload failed, falling back to direct Telegram API:', workerErr);
         }
-        if (!res.ok) throw new Error(`Ошибка шлюза: HTTP ${res.status}`);
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.description || 'Telegram отклонил отправку отчета');
+
+        // Guaranteed direct Telegram Bot API fallback if worker returned 500 or failed
+        if (!uploadSucceeded) {
+          const directResult = await sendTelegramDocumentDirect(blob, fileName, caption);
+          if (!directResult.ok) {
+            throw new Error(directResult.error || 'Ошибка отправки отчета');
+          }
+        }
       } else {
         // Single photo or multiple photos stitched into one album package
         let fileToSend: File;
@@ -373,35 +391,62 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
         formData.append('caption', finalCaption);
         formData.append('diagnostics', JSON.stringify(diagnostics));
 
-        const res = await fetch(`${WORKER_BASE}/upload`, {
-          method: 'POST',
-          headers: {
-            ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
-          },
-          body: formData
-        });
-
-        if (res.status === 429) {
-          throw new Error('Слишком много запросов. Пожалуйста, подождите 15-30 секунд перед повторной отправкой.');
-        }
-        if (!res.ok) throw new Error(`Ошибка шлюза при загрузке: HTTP ${res.status}`);
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.description || 'Telegram отклонил отправку отчета');
-
-        // Additionally send diagnostic dump companion JSON file
+        let uploadSucceeded = false;
         try {
-          const diagBlob = new Blob([JSON.stringify(diagnostics, null, 2)], { type: 'application/json' });
-          const diagFormData = new FormData();
-          const diagFileName = `diagnostics_${cleanGroup.replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g, '_')}_${Date.now()}.json`;
-          diagFormData.append('document', diagBlob, diagFileName);
-          diagFormData.append('caption', `📋 Диагностический дамп логов и снимок системы [Ошибок: ${diagErrors}] #${groupTag || 'samgtu'}`);
-          await fetch(`${WORKER_BASE}/upload`, {
+          const res = await fetch(`${WORKER_BASE}/upload`, {
             method: 'POST',
             headers: {
               ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
             },
-            body: diagFormData
+            body: formData
           });
+
+          if (res.status === 429) {
+            throw new Error('Слишком много запросов. Пожалуйста, подождите 15-30 секунд перед повторной отправкой.');
+          }
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.ok) {
+              uploadSucceeded = true;
+            }
+          }
+        } catch (workerErr: any) {
+          if (workerErr.message?.includes('Слишком много запросов')) throw workerErr;
+          console.warn('[BugReport] Worker upload failed, falling back to direct Telegram API:', workerErr);
+        }
+
+        // Guaranteed direct Telegram Bot API fallback if worker returned 500 or failed
+        if (!uploadSucceeded) {
+          const directResult = await sendTelegramDocumentDirect(fileToSend, fileToSend.name || `bugreport_${Date.now()}.jpg`, finalCaption);
+          if (!directResult.ok) {
+            throw new Error(directResult.error || 'Ошибка отправки отчета');
+          }
+        }
+
+        // Additionally send diagnostic dump companion JSON file
+        try {
+          const diagBlob = new Blob([JSON.stringify(diagnostics, null, 2)], { type: 'application/json' });
+          const diagFileName = `diagnostics_${cleanGroup.replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g, '_')}_${Date.now()}.json`;
+          const diagCaption = `📋 Диагностический дамп логов и снимок системы [Ошибок: ${diagErrors}] #${groupTag || 'samgtu'}`;
+          
+          let diagSent = false;
+          try {
+            const diagFormData = new FormData();
+            diagFormData.append('document', diagBlob, diagFileName);
+            diagFormData.append('caption', diagCaption);
+            const diagRes = await fetch(`${WORKER_BASE}/upload`, {
+              method: 'POST',
+              headers: {
+                ...(import.meta.env.VITE_APP_SECRET ? { 'X-App-Key': import.meta.env.VITE_APP_SECRET } : {})
+              },
+              body: diagFormData
+            });
+            if (diagRes.ok) diagSent = true;
+          } catch (e) {}
+
+          if (!diagSent) {
+            await sendTelegramDocumentDirect(diagBlob, diagFileName, diagCaption);
+          }
         } catch (diagErr) {
           console.warn('Diagnostics companion upload failed non-critically:', diagErr);
         }

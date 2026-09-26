@@ -5,6 +5,7 @@ import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { WORKER_BASE } from './cloudSync';
+import { sendTelegramDocumentDirect, getTelegramDirectDownloadUrl } from './telegramFallback';
 
 export interface ExportWordResult {
   success: boolean;
@@ -358,6 +359,38 @@ export const exportAttendanceToWord = async (
           }
         } catch (uploadErr) {
           console.warn('/upload fallback failed:', uploadErr);
+        }
+      }
+
+      // Live Telegram direct fallback (Guaranteed zero-dependency fail-safe if worker is down or unconfigured)
+      if (!directUrl) {
+        try {
+          const exportCaption = `📄 Официальная ведомость пропусков (${groupConfig.name || 'СамГТУ'})\n📅 Сформировано: ${new Date().toLocaleDateString('ru-RU')}`;
+          let tgFallbackData: any = null;
+
+          if (userId !== null && userId > 0) {
+            const pmResult = await sendTelegramDocumentDirect(blob, filename, exportCaption, userId);
+            if (pmResult.ok && pmResult.data?.result?.document?.file_id) {
+              sentToPm = true;
+              tgFallbackData = pmResult.data;
+            }
+          }
+
+          if (!tgFallbackData) {
+            const chResult = await sendTelegramDocumentDirect(blob, filename, `[Архив ведомостей] ${exportCaption}`);
+            if (chResult.ok && chResult.data?.result?.document?.file_id) {
+              tgFallbackData = chResult.data;
+            }
+          }
+
+          if (tgFallbackData?.result?.document?.file_id) {
+            const directFileUrl = await getTelegramDirectDownloadUrl(tgFallbackData.result.document.file_id);
+            if (directFileUrl) {
+              directUrl = directFileUrl;
+            }
+          }
+        } catch (tgFallbackErr) {
+          console.warn('[exportWord] Direct Telegram fallback failed:', tgFallbackErr);
         }
       }
 

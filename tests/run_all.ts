@@ -23,6 +23,7 @@ await import('./test_group_dedup_and_ingt3');
 await import('./test_roster_cloud_sync');
 await import('./test_roster_provider');
 await import('./test_attendance_word_export_verification');
+await import('./test_tma_resilience_e2e');
 const { runHomeworkLifecycleStressTest } = await import('./test_homework_lifecycle_stress');
 await runHomeworkLifecycleStressTest();
 console.log("\n=================================================");

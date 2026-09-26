@@ -846,8 +846,14 @@ const App: React.FC = () => {
     setUserRole('student');
     setUser(null);
     setStarostaGroupId(null);
-    try { localStorage.removeItem('starosta_group_id'); } catch (e) {}
-    toast.success('Вы перешли в режим Студента');
+    try {
+      localStorage.removeItem('user_role');
+      localStorage.setItem('user_role', 'student');
+      localStorage.removeItem('starosta_group_id');
+      sessionStorage.removeItem('admin_maintenance_bypass');
+    } catch (e) {}
+    setActiveTab('schedule');
+    toast.success('Вы вышли из системы. Включен режим Студента (Гостя)');
   };
 
   const handleClearScheduleCache = async () => {
@@ -1251,9 +1257,23 @@ const App: React.FC = () => {
                 className="cursor-pointer select-none"
                 title="5 быстрых тапов открывают консоль диагностики"
               >
-                <h1 className="text-base font-bold text-slate-900 dark:text-white leading-tight">
-                  Расписание {currentGroupConfig.name}
-                </h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-base font-bold text-slate-900 dark:text-white leading-tight">
+                    Расписание {currentGroupConfig.name}
+                  </h1>
+                  {effectiveRole !== 'student' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLogout();
+                      }}
+                      className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-900 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-800/40 transition-colors"
+                      title="Нажмите, чтобы выйти в гостевой режим"
+                    >
+                      {effectiveRole === 'admin' ? 'Админ (выйти)' : 'Староста (выйти)'}
+                    </button>
+                  )}
+                </div>
                 <p className="text-xs text-slate-400 font-medium">
                   {currentFaculty.shortName} • СамГТУ
                 </p>
@@ -1560,15 +1580,39 @@ const App: React.FC = () => {
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                 {user ? user.displayName || user.email : `Студент ${currentGroupConfig.name}`}
               </h2>
-              <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                effectiveRole === 'admin' 
-                  ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30' 
-                  : effectiveRole === 'starosta' 
-                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30' 
-                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800'
-              }`}>
-                Роль: {effectiveRole} {userRole === 'starosta' && effectiveRole === 'student' && `(Староста группы ${AVAILABLE_GROUPS.find(g => g.id === starostaGroupId)?.name || starostaGroupId})`}
-              </span>
+              {effectiveRole === 'student' ? (
+                <div className="flex items-center justify-between p-3.5 bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/40 rounded-2xl text-left">
+                  <div className="flex items-start gap-2.5">
+                    <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+                    <div>
+                      <span className="text-xs font-bold text-blue-900 dark:text-blue-200">Гостевой режим (Студент)</span>
+                      <p className="text-[11px] text-blue-700 dark:text-blue-300 leading-snug mt-0.5">
+                        Вам доступны расписание занятий и домашние задания. Журнал посещаемости и ведомости деканата защищены по стандарту 152-ФЗ.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-3.5 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/40 rounded-2xl text-left">
+                  <div className="flex items-start gap-2.5">
+                    <Shield className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                    <div>
+                      <span className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                        {effectiveRole === 'admin' ? 'Режим: Главный администратор' : `Режим: Староста группы ${currentGroupConfig.name}`}
+                      </span>
+                      <p className="text-[11px] text-amber-700 dark:text-amber-300 leading-snug mt-0.5">
+                        Вам доступны журнал посещаемости, ведомости деканата и редактирование данных группы.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shrink-0 transition-colors shadow-xs ml-2"
+                  >
+                    Выйти
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Academic Group Binding */}
