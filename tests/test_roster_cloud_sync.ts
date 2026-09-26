@@ -50,10 +50,23 @@ globalThis.fetch = async (url: any, opts: any) => {
     if (method === 'PUT') {
       const body = JSON.parse(opts.body);
       const payload = typeof body.payload === 'string' ? JSON.parse(body.payload) : body;
-      mockCloudAttendanceBin = payload;
+      if (payload.byGroup) {
+        for (const [gid, incoming] of Object.entries(payload.byGroup as Record<string, any>)) {
+          const existing = mockCloudAttendanceBin.byGroup[gid] || {};
+          mockCloudAttendanceBin.byGroup[gid] = {
+            ...existing,
+            ...incoming,
+            records: incoming.records !== undefined ? incoming.records : existing.records,
+            students: incoming.students !== undefined ? incoming.students : existing.students,
+            updatedAt: Date.now()
+          };
+        }
+      } else {
+        mockCloudAttendanceBin = payload;
+      }
       return new Response(JSON.stringify({ status: 0, data: 'OK' }), { status: 200 });
     }
-    return new Response(JSON.stringify({ payload: JSON.stringify(mockCloudAttendanceBin), updatedAt: Date.now() }), { status: 200 });
+    return new Response(JSON.stringify({ byGroup: mockCloudAttendanceBin.byGroup, payload: JSON.stringify(mockCloudAttendanceBin), updatedAt: Date.now() }), { status: 200 });
   }
 
   // Fallback for schedule / homework

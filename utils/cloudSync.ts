@@ -10,13 +10,6 @@ const ENDPOINTS = {
   attendance: `${WORKER_BASE}/sync/attendance`
 };
 
-// Fallback direct bins
-const FALLBACK_BINS = {
-  schedule: 'https://extendsclass.com/api/json-storage/bin/cecbcbf',
-  homework: 'https://extendsclass.com/api/json-storage/bin/dfdebcc',
-  attendance: 'https://extendsclass.com/api/json-storage/bin/cdaacff'
-};
-
 export interface GroupCloudData {
   homework: HomeworkItem[];
   deletedIds?: string[];
@@ -258,20 +251,6 @@ const parseCloudPayload = (raw: any): any => {
   return raw;
 };
 
-const fetchWithFallback = async (primaryUrl: string, fallbackUrl: string, signal?: AbortSignal) => {
-  if (signal?.aborted) return null;
-  const p = await fetchJson(primaryUrl, 3500, signal);
-  if (p !== null) return p;
-  if (signal?.aborted) return null;
-  return await fetchJson(fallbackUrl, 3500, signal);
-};
-
-const safePut = async (primaryUrl: string, fallbackUrl: string, body: any) => {
-  const ok = await putJson(primaryUrl, body);
-  if (ok) return true;
-  return await putJson(fallbackUrl, body);
-};
-
 export const fetchGroupCloudData = async (force: boolean = false, groupId = 'ingt-310', signal?: AbortSignal): Promise<GroupCloudData | null> => {
   if (signal?.aborted) return null;
   const now = Date.now();
@@ -282,11 +261,11 @@ export const fetchGroupCloudData = async (force: boolean = false, groupId = 'ing
   const localBackup = getLocalBackup(groupId);
 
   try {
-    // Fetch all 3 dedicated endpoints in parallel with fallback
+    const gq = `groupId=${encodeURIComponent(groupId)}`;
     const [schedRes, hwRes, attRes] = await Promise.allSettled([
-      fetchWithFallback(ENDPOINTS.schedule, FALLBACK_BINS.schedule, signal),
-      fetchWithFallback(ENDPOINTS.homework, FALLBACK_BINS.homework, signal),
-      fetchWithFallback(ENDPOINTS.attendance, FALLBACK_BINS.attendance, signal)
+      fetchJson(`${ENDPOINTS.schedule}?${gq}`, 4000, signal),
+      fetchJson(`${ENDPOINTS.homework}?${gq}`, 4000, signal),
+      fetchJson(`${ENDPOINTS.attendance}?${gq}`, 4000, signal)
     ]);
 
     if (signal?.aborted) return null;
@@ -436,23 +415,14 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
       : sanitizeTeachers({ ...(lastFetchedDataMap[groupId]?.subjectTeachers || {}), ...(local.subjectTeachers || {}) }, groupId);
 
     promises.push((async () => {
-      const currentRaw = await fetchWithFallback(ENDPOINTS.schedule, FALLBACK_BINS.schedule);
-      const current = parseCloudPayload(currentRaw) || {};
-      const byGroup = current.byGroup || {};
-      byGroup[groupId] = { overrides, teachers, updatedAt: Date.now() };
-
-      const payload: any = { byGroup, updatedAt: Date.now() };
-      if (groupId === 'ingt-310') {
-        payload.overrides = overrides;
-        payload.teachers = teachers;
-      } else if (current.overrides) {
-        payload.overrides = sanitizeOverrides(current.overrides);
-        payload.teachers = sanitizeTeachers(current.teachers, 'ingt-310');
-      }
-
-      return await safePut(ENDPOINTS.schedule, FALLBACK_BINS.schedule, {
-        payload: JSON.stringify(payload),
-        updatedAt: Date.now()
+      return await putJson(`${ENDPOINTS.schedule}?groupId=${encodeURIComponent(groupId)}`, {
+        byGroup: {
+          [groupId]: {
+            overrides,
+            teachers,
+            updatedAt: Date.now()
+          }
+        }
       });
     })());
   }
@@ -498,38 +468,15 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
     }));
 
     promises.push((async () => {
-      const currentRaw = await fetchWithFallback(ENDPOINTS.homework, FALLBACK_BINS.homework);
-      const current = parseCloudPayload(currentRaw) || {};
-      const byGroup = current.byGroup || {};
-
-      // Merge remote cloud tombstones to prevent parallel device race conditions
-      const cloudGroup = byGroup[groupId] || {};
-      const cloudDeleted = Array.isArray(cloudGroup.deletedIds) ? cloudGroup.deletedIds : [];
-      const mergedDeleted = Array.from(new Set([...allDeleted, ...cloudDeleted]));
-      const mergedDeletedSet = new Set(mergedDeleted);
-      const cleanItems = sanitizedHw.filter(it => !mergedDeletedSet.has(it.id));
-
-      byGroup[groupId] = {
-        items: cleanItems,
-        deletedIds: mergedDeleted,
-        updatedAt: Date.now()
-      };
-
-      // Aggregate all items with group tags for backward compatibility
-      const allItems: HomeworkItem[] = [];
-      const allDeletedSet = new Set<string>();
-      Object.entries(byGroup).forEach(([gid, grp]: [string, any]) => {
-        (grp.items || []).forEach((it: HomeworkItem) => allItems.push({ ...it, groupId: it.groupId || gid }));
-        (grp.deletedIds || []).forEach((id: string) => allDeletedSet.add(id));
-      });
-
-      return await safePut(ENDPOINTS.homework, FALLBACK_BINS.homework, {
-        payload: JSON.stringify({
-          byGroup,
-          items: allItems,
-          deletedIds: Array.from(allDeletedSet)
-        }),
-        updatedAt: Date.now()
+      const cleanItems = sanitizedHw.filter(it => !allDeleted.includes(it.id));
+      return await putJson(`${ENDPOINTS.homework}?groupId=${encodeURIComponent(groupId)}`, {
+        byGroup: {
+          [groupId]: {
+            items: cleanItems,
+            deletedIds: allDeleted,
+            updatedAt: Date.now()
+          }
+        }
       });
     })());
   }
@@ -546,28 +493,13 @@ export const pushGroupCloudData = async (partialUpdate: Partial<GroupCloudData>,
       : undefined;
 
     promises.push((async () => {
-      const currentRaw = await fetchWithFallback(ENDPOINTS.attendance, FALLBACK_BINS.attendance);
-      const current = parseCloudPayload(currentRaw) || {};
-      const byGroup = current.byGroup || {};
-      const existingGroup = byGroup[groupId] || {};
-
-      byGroup[groupId] = {
-        records: updatedAtt !== undefined ? updatedAtt : (existingGroup.records || []),
-        students: updatedStudents !== undefined ? updatedStudents : existingGroup.students,
-        updatedAt: Date.now()
-      };
-
-      const allRecords: AttendanceRecord[] = [];
-      Object.entries(byGroup).forEach(([gid, grp]: [string, any]) => {
-        (grp.records || []).forEach((r: AttendanceRecord) => allRecords.push({ ...r, groupId: r.groupId || gid }));
-      });
-
-      return await safePut(ENDPOINTS.attendance, FALLBACK_BINS.attendance, {
-        payload: JSON.stringify({
-          byGroup,
-          records: allRecords
-        }),
-        updatedAt: Date.now()
+      const groupSlice: any = { updatedAt: Date.now() };
+      if (updatedAtt !== undefined) groupSlice.records = updatedAtt;
+      if (updatedStudents !== undefined) groupSlice.students = updatedStudents;
+      return await putJson(`${ENDPOINTS.attendance}?groupId=${encodeURIComponent(groupId)}`, {
+        byGroup: {
+          [groupId]: groupSlice
+        }
       });
     })());
   }

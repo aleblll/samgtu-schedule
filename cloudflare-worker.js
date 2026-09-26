@@ -433,8 +433,25 @@ export default {
               targetData = JSON.parse(cleanData.payload);
             } catch {}
           }
-          const groupSlice = (targetData && targetData.byGroup && targetData.byGroup[groupId]) || targetData || {};
-          groupSlice.updatedAt = Date.now();
+          const rawExisting = await env.APP_DATA.get(kvKey);
+          let existingGroup = {};
+          if (rawExisting) {
+            try { existingGroup = JSON.parse(rawExisting); } catch {}
+          }
+          const incomingSlice = (targetData && targetData.byGroup && targetData.byGroup[groupId]) || targetData || {};
+          const groupSlice = {
+            ...existingGroup,
+            ...incomingSlice,
+            updatedAt: Date.now()
+          };
+
+          if (type === "attendance") {
+            if (incomingSlice.records !== undefined) groupSlice.records = incomingSlice.records;
+            else if (existingGroup.records !== undefined) groupSlice.records = existingGroup.records;
+
+            if (incomingSlice.students !== undefined) groupSlice.students = incomingSlice.students;
+            else if (existingGroup.students !== undefined) groupSlice.students = existingGroup.students;
+          }
 
           await env.APP_DATA.put(kvKey, JSON.stringify(groupSlice));
           return new Response(JSON.stringify({ ok: true, updatedAt: groupSlice.updatedAt }), {
