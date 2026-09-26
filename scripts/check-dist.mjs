@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const distIndexPath = path.resolve(__dirname, '../dist/index.html');
+const distDir = path.resolve(__dirname, '../dist');
+const distIndexPath = path.resolve(distDir, 'index.html');
 
 console.log(`[check:dist] Checking production build artifact: ${distIndexPath}`);
 
@@ -33,3 +34,42 @@ if (errors.length > 0) {
 }
 
 console.log('[check:dist] Verification passed: dist/index.html contains id="root" and <script type="module".');
+
+// Check for sensitive credential leaks in build artifacts
+console.log('[check:dist] Scanning dist assets for sensitive credential leaks...');
+const leakPatterns = [
+  { name: 'Bot Token pattern', regex: /[0-9]{8,10}:[a-zA-Z0-9_-]{35}/ },
+  { name: 'Private Key header', regex: /-----BEGIN (?:RSA )?PRIVATE KEY-----/ },
+  { name: 'Plaintext Admin PIN', regex: /\b94726108\b/ },
+  { name: 'Plaintext Starosta PINs', regex: /\b(?:839124|572916|618342|482915)\b/ }
+];
+
+const leakErrors = [];
+function scanForLeaks(dir) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      scanForLeaks(fullPath);
+    } else if (/\.(js|html|css|json|map)$/i.test(entry.name)) {
+      const content = fs.readFileSync(fullPath, 'utf8');
+      for (const pattern of leakPatterns) {
+        if (pattern.regex.test(content)) {
+          leakErrors.push(`Potential credential leak (${pattern.name}) detected in: ${path.relative(distDir, fullPath)}`);
+        }
+      }
+    }
+  }
+}
+
+scanForLeaks(distDir);
+
+if (leakErrors.length > 0) {
+  console.error('[check:dist] Leak scan failed:');
+  for (const err of leakErrors) {
+    console.error(`  - ${err}`);
+  }
+  process.exit(1);
+}
+
+console.log('[check:dist] Verification passed: 0 secret leaks detected across all bundle assets.');

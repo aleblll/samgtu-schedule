@@ -166,19 +166,16 @@ async function runSanitizationTests() {
   clearWorkerRateLimits();
 
   const t0 = 1000000;
-  check('1st upload allowed', !isUploadRateLimited(t0));
-  recordUploadSent(t0);
+  for (let i = 0; i < 29; i++) {
+    recordUploadSent(t0 + i * 1000);
+  }
+  check('29 uploads allowed', !isUploadRateLimited(t0 + 29000));
+  recordUploadSent(t0 + 29000);
 
-  check('2nd upload allowed', !isUploadRateLimited(t0 + 5000));
-  recordUploadSent(t0 + 5000);
+  check('31st upload throttled (exceeded max 30/min)', isUploadRateLimited(t0 + 30000));
 
-  check('3rd upload allowed', !isUploadRateLimited(t0 + 10000));
-  recordUploadSent(t0 + 10000);
-
-  check('4th upload throttled (exceeded max 3/min)', isUploadRateLimited(t0 + 15000));
-
-  // After 61 seconds window expires
-  check('Upload allowed after 1 minute cooldown', !isUploadRateLimited(t0 + 62000));
+  // After cooldown window expires
+  check('Upload allowed after cooldown window', !isUploadRateLimited(t0 + 62000));
 
   // --- 6. End-to-End Worker PUT /sync Test ---
   console.log('\n--- 6. End-to-End Worker PUT /sync Request Handling ---');
