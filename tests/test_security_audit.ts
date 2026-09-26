@@ -60,6 +60,25 @@ const badKeySyncReq = new Request('https://worker.test/sync/homework', {
 const badKeySyncRes = await worker.fetch(badKeySyncReq, mockEnv);
 assert(badKeySyncRes.status === 401, `PUT /sync/homework with forged X-App-Key returns 401 Unauthorized (got ${badKeySyncRes.status})`);
 
+// 1.2b Test GET /sync/homework without X-App-Key (KV lockdown)
+const unauthGetSyncReq = new Request('https://worker.test/sync/homework?groupId=ingt-310', { method: 'GET' });
+const unauthGetSyncRes = await worker.fetch(unauthGetSyncReq, mockEnv);
+assert(unauthGetSyncRes.status === 401, `GET /sync/homework without X-App-Key returns 401 Unauthorized (got ${unauthGetSyncRes.status})`);
+
+// 1.2c Test GET /admin/migrate-to-kv without X-App-Key
+const unauthMigrateReq = new Request('https://worker.test/admin/migrate-to-kv', { method: 'GET' });
+const unauthMigrateRes = await worker.fetch(unauthMigrateReq, mockEnv);
+assert(unauthMigrateRes.status === 401, `GET /admin/migrate-to-kv without X-App-Key returns 401 Unauthorized (got ${unauthMigrateRes.status})`);
+
+// 1.2d Test GET /sync/homework with invalid groupId format (Anti-Injection)
+const invalidGroupEnv = { ...mockEnv, APP_DATA: { get: async () => null, put: async () => {} } };
+const invalidGroupReq = new Request('https://worker.test/sync/homework?groupId=bad%20group!', {
+  method: 'GET',
+  headers: { 'X-App-Key': mockEnv.APP_SECRET }
+});
+const invalidGroupRes = await worker.fetch(invalidGroupReq, invalidGroupEnv);
+assert(invalidGroupRes.status === 400, `GET /sync/homework with malformed groupId returns 400 Bad Request (got ${invalidGroupRes.status})`);
+
 // 1.3 Test POST /upload without X-App-Key
 const unauthUploadReq = new Request('https://worker.test/upload', {
   method: 'POST',

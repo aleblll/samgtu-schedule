@@ -261,6 +261,9 @@ export function formatTelegramErrorHtml({ message, stack, component, group, plat
   return text;
 }
 
+export const KV_TYPES = new Set(["schedule", "homework", "attendance"]);
+export const GROUP_ID_RE = /^[a-z0-9-]{1,64}$/;
+
 export default {
   async fetch(request, env) {
     const corsHeaders = {
@@ -278,12 +281,6 @@ export default {
     const CHANNEL_ID = (env && env.TELEGRAM_CHANNEL_ID) ? env.TELEGRAM_CHANNEL_ID : "-1002345678901";
 
     const APP_SECRET = (env && (env.APP_SECRET || env.X_APP_KEY)) ? (env.APP_SECRET || env.X_APP_KEY) : null;
-
-    const BINS = {
-      schedule: "https://extendsclass.com/api/json-storage/bin/cecbcbf",
-      homework: "https://extendsclass.com/api/json-storage/bin/dfdebcc",
-      attendance: "https://extendsclass.com/api/json-storage/bin/cdaacff"
-    };
 
     try {
       // 0. Maintenance & Service Health Endpoint
@@ -306,26 +303,87 @@ export default {
         });
       }
 
-      // 1. Cloud Storage Sync (Schedule, Homework, Attendance)
-      // Solves CORS Preflight 500 error & provides atomic server-to-server updates
+      // 0a. Admin: One-time migration to Cloudflare KV with per-group isolation
+      if (url.pathname === "/admin/migrate-to-kv" && request.method === "GET") {
+        if (!APP_SECRET || request.headers.get("X-App-Key") !== APP_SECRET) {
+          return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+        if (!env || !env.APP_DATA) {
+          return new Response(JSON.stringify({ error: "Cloudflare KV APP_DATA namespace is not bound" }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+        const OLD_BINS = {
+          schedule: "https://extendsclass.com/api/json-storage/bin/cecbcbf",
+          homework: "https://extendsclass.com/api/json-storage/bin/dfdebcc",
+          attendance: "https://extendsclass.com/api/json-storage/bin/cdaacff"
+        };
+        const summary = {};
+        for (const [type, binUrl] of Object.entries(OLD_BINS)) {
+          const res = await fetch(`${binUrl}?_t=${Date.now()}`);
+          const raw = await res.json().catch(() => null);
+          const data = (raw && typeof raw.payload === "string") ? JSON.parse(raw.payload) : raw;
+          const byGroup = (data && data.byGroup) || {};
+          const groups = Object.keys(byGroup);
+          for (const gid of groups) {
+            await env.APP_DATA.put(`${type}:${gid}`, JSON.stringify(byGroup[gid]));
+          }
+          summary[type] = groups;
+        }
+        return new Response(JSON.stringify({ ok: true, migrated: summary }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      // 1. Cloud Storage Sync (Schedule, Homework, Attendance) via Cloudflare KV with per-group isolation
       if (url.pathname.startsWith("/sync/")) {
         const type = url.pathname.replace("/sync/", "").replace(/^\/+|\/+$/g, "");
-        const binUrl = BINS[type];
-        if (!binUrl) {
+        if (!KV_TYPES.has(type)) {
           return new Response(JSON.stringify({ error: "Unknown sync type: " + type }), {
             status: 404,
             headers: { ...corsHeaders, "Content-Type": "application/json" }
           });
         }
 
-        // GET latest data from cloud bin
-        if (request.method === "GET") {
-          const res = await fetch(`${binUrl}?_t=${Date.now()}`, {
-            headers: { "Accept": "application/json", "Cache-Control": "no-cache" }
+        // Require X-App-Key for both GET and PUT/POST when APP_SECRET is configured
+        if (APP_SECRET && request.headers.get("X-App-Key") !== APP_SECRET) {
+          return new Response(JSON.stringify({ error: "Unauthorized: Invalid or missing X-App-Key" }), {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
           });
-          const text = await res.text();
-          return new Response(text, {
-            status: res.status,
+        }
+
+        if (!env || !env.APP_DATA) {
+          return new Response(JSON.stringify({ error: "Cloudflare KV APP_DATA namespace is not bound" }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+
+        let groupId = (url.searchParams.get("groupId") || "").toLowerCase();
+
+        // GET latest data from Cloudflare KV for the specific group
+        if (request.method === "GET") {
+          if (!groupId || !GROUP_ID_RE.test(groupId)) {
+            return new Response(JSON.stringify({ error: "Invalid or missing groupId parameter" }), {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" }
+            });
+          }
+
+          const kvKey = `${type}:${groupId}`;
+          const raw = await env.APP_DATA.get(kvKey);
+          let groupData = {};
+          if (raw) {
+            try {
+              groupData = JSON.parse(raw);
+            } catch {
+              groupData = {};
+            }
+          }
+          return new Response(JSON.stringify({ byGroup: { [groupId]: groupData }, updatedAt: groupData.updatedAt || 0 }), {
             headers: {
               ...corsHeaders,
               "Content-Type": "application/json",
@@ -335,23 +393,12 @@ export default {
           });
         }
 
-        // PUT or POST save data to cloud bin (Worker does server-to-server PUT without browser CORS preflight block!)
+        // PUT or POST save data to Cloudflare KV with per-group isolation
         if (request.method === "PUT" || request.method === "POST") {
-          if (APP_SECRET && request.headers.get("X-App-Key") !== APP_SECRET) {
-            return new Response(JSON.stringify({ error: "Unauthorized: Invalid or missing X-App-Key" }), {
-              status: 401,
-              headers: { ...corsHeaders, "Content-Type": "application/json" }
-            });
-          }
-
           const rawText = await request.text();
-          let sanitizedBody = rawText;
-
-          // Mass Assignment Protection (Video 2: Strict Whitelist DTO)
+          let parsed;
           try {
-            const parsed = JSON.parse(rawText);
-            const cleanData = sanitizeSyncPayload(type, parsed);
-            sanitizedBody = JSON.stringify(cleanData);
+            parsed = JSON.parse(rawText);
           } catch {
             return new Response(JSON.stringify({ error: "Invalid JSON body for sync" }), {
               status: 400,
@@ -359,17 +406,38 @@ export default {
             });
           }
 
-          const res = await fetch(binUrl, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              "Accept": "application/json"
-            },
-            body: sanitizedBody
-          });
-          const text = await res.text();
-          return new Response(text, {
-            status: res.status,
+          // Fallback to extract groupId from body if omitted in query params
+          if (!groupId && parsed && typeof parsed === "object") {
+            if (typeof parsed.groupId === "string") {
+              groupId = parsed.groupId.toLowerCase();
+            } else if (parsed.byGroup && typeof parsed.byGroup === "object") {
+              const keys = Object.keys(parsed.byGroup);
+              if (keys.length > 0) groupId = keys[0].toLowerCase();
+            }
+          }
+
+          if (!groupId || !GROUP_ID_RE.test(groupId)) {
+            return new Response(JSON.stringify({ error: "Invalid or missing groupId parameter" }), {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" }
+            });
+          }
+
+          const kvKey = `${type}:${groupId}`;
+
+          // Mass Assignment Protection (Strict Whitelist DTO)
+          const cleanData = sanitizeSyncPayload(type, parsed);
+          let targetData = cleanData;
+          if (cleanData && typeof cleanData.payload === "string") {
+            try {
+              targetData = JSON.parse(cleanData.payload);
+            } catch {}
+          }
+          const groupSlice = (targetData && targetData.byGroup && targetData.byGroup[groupId]) || targetData || {};
+          groupSlice.updatedAt = Date.now();
+
+          await env.APP_DATA.put(kvKey, JSON.stringify(groupSlice));
+          return new Response(JSON.stringify({ ok: true, updatedAt: groupSlice.updatedAt }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" }
           });
         }

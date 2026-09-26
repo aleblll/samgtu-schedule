@@ -182,20 +182,15 @@ async function runSanitizationTests() {
 
   // --- 6. End-to-End Worker PUT /sync Test ---
   console.log('\n--- 6. End-to-End Worker PUT /sync Request Handling ---');
-  const originalFetch = globalThis.fetch;
-  let forwardedBody: any = null;
-
-  globalThis.fetch = async (input: any, init?: any): Promise<any> => {
-    if (init?.body) {
-      forwardedBody = JSON.parse(init.body);
+  const mockKvStore = new Map<string, string>();
+  const mockWorkerEnv = {
+    APP_DATA: {
+      get: async (k: string) => mockKvStore.get(k) || null,
+      put: async (k: string, v: string) => { mockKvStore.set(k, v); }
     }
-    return new Response(JSON.stringify({ status: 'success' }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
   };
 
-  const req = new Request('https://worker.test/sync/attendance', {
+  const req = new Request('https://worker.test/sync/attendance?groupId=ingt-310', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -209,14 +204,69 @@ async function runSanitizationTests() {
     })
   });
 
-  const res = await worker.fetch(req, {});
+  const res = await worker.fetch(req, mockWorkerEnv);
   check('Worker PUT /sync returns HTTP 200', res.status === 200);
-  check('Forwarded body stripped of topHack', forwardedBody && forwardedBody.topHack === undefined);
-  check('Forwarded body stripped of hackField in group', forwardedBody && forwardedBody.byGroup['ingt-310'].hackField === undefined);
-  check('Forwarded attendance record stripped of isSuperuser', forwardedBody && forwardedBody.byGroup['ingt-310'].records[0].isSuperuser === undefined);
-  check('Forwarded attendance record preserved absentStudentIds', forwardedBody && JSON.stringify(forwardedBody.byGroup['ingt-310'].records[0].absentStudentIds) === JSON.stringify([1, 2, 3]));
-  check('Forwarded attendance record preserved excusedStudentIds', forwardedBody && JSON.stringify(forwardedBody.byGroup['ingt-310'].records[0].excusedStudentIds) === JSON.stringify([4, 5]));
-  check('Forwarded attendance record preserved isCancelled', forwardedBody && forwardedBody.byGroup['ingt-310'].records[0].isCancelled === true);
+
+  const storedRaw = mockKvStore.get('attendance:ingt-310');
+  const storedData = storedRaw ? JSON.parse(storedRaw) : null;
+  check('KV store received group slice', storedData !== null);
+  check('Stored data stripped of hackField in group', storedData && storedData.hackField === undefined);
+  check('Stored attendance record stripped of isSuperuser', storedData && storedData.records[0].isSuperuser === undefined);
+  check('Stored attendance record preserved absentStudentIds', storedData && JSON.stringify(storedData.records[0].absentStudentIds) === JSON.stringify([1, 2, 3]));
+  check('Stored attendance record preserved excusedStudentIds', storedData && JSON.stringify(storedData.records[0].excusedStudentIds) === JSON.stringify([4, 5]));
+  check('Stored attendance record preserved isCancelled', storedData && storedData.records[0].isCancelled === true);
+
+  // Test GET isolation from KV
+  const getReq = new Request('https://worker.test/sync/attendance?groupId=ingt-310', {
+    method: 'GET'
+  });
+  const getRes = await worker.fetch(getReq, mockWorkerEnv);
+  check('Worker GET /sync returns HTTP 200', getRes.status === 200);
+  const getBody = await getRes.json();
+  check('GET returns isolated byGroup[groupId]', getBody && getBody.byGroup && getBody.byGroup['ingt-310'] !== undefined);
+  check('GET returns matching records', getBody.byGroup['ingt-310'].records.length === 1);
+
+  // --- 7. Admin Migration Route (/admin/migrate-to-kv) ---
+  console.log('\n--- 7. Admin KV Migration Endpoint (/admin/migrate-to-kv) ---');
+  const originalFetch = globalThis.fetch;
+  const mockOldBinsData: Record<string, any> = {
+    'cecbcbf': { byGroup: { 'ingt-310': { overrides: {} } } },
+    'dfdebcc': { byGroup: { 'ingt-310': { items: [] } } },
+    'cdaacff': { byGroup: { 'ingt-310': { records: [] } } }
+  };
+
+  globalThis.fetch = async (input: any): Promise<any> => {
+    const urlStr = String(input);
+    for (const [binId, data] of Object.entries(mockOldBinsData)) {
+      if (urlStr.includes(binId)) {
+        return new Response(JSON.stringify(data), { status: 200 });
+      }
+    }
+    return new Response(JSON.stringify({}), { status: 200 });
+  };
+
+  const adminEnv = {
+    APP_SECRET: 'admin-secret',
+    APP_DATA: {
+      get: async (k: string) => mockKvStore.get(k) || null,
+      put: async (k: string, v: string) => { mockKvStore.set(k, v); }
+    }
+  };
+
+  // Unauthorized test
+  const unauthMigrate = new Request('https://worker.test/admin/migrate-to-kv', { method: 'GET' });
+  const unauthMigrateRes = await worker.fetch(unauthMigrate, adminEnv);
+  check('GET /admin/migrate-to-kv without secret returns 401', unauthMigrateRes.status === 401);
+
+  // Authorized test
+  const authMigrate = new Request('https://worker.test/admin/migrate-to-kv', {
+    method: 'GET',
+    headers: { 'X-App-Key': 'admin-secret' }
+  });
+  const authMigrateRes = await worker.fetch(authMigrate, adminEnv);
+  check('GET /admin/migrate-to-kv with secret returns 200', authMigrateRes.status === 200);
+  const migrateJson = await authMigrateRes.json();
+  check('Migration summary reported correctly', migrateJson && migrateJson.ok === true && migrateJson.migrated.homework.includes('ingt-310'));
 
   // Restore fetch
   globalThis.fetch = originalFetch;
