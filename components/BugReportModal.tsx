@@ -348,9 +348,24 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
         if (res.status === 429) {
           throw new Error('Слишком много запросов. Пожалуйста, подождите 15-30 секунд перед повторной отправкой.');
         }
-        if (!res.ok) throw new Error(`Ошибка шлюза: HTTP ${res.status}`);
+        if (!res.ok) {
+          try {
+            const errData = await res.json();
+            if (errData?.error && /too many/i.test(errData.error)) {
+              throw new Error('Слишком много запросов. Пожалуйста, подождите 15-30 секунд перед повторной отправкой.');
+            }
+          } catch (e: any) {
+            if (e.message?.includes('Слишком много запросов')) throw e;
+          }
+          throw new Error(`Ошибка шлюза: HTTP ${res.status}`);
+        }
         const data = await res.json();
-        if (!data.ok) throw new Error(data.description || 'Telegram отклонил отправку отчета');
+        if (!data.ok) {
+          if (data.error_code === 429 || (data.description && /too many requests/i.test(data.description))) {
+            throw new Error('Слишком много запросов. Пожалуйста, подождите 15-30 секунд перед повторной отправкой.');
+          }
+          throw new Error(data.description || 'Telegram отклонил отправку отчета');
+        }
       } else {
         // Single photo or multiple photos stitched into one album package
         let fileToSend: File;
@@ -384,9 +399,24 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
         if (res.status === 429) {
           throw new Error('Слишком много запросов. Пожалуйста, подождите 15-30 секунд перед повторной отправкой.');
         }
-        if (!res.ok) throw new Error(`Ошибка шлюза при загрузке: HTTP ${res.status}`);
+        if (!res.ok) {
+          try {
+            const errData = await res.json();
+            if (errData?.error && /too many/i.test(errData.error)) {
+              throw new Error('Слишком много запросов. Пожалуйста, подождите 15-30 секунд перед повторной отправкой.');
+            }
+          } catch (e: any) {
+            if (e.message?.includes('Слишком много запросов')) throw e;
+          }
+          throw new Error(`Ошибка шлюза при загрузке: HTTP ${res.status}`);
+        }
         const data = await res.json();
-        if (!data.ok) throw new Error(data.description || 'Telegram отклонил отправку отчета');
+        if (!data.ok) {
+          if (data.error_code === 429 || (data.description && /too many requests/i.test(data.description))) {
+            throw new Error('Слишком много запросов. Пожалуйста, подождите 15-30 секунд перед повторной отправкой.');
+          }
+          throw new Error(data.description || 'Telegram отклонил отправку отчета');
+        }
 
         // Additionally send diagnostic dump companion JSON file
         try {

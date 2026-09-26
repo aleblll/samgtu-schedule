@@ -42,6 +42,7 @@ check('Tag #bugreport included in caption', modalContent.includes('#bugreport'))
 check('Group tag included in caption', modalContent.includes('groupTag'));
 check('Direct upload via WORKER_BASE /upload', modalContent.includes('WORKER_BASE') && modalContent.includes('/upload'));
 check('Fallback document created when no screenshot attached', modalContent.includes('new Blob') && modalContent.includes('report_'));
+check('Rate limit 429 handled with friendly wait advice', modalContent.includes('429') && modalContent.includes('Слишком много запросов') && modalContent.includes('подождите'));
 
 // 4. Check Developer Contact Info
 console.log('\n--- 4. Developer Contact Info ---');
