@@ -345,6 +345,9 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
           body: formData
         });
 
+        if (res.status === 429) {
+          throw new Error('Слишком много запросов. Пожалуйста, подождите 15-30 секунд перед повторной отправкой.');
+        }
         if (!res.ok) throw new Error(`Ошибка шлюза: HTTP ${res.status}`);
         const data = await res.json();
         if (!data.ok) throw new Error(data.description || 'Telegram отклонил отправку отчета');
@@ -378,6 +381,9 @@ export const BugReportModal: React.FC<BugReportModalProps> = ({
           body: formData
         });
 
+        if (res.status === 429) {
+          throw new Error('Слишком много запросов. Пожалуйста, подождите 15-30 секунд перед повторной отправкой.');
+        }
         if (!res.ok) throw new Error(`Ошибка шлюза при загрузке: HTTP ${res.status}`);
         const data = await res.json();
         if (!data.ok) throw new Error(data.description || 'Telegram отклонил отправку отчета');
