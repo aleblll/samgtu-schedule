@@ -42,7 +42,7 @@
 
 - **Frontend**: React 19, TypeScript, Vite, Tailwind CSS v4, Lucide React, Sonner (Toasts)
 - **Runtime**: Telegram WebApp SDK, Capacitor (Android), Service Worker (PWA)
-- **Backend / Edge**: Cloudflare Workers, ExtendsClass JSON Bins, Telegram Bot API
+- **Backend / Edge**: Cloudflare Workers, Cloudflare KV Storage, Telegram Bot API
 - **Экспорт**: `docx` (генерация ведомостей посещаемости)
 - **Тестирование**: TypeScript / Node.js автоматический тестовый комплекс (23 сьюта)
 
